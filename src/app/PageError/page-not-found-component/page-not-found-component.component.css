@@ -26,7 +26,7 @@
 .blob-1 {
   width: 320px;
   height: 320px;
-  background: #6366f1;
+  background: var(--nexsuz-primary);
   top: -60px;
   left: -60px;
 }
@@ -65,7 +65,7 @@
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   backdrop-filter: blur(16px);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4) !important;
-  color: #e2e8f0;
+  color: var(--nexsuz-border);
 }
 
 /* LOGO */
@@ -210,7 +210,7 @@
 .time-box small {
   margin-top: 6px;
   font-size: 10px;
-  color: #94a3b8;
+  color: var(--nexsuz-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }

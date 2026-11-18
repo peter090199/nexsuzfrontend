@@ -19,7 +19,7 @@
 
 .skeleton {
   border-radius: 8px;
-  background-color: #e0e0e0;
+  background-color: var(--nexsuz-border);
   margin-bottom: 8px;
 }
 
@@ -107,13 +107,13 @@
   font-size: 0.95rem;
   margin: 4px 0;
   text-align: center;
-  color: #333;
+  color: var(--nexsuz-text);
   text-decoration: none;
 }
 
 mat-card-subtitle {
   font-size: 0.8rem;
-  color: #666;
+  color: var(--nexsuz-muted);
   text-align: center;
 }
 

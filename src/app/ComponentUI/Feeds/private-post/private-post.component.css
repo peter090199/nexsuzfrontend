@@ -6,7 +6,7 @@ nav {
   align-items: center;
   justify-content: space-between;
   background: #fff;
-  border-bottom: 1px solid #dddfe2;
+  border-bottom: 1px solid var(--nexsuz-border);
   position: fixed;
   top: 0;
   z-index: 1000;
@@ -49,7 +49,7 @@ nav {
 
 .post-footer-accordion {
   margin-top: 10px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--nexsuz-border);
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
@@ -73,14 +73,14 @@ nav {
   gap: 5px;
   background: white;
   padding: 5px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--nexsuz-border);
   border-radius: 30px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
 .comment-card {
   margin-top: 10px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--nexsuz-border);
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
@@ -103,7 +103,7 @@ nav {
   left: 0;
   width: 380px;
   height: calc(100vh - 64px);
-  background: #f0f2f5;
+  background: var(--nexsuz-background);
   padding: 1rem;
   overflow-y: auto;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.08);
@@ -170,7 +170,7 @@ nav {
 .profile-profession {
   margin-top: 4px;
   text-align: center;
-  color: #65676b;
+  color: var(--nexsuz-muted);
   font-size: 14px;
 }
 
@@ -188,12 +188,12 @@ nav {
   text-transform: none;
   font-size: 14px;
   font-weight: 500;
-  color: #050505;
+  color: var(--nexsuz-text);
 }
 
 .list-label mat-icon {
   margin-right: 6px;
-  color: #65676b;
+  color: var(--nexsuz-muted);
 }
 
 /* ---- Middle Column (Feed) ---- */
@@ -304,7 +304,7 @@ nav {
 
 .post-user-info span {
   font-size: 13px;
-  color: #65676b;
+  color: var(--nexsuz-muted);
 }
 
 /* Post text */
@@ -335,7 +335,7 @@ nav {
   display: flex;
   justify-content: space-between;
   margin-top: 8px;
-  border-top: 1px solid #dddfe2;
+  border-top: 1px solid var(--nexsuz-border);
   padding-top: 8px;
 }
 
@@ -348,7 +348,7 @@ nav {
   padding: 8px 0;
   font-size: 14px;
   font-weight: 500;
-  color: #65676b;
+  color: var(--nexsuz-muted);
   border: none;
   background: none;
   cursor: pointer;
@@ -357,7 +357,7 @@ nav {
 }
 
 .post-actions button:hover {
-  background: #f0f2f5;
+  background: var(--nexsuz-background);
 }
 
 /* Input + actions */
@@ -371,10 +371,10 @@ nav {
   flex: 1;
   font-size: 16px;
   padding: 10px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--nexsuz-border);
   border-radius: 6px;
   background: #f0f0f0;
-  color: #666;
+  color: var(--nexsuz-muted);
 }
 
 .actions-section {
@@ -396,7 +396,7 @@ nav {
 
 .action-btn.live-video {
   background: #e3f2fd;
-  color: #1976d2;
+  color: var(--nexsuz-primary);
 }
 
 .action-btn.photo-video {
@@ -419,7 +419,7 @@ nav {
 
 .reaction-count-text {
   font-size: 13px;
-  color: #65676b;
+  color: var(--nexsuz-muted);
   cursor: pointer;
 }
 
@@ -427,7 +427,7 @@ nav {
 mat-card-footer {
   display: flex;
   justify-content: space-around;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--nexsuz-border);
   padding-top: 6px;
   margin-top: 10px;
 }
@@ -435,7 +435,7 @@ mat-card-footer {
 mat-card-footer button {
   flex: 1;
   justify-content: center;
-  color: #65676b;
+  color: var(--nexsuz-muted);
   text-transform: none;
 }
 
@@ -477,7 +477,7 @@ mat-card-footer button mat-icon {
   margin-top: 20px;
   padding: 1rem;
   background: #fff;
-  border-left: 1px solid #dddfe2;
+  border-left: 1px solid var(--nexsuz-border);
   border-radius: 12px 0 0 12px;
 }
 
@@ -491,7 +491,7 @@ mat-card-footer button mat-icon {
   margin-top: 20px;
   padding: 1rem;
   background: #fff;
-  border-left: 1px solid #dddfe2;
+  border-left: 1px solid var(--nexsuz-border);
   box-shadow: -2px 0 5px rgba(0, 0, 0, 0.08);
   border-radius: 12px;
 }
@@ -502,7 +502,7 @@ mat-card-footer button mat-icon {
   display: flex;
   align-items: center;
   padding: .5rem 0;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--nexsuz-background);
 }
 
 .client-item:last-child {
@@ -526,13 +526,13 @@ mat-card-footer button mat-icon {
   margin: 0;
   font-size: 14px;
   font-weight: 600;
-  color: #050505;
+  color: var(--nexsuz-text);
 }
 
 .client-info p {
   margin: 2px 0 0;
   font-size: 12px;
-  color: #65676b;
+  color: var(--nexsuz-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -600,7 +600,7 @@ mat-card-footer button mat-icon {
 .skeleton-avatar,
 .skeleton-btn,
 .skeleton-user {
-  background: #e0e0e0;
+  background: var(--nexsuz-border);
   border-radius: 4px;
   position: relative;
   overflow: hidden;
@@ -712,7 +712,7 @@ mat-card-footer button mat-icon {
   position: fixed;
   bottom: 30px;
   right: 30px;
-  background: #1976d2;
+  background: var(--nexsuz-primary);
   /* primary blue */
   color: #fff;
   border: none;
@@ -729,7 +729,7 @@ mat-card-footer button mat-icon {
 }
 
 .scroll-to-top:hover {
-  background: #1565c0;
+  background: var(--nexsuz-primary-dark);
   transform: translateY(-2px);
 }
 
@@ -739,7 +739,7 @@ mat-card-footer button mat-icon {
 .reactions-summary {
   display: flex;
   align-items: center;
-  font-family: Arial, sans-serif;
+  font-family: var(--nx-font);
 }
 
 .emoji-stack {
@@ -767,7 +767,7 @@ mat-card-footer button mat-icon {
   margin-left: 8px;
   /* spacing between emoji stack and count */
   font-size: 14px;
-  color: #65676b;
+  color: var(--nexsuz-muted);
   cursor: pointer;
   font-weight: 500;
 }
@@ -811,7 +811,7 @@ mat-card-footer {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--nexsuz-border);
   background-color: #fff;
   padding: 4px 0;
   font-size: 9px;
@@ -841,7 +841,7 @@ mat-card-footer {
   font-size: 12px;
   font-weight: 500;
   text-transform: none;
-  color: #606770;
+  color: var(--nexsuz-muted);
   display: flex;
   align-items: center;
   gap: 2px;
@@ -850,7 +850,7 @@ mat-card-footer {
 /* Icons inside buttons */
 .footer-btn mat-icon {
   font-size: 16px;
-  color: #606770;
+  color: var(--nexsuz-muted);
 }
 
 
@@ -921,7 +921,7 @@ mat-card-footer {
 }
 
 .post-card {
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--nexsuz-border);
   padding: 15px;
   margin-bottom: 20px;
 }
@@ -930,7 +930,7 @@ mat-card-footer {
 .end {
   text-align: center;
   padding: 10px;
-  color: #888;
+  color: var(--nexsuz-muted);
 }
 
 
@@ -940,7 +940,7 @@ mat-card-footer {
   position: sticky;
   top: 10px;
   z-index: 100;
-  background-color: #1976d2;
+  background-color: var(--nexsuz-primary);
   color: white;
   border: none;
   border-radius: 20px;
@@ -973,7 +973,7 @@ mat-card-footer {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--nexsuz-border);
   border-radius: 12px;
   background: #fff;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
@@ -1012,16 +1012,16 @@ mat-card-footer {
 
 .custom-title {
   text-decoration: none;
-  color: #222;
+  color: var(--nexsuz-text);
   font-weight: 600;
 }
 
 .custom-title:hover {
-  color: #1976d2;
+  color: var(--nexsuz-primary);
 }
 
 .client-profession {
-  color: #666;
+  color: var(--nexsuz-muted);
   font-size: 0.9rem;
   margin-top: 4px;
 }
@@ -1094,7 +1094,7 @@ mat-card-footer {
 
 .no-data-text {
   text-align: center;
-  color: #888;
+  color: var(--nexsuz-muted);
   font-style: italic;
   margin-top: 20px;
 }
@@ -1109,13 +1109,13 @@ mat-card-footer {
   margin: 0;
   font-size: 14px;
   font-weight: 600;
-  color: #050505;
+  color: var(--nexsuz-text);
 }
 
 .client-info p {
   margin: 2px 0 0;
   font-size: 12px;
-  color: #65676b;
+  color: var(--nexsuz-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

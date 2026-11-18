@@ -171,7 +171,7 @@ app-app-logo:hover {
 
 .btn-signup {
   color: #ffffff !important;
-  background: linear-gradient(135deg, #2563eb, #4f46e5) !important;
+  background: linear-gradient(135deg, var(--nexsuz-primary), #4f46e5) !important;
   box-shadow: 0 10px 25px rgba(37, 99, 235, .25);
 }
 
@@ -244,7 +244,7 @@ app-app-logo:hover {
 
   padding: 18px;
 
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--nexsuz-border);
 }
 
 .sidebar-content {

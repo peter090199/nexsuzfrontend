@@ -4,17 +4,14 @@
 @import "~@angular/material/prebuilt-themes/indigo-pink.css";
 
 
-
-
 html,
 body {
   margin: 0 !important;
   padding: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
   font-family: Verdana;
   width: 100%;
 }
+/* scrolling is handled once, at the viewport: see styles/nexsuz-design-system.scss */
 body{
     font-family: Verdana, Geneva, Tahoma, sans-serif;
 }

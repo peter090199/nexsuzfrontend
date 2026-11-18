@@ -15,7 +15,8 @@ export interface User {
 @Component({
   selector: 'app-topheader',
   templateUrl: './topheader.component.html',
-  styleUrls: ['./topheader.component.css']
+  styleUrls: ['./topheader.component.css'],
+  animations: [slideUp, slideFade]
 })
 export class TopheaderComponent implements OnInit {
   fadeIn: boolean = false;

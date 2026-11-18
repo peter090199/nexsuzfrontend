@@ -3,9 +3,8 @@ import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 
 export const environment = {
-  production: true,
-   //apiUrl: 'http://localhost:8000/api/' 
-  apiUrl: 'https://api.nexsuz.com/api/',
+  production: false,
+  apiUrl: 'http://localhost:8000/api/' 
     
 }; 
 

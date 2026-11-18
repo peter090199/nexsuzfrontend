@@ -71,7 +71,7 @@
 
   <!-- Main -->
   <mat-sidenav-content class="fixed-header">
-    <header>
+    <header [class.scrolled]="navScrolled">
       <mat-toolbar>
         <app-app-logo></app-app-logo>
 
@@ -123,7 +123,7 @@
     </header>
 
     <!-- Page Content -->
-    <main class="page-content" (scroll)="onPageScroll($event)">
+    <main #pageContent class="page-content" (scroll)="onPageScroll($event)">
       <app-homesection id="home-section"></app-homesection>
       <app-about id="about-section"></app-about>
       <app-pricing id="pricing-section"></app-pricing>

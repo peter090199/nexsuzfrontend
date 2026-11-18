@@ -1,0 +1,30 @@
+:host { display: block; font-family: var(--nx-font); }
+.cropper { display: flex; flex-direction: column; gap: 12px; outline: 0; }
+.head { display: flex; align-items: center; justify-content: space-between; }
+.head h2 { margin: 0; font-size: 18px; color: var(--nexsuz-primary-dark); }
+.hint { margin: 0; font-size: 12px; color: var(--nexsuz-muted); text-align: center; }
+.hint.warn { color: var(--nx-warning); }
+.error { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 10px; background: #fdecea; color: #a52019; font-size: 13px; }
+.loading { display: flex; justify-content: center; padding: 32px 0; }
+
+.stage-wrap { display: flex; justify-content: center; }
+.stage { position: relative; overflow: hidden; background: #111; border-radius: 12px; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; outline-offset: 3px; max-width: 100%; }
+.stage:active { cursor: grabbing; }
+.stage img { position: absolute; left: 0; top: 0; max-width: none; max-height: none; transform-origin: 0 0; pointer-events: none; -webkit-user-drag: none; will-change: transform; }
+
+/* the "window": everything outside it is dimmed, like Facebook's editor */
+.mask { position: absolute; inset: 0; pointer-events: none; border: 2px solid rgba(255, 255, 255, .9); border-radius: 12px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25); }
+.mask.circle { inset: 6px; border-radius: 50%; border-width: 2px; box-shadow: 0 0 0 999px rgba(0, 0, 0, .55); }
+
+.zoom { display: flex; align-items: center; gap: 4px; }
+.zoom input[type=range] { flex: 1; min-width: 0; height: 44px; accent-color: var(--nexsuz-primary); cursor: pointer; }
+.reset { min-height: 36px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; color: var(--nexsuz-primary); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.reset:hover:not([disabled]) { background: var(--nx-sky-soft); }
+
+.actions { display: flex; justify-content: flex-end; gap: 8px; }
+.actions button { min-height: 44px; min-width: 96px; border-radius: 22px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+.actions ::ng-deep .mat-progress-spinner circle { stroke: #fff; }
+
+@media (max-width: 480px) {
+  .actions button { flex: 1; }
+}

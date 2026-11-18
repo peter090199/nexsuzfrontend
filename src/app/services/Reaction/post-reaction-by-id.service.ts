@@ -34,6 +34,17 @@ export class PostReactionByIdService {
     );
   }
 
+  /** Set or change the current user's reaction. Errors reach the caller; the reply carries the fresh summary. */
+  setReaction(postId: number, reaction: string): Observable<any> {
+    return this.http.post(`${_url}reactToPostById`, { post_id: postId, reaction }, { headers: this.createHeaders() });
+  }
+
+  /** Unlike: remove the current user's reaction. */
+  removeReaction(postId: number): Observable<any> {
+    const headers = this.createHeaders();
+    return this.http.post(`${_url}removeReactionByPostId`, { post_id: postId }, { headers });
+  }
+
   getReaction(postId: number): Observable<any> {
     const headers = this.createHeaders();
     return this.http.get<any>(`${_url}getReactionByPostId/${postId}`, { headers });

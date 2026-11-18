@@ -11,7 +11,7 @@
   <div class="company-info">
     <h3>{{ data?.company }}</h3>
     <p class="role">{{ data?.job_position }}</p>
-    <span class="badge" [ngClass]="data?.work_type.toLowerCase()">{{ data?.work_type }}</span>
+    <span class="badge" [ngClass]="data?.work_type?.toLowerCase()">{{ data?.work_type }}</span>
   </div>
 </div>
 <mat-divider></mat-divider>

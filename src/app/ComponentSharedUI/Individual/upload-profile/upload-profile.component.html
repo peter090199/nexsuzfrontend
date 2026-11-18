@@ -15,19 +15,12 @@
   </mat-progress-bar>
 
   <form [formGroup]="uploadform" (ngSubmit)="onSubmit()">
-    <mat-form-field appearance="standard" class="full-width">
-      <mat-icon matPrefix>cloud_upload</mat-icon>
-      <!-- Icon for file upload -->
-      <input
-        matInput
-        type="file"
-        (change)="onFileSelected($event)"
-        accept="image/*"
-        required>
-      <mat-error *ngIf="fileControl.hasError('required')">
-        Image is required.
-      </mat-error>
-    </mat-form-field>
+    <!-- a native file input cannot be a matInput, so it lives outside mat-form-field -->
+    <div class="file-field full-width">
+      <label class="file-label" for="profileImage"><mat-icon>cloud_upload</mat-icon> Choose image</label>
+      <input id="profileImage" type="file" (change)="onFileSelected($event)" accept="image/*" required>
+      <small class="file-hint">{{ selectedFile ? selectedFile.name : 'Required: a JPEG or PNG image.' }}</small>
+    </div>
 
     <div class="button-end">
       <button mat-raised-button color="primary" type="submit" [disabled]="isLoading">Upload CV Image</button>

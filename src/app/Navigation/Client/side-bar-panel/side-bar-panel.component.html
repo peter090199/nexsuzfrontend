@@ -65,7 +65,7 @@
 
   <!-- ================= MAIN CONTENT ================= -->
   <mat-sidenav-content>
-    <mat-toolbar class="topbar">
+    <mat-toolbar class="topbar" nxAutoHide nxAutoHideScroller=".mat-drawer-content">
       <div class="toolbar-left">
         <button *ngIf="isMobile" mat-icon-button class="menu-btn" (click)="toggleSidebar()">
           <mat-icon>menu</mat-icon>

@@ -1,3 +1,4 @@
+import { NexsuzTestingModule } from 'src/testing/nexsuz-testing.module';
 import { TestBed } from '@angular/core/testing';
 
 import { WebsocketService } from './websocket.service';
@@ -6,7 +7,9 @@ describe('WebsocketService', () => {
   let service: WebsocketService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      imports: [NexsuzTestingModule]
+    });
     service = TestBed.inject(WebsocketService);
   });
 

@@ -1,0 +1,206 @@
+// ============================================================
+// NEXSUZ DESIGN SYSTEM – GLOBAL LAYER
+// Loaded after styles.css (see angular.json). Components should
+// use the .nx-* classes / --nx-* variables instead of re-declaring
+// colors, fonts, cards or buttons.
+// ============================================================
+@import 'nexsuz-tokens';
+
+:root {
+  --nx-navy: #{$nx-navy-700};
+  --nx-navy-dark: #{$nx-navy-900};
+  --nx-navy-light: #{$nx-navy-500};
+  --nx-sky: #{$nx-sky-500};
+  --nx-sky-soft: #{$nx-sky-100};
+  --nx-bg: #{$nx-bg};
+  --nx-surface: #{$nx-surface};
+  --nx-border: #{$nx-border};
+  --nx-text: #{$nx-text};
+  --nx-muted: #{$nx-text-muted};
+  --nx-success: #{$nx-success};
+  --nx-warning: #{$nx-warning};
+  --nx-danger: #{$nx-danger};
+  --nx-radius: #{$nx-radius};
+  --nx-radius-lg: #{$nx-radius-lg};
+  --nx-shadow: #{$nx-shadow};
+  --nx-font: #{$nx-font};
+}
+
+@keyframes nx-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+// ---------- Base (applies to every module) ----------
+html, body { background: $nx-bg; color: $nx-text; font-family: $nx-font; }
+*, *::before, *::after { box-sizing: border-box; }
+img { max-width: 100%; }
+
+// ---------- Viewport & scrolling (desktop + mobile) ----------
+// One scroll container only: the viewport. html stays visible so body's
+// overflow propagates to it (no nested/double scrollbars, sticky works).
+html {
+  height: auto;
+  overflow: visible;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+body {
+  min-height: 100vh;
+  min-height: 100dvh;      // mobile: follows the collapsing address bar
+  overflow-x: hidden;      // never scroll sideways
+  overflow-y: visible;
+  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
+}
+// Pages that scroll inside an app shell (e.g. .page-content) opt in with .nx-scroll
+.nx-scroll { overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; min-height: 0; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+a { transition: color $nx-transition; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+// ---------- Layout helpers ----------
+.nx-container { width: 100%; max-width: $nx-container; margin: 0 auto; padding: 0 $nx-space-4; }
+.nx-page { background: $nx-bg; min-height: 100vh; padding: $nx-space-4 0 $nx-space-6; }
+
+// LinkedIn-style layouts: 1 column mobile, 2 tablet, 3 desktop
+.nx-layout-3 {
+  display: grid; gap: $nx-space-4; grid-template-columns: minmax(0, 1fr);
+  > * { min-width: 0; }
+  @include nx-up($nx-bp-tablet) {
+    grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
+    .nx-aside-right { grid-column: 1 / -1; }
+  }
+  @include nx-up($nx-bp-desktop) {
+    grid-template-columns: minmax(0, 260px) minmax(0, 1fr) minmax(0, 300px);
+    .nx-aside-right { grid-column: auto; }
+  }
+}
+.nx-layout-2 {
+  display: grid; gap: $nx-space-4; grid-template-columns: minmax(0, 1fr);
+  > * { min-width: 0; }
+  @include nx-up($nx-bp-tablet) { grid-template-columns: minmax(0, 1fr) minmax(0, 340px); }
+}
+// The app shell scrolls below its toolbar, so rails stick near the top of the scroll area (override with --nx-sticky-top)
+.nx-sticky { @include nx-up($nx-bp-desktop) { position: sticky; top: var(--nx-sticky-top, 12px); align-self: start; } }
+
+// ---------- Cards ----------
+.nx-card {
+  @include nx-card;
+  @include nx-fade-up;
+  &.nx-card-hover {
+    transition: box-shadow $nx-transition, transform $nx-transition;
+    &:hover { box-shadow: $nx-shadow-hover; transform: translateY(-2px); }
+  }
+  @include nx-down($nx-bp-tablet) { padding: $nx-space-4; border-radius: $nx-radius; }
+}
+.nx-card-title { margin: 0 0 $nx-space-3; font-size: $nx-fs-lg; font-weight: 700; color: $nx-navy-700; }
+.nx-muted { color: $nx-text-muted; font-size: $nx-fs-sm; }
+.nx-avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background: $nx-navy-700; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; flex: none; }
+.nx-cover { height: 140px; border-radius: $nx-radius-lg $nx-radius-lg 0 0; background: linear-gradient(135deg, $nx-navy-700, $nx-sky-500); background-size: cover; background-position: center; }
+.nx-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; background: $nx-sky-100; color: $nx-navy-500; font-size: $nx-fs-xs; font-weight: 700; }
+
+// ---------- Buttons ----------
+.nx-btn { @include nx-button-primary; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 20px; font-family: $nx-font; cursor: pointer; }
+.nx-btn[disabled] { opacity: .7; cursor: not-allowed; }
+.nx-btn-outline {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 20px;
+  border: 1.5px solid $nx-navy-500; color: $nx-navy-500; background: transparent; border-radius: $nx-radius;
+  font-weight: 700; font-family: $nx-font; cursor: pointer; transition: background $nx-transition;
+  &:hover { background: $nx-sky-100; }
+}
+
+// ---------- Inputs ----------
+.nx-input { @include nx-input; width: 100%; }
+
+// ---------- Tables ----------
+.nx-table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; @include nx-card(0); }
+.nx-table {
+  width: 100%; border-collapse: collapse; font-size: $nx-fs-sm;
+  th { background: $nx-bg; color: $nx-navy-700; text-align: left; font-weight: 700; padding: 12px; }
+  td { padding: 12px; border-top: 1px solid $nx-border; }
+  tr:hover td { background: #fafcff; }
+}
+
+// ============================================================
+// Angular Material alignment (applies to all existing modules)
+// ============================================================
+.mat-card { background-color: $nx-surface !important; border: 1px solid $nx-border; border-radius: $nx-radius-lg !important; box-shadow: $nx-shadow !important; }
+.mat-dialog-container { border-radius: $nx-radius-lg !important; font-family: $nx-font; }
+.mat-menu-panel { border-radius: $nx-radius !important; box-shadow: $nx-shadow-hover !important; }
+.mat-select-panel, .mat-autocomplete-panel { border-radius: $nx-radius-sm !important; }
+.mat-header-cell { background: $nx-bg !important; color: $nx-navy-700; }
+.mat-raised-button, .mat-flat-button, .mat-stroked-button, .mat-button { font-family: $nx-font; border-radius: $nx-radius-sm; }
+.mat-raised-button, .mat-flat-button { transition: box-shadow $nx-transition, transform $nx-transition; }
+.mat-icon-button { transition: background $nx-transition; }
+.mat-form-field { font-family: $nx-font; }
+.mat-tab-label-active { color: $nx-navy-700 !important; opacity: 1 !important; }
+
+// Print and document views keep their own specialised styles
+@media print {
+  html, body { background: #fff !important; }
+  .mat-card, .nx-card { box-shadow: none !important; }
+}
+
+// ============================================================
+// --nexsuz-* aliases and .nexsuz-* classes
+// (naming used by the NEXSUZ global template spec; values as specified)
+// ============================================================
+:root {
+  --nexsuz-primary: #0a66c2;
+  --nexsuz-primary-dark: #004182;
+  --nexsuz-accent: #70b5f9;
+  --nexsuz-background: #f5f7fb;
+  --nexsuz-card: #ffffff;
+  --nexsuz-text: #191919;
+  --nexsuz-muted: #666666;
+  --nexsuz-border: #e0e0e0;
+  --nexsuz-radius: 12px;
+  --nexsuz-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.nexsuz-container { width: 100%; max-width: 1440px; margin: 0 auto; padding: 20px; }
+.nexsuz-card {
+  background: var(--nexsuz-card);
+  border: 1px solid var(--nexsuz-border);
+  border-radius: var(--nexsuz-radius);
+  box-shadow: var(--nexsuz-shadow);
+  padding: 18px;
+}
+.nexsuz-btn-primary {
+  background: var(--nexsuz-primary); color: #fff; border: none; border-radius: 6px;
+  padding: 10px 18px; min-height: 44px; cursor: pointer; transition: background .2s ease;
+  &:hover { background: var(--nexsuz-primary-dark); }
+}
+
+input, textarea, select { max-width: 100%; font-family: inherit; }
+.form-control { min-height: 40px; border-radius: 6px; }
+
+@media (max-width: 767px) {
+  .nexsuz-container { padding: 12px; }
+  .nexsuz-card { padding: 14px; }
+}
+@media (min-width: 768px) and (max-width: 1199px) {
+  .nexsuz-container { padding: 16px; }
+}
+
+@import 'nexsuz-vendor-overrides';
+
+// ============================================================
+// Smart auto-hide navbar (directive: nxAutoHide)
+// ============================================================
+:root {
+  --nx-nav-h: 0px;                                   // published by the directive from the real bar height
+  --nx-sticky-top: calc(var(--nx-nav-h) + 12px);     // sticky rails sit just under a visible bar
+}
+:root.nx-nav-is-hidden { --nx-sticky-top: 12px; }    // ...and move up when the bar slides away
+
+.nx-autohide {
+  transition: transform 250ms ease-in-out, box-shadow 250ms ease-in-out;
+  will-change: transform;
+  &.nx-nav-hidden { transform: translateY(-100%); box-shadow: none; }
+}
+.nx-sticky, .home-left { transition: top 250ms ease-in-out; }

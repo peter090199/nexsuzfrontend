@@ -1,6 +1,6 @@
 /* Container for the whole tab group */
 mat-tab-group {
-  width: 900px;
+  width: min(100%, 900px);
   margin: 10px;
 }
 
@@ -91,7 +91,7 @@ mat-list-item button {
 .skeleton-avatar {
   width: 40px;
   height: 40px;
-  background: #ddd;
+  background: var(--nexsuz-border);
   border-radius: 50%;
   margin-right: 12px;
   animation: pulse 1.5s infinite ease-in-out;
@@ -103,7 +103,7 @@ mat-list-item button {
 
 .skeleton-line {
   height: 8px;
-  background: #ddd;
+  background: var(--nexsuz-border);
   border-radius: 4px;
   margin-bottom: 6px;
   animation: pulse 1.5s infinite ease-in-out;
@@ -120,7 +120,7 @@ mat-list-item button {
 .skeleton-button {
   width: 80px;
   height: 32px;
-  background: #ddd;
+  background: var(--nexsuz-border);
   border-radius: 4px;
   margin-left: 12px;
   animation: pulse 1.5s infinite ease-in-out;

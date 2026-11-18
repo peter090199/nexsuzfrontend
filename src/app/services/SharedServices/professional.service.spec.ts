@@ -1,3 +1,4 @@
+import { NexsuzTestingModule } from 'src/testing/nexsuz-testing.module';
 import { TestBed } from '@angular/core/testing';
 
 import { ProfessionalService } from './professional.service';
@@ -6,7 +7,9 @@ describe('ProfessionalService', () => {
   let service: ProfessionalService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      imports: [NexsuzTestingModule]
+    });
     service = TestBed.inject(ProfessionalService);
   });
 

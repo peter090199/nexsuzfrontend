@@ -10,19 +10,15 @@
   <div class="register-container">
     <mat-card class="register-card">
       <div class="left-panel">
-        <div class="logo-container">
-          <img src="assets/images/logo2.png" class="logo" (click)="refreshHomePage()" />
-          <h2 style="margin-top: 4px;">exsuz</h2>
-        </div>
-
+        <app-app-logo></app-app-logo>
       </div>
       <mat-divider></mat-divider>
       <mat-card-content>
         <mat-tab-group dynamicHeight>
           <mat-tab label="Individual Sign-up">
-            <div class="example-small-box mat-elevation-z4">
-              <form [formGroup]="userForm" (ngSubmit)="onSubmitIndividual()">
-                <div class="form-row">
+            <form [formGroup]="userForm" (ngSubmit)="onSubmitIndividual()">
+              <div class="row">
+                <div class="col-6">
                   <mat-form-field appearance="standard" class="form-field">
                     <mat-label>Your Profession</mat-label>
                     <mat-icon matPrefix class="aligned-icon">work</mat-icon>
@@ -31,7 +27,9 @@
                       Please input a profession.
                     </mat-error>
                   </mat-form-field>
+                </div>
 
+                <div class="col-6">
                   <mat-form-field appearance="standard" class="form-field">
                     <mat-icon matPrefix class="aligned-icon">straighten</mat-icon>
                     <mat-label>Your Age:</mat-label>
@@ -41,19 +39,19 @@
                       </mat-option>
                     </mat-select>
                   </mat-form-field>
-
-
-
                 </div>
+              </div>
 
-                <!-- Firstname and Family Name Fields -->
-                <div class="form-row">
+              <!-- Firstname and Family Name Fields -->
+              <div class="row">
+                <div class="col-6">
                   <mat-form-field class="form-field" appearance="standard">
                     <mat-icon matPrefix class="aligned-icon">person</mat-icon>
                     <mat-label>First Name</mat-label>
                     <input matInput formControlName="fname" required>
                   </mat-form-field>
-
+                </div>
+                <div class="col-6">
                   <mat-form-field class="form-field" appearance="standard">
                     <mat-icon matPrefix class="aligned-icon">person</mat-icon>
                     <mat-label>Family Name</mat-label>
@@ -61,14 +59,18 @@
                   </mat-form-field>
                 </div>
 
-                <!-- Password and Confirm Password Fields -->
-                <div class="form-row">
-                  <mat-form-field class="half-width" appearance="standard">
+              </div>
+
+              <!-- Password and Confirm Password Fields -->
+              <div class="row">
+                <div class="col-6">
+                  <mat-form-field class="form-field" appearance="standard">
                     <mat-icon matPrefix class="aligned-icon">email</mat-icon>
                     <mat-label>Email:</mat-label>
                     <input matInput type="email" formControlName="email" required>
                   </mat-form-field>
-
+                </div>
+                <div class="col-6 contact-group">
                   <mat-form-field appearance="standard" class="country-field">
                     <mat-icon matPrefix class="aligned-icon">flag</mat-icon>
                     <mat-label>Code</mat-label>
@@ -78,16 +80,17 @@
                       </mat-option>
                     </mat-select>
                   </mat-form-field>
-
-                  <mat-form-field class="half-width" appearance="standard">
+                  <mat-form-field class="phone-field" appearance="standard">
                     <mat-icon matPrefix class="aligned-icon">phone</mat-icon>
                     <mat-label>Contact Number</mat-label>
                     <input matInput type="text" formControlName="contactno" required>
                   </mat-form-field>
                 </div>
+              </div>
 
 
-                <div class="form-row">
+              <div class="row">
+                <div class="col-6">
                   <mat-form-field appearance="standard" class="form-field">
                     <mat-label>Password</mat-label>
                     <mat-icon class="aligned-icon" matPrefix>lock</mat-icon>
@@ -107,14 +110,13 @@
                       character.
                     </mat-error>
                   </mat-form-field>
-
-
+                </div>
+                <div class="col-6">
                   <mat-form-field class="form-field" appearance="standard">
                     <mat-icon matPrefix class="aligned-icon">lock</mat-icon>
                     <mat-label>Confirm Password</mat-label>
-                    <input matInput [type]="passwordVisible ? 'text' : 'password'"
-                      formControlName="password_confirmation" required
-                      pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$">
+                    <input matInput [type]="passwordVisible ? 'text' : 'password'" formControlName="password_confirmation"
+                      required pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$">
 
                     <mat-icon matSuffix (click)="togglePasswordVisibility()" style="cursor: pointer;">
                       {{ passwordVisible ? 'visibility_off' : 'visibility' }}
@@ -129,31 +131,30 @@
                     </mat-error>
 
                   </mat-form-field>
-
                 </div>
+              </div>
 
-                <!-- Agreement Checkboxes -->
-                <div class="agreement-section">
-                  <mat-checkbox formControlName="agreementTerms" required>
-                    <a (click)="openModalTerms('Terms of Use', '')" style="cursor: pointer;">Terms of Use</a>
-                  </mat-checkbox>
+              <!-- Agreement Checkboxes -->
+              <div class="agreement-section">
+                <mat-checkbox formControlName="agreementTerms" required>
+                  <a (click)="openModalTerms('Terms of Use', '')" style="cursor: pointer;">Terms of Use</a>
+                </mat-checkbox>
 
-                  <mat-checkbox formControlName="agreementPrivacy" required>
-                    <a (click)="openModalPrivacy('Data Privacy Policy', '')" style="cursor: pointer;">Data Privacy
-                      Policy</a>
-                  </mat-checkbox>
-                </div>
+                <mat-checkbox formControlName="agreementPrivacy" required>
+                  <a (click)="openModalPrivacy('Data Privacy Policy', '')" style="cursor: pointer;">Data Privacy
+                    Policy</a>
+                </mat-checkbox>
+              </div>
 
-                <!-- Signup Button -->
-                <button mat-raised-button color="primary" class="signup-button" type="submit"
-                  [disabled]="userForm.invalid || isLoadingIndividual">
-                  <mat-icon *ngIf="isLoadingIndividual" class="spinner-icon">autorenew</mat-icon>
-                   <span [class.fade]="isLoadingIndividual" *ngIf="!isLoadingIndividual">Sign-up</span>
-                  <span [class.fade]="isLoadingIndividual" *ngIf="isLoadingIndividual">User Signing up...</span>
-                </button>
+              <!-- Signup Button -->
+              <button mat-raised-button color="primary" class="signup-button" type="submit"
+                [disabled]="userForm.invalid || isLoadingIndividual">
+                <mat-icon *ngIf="isLoadingIndividual" class="spinner-icon">autorenew</mat-icon>
+                <span [class.fade]="isLoadingIndividual" *ngIf="!isLoadingIndividual">Sign-up</span>
+                <span [class.fade]="isLoadingIndividual" *ngIf="isLoadingIndividual">User Signing up...</span>
+              </button>
 
-              </form>
-            </div>
+            </form>
           </mat-tab>
 
           <!-- COMPANY SIGN-UP -->
@@ -162,135 +163,138 @@
             <div class="example-large-box mat-elevation-z4">
               <form [formGroup]="companyForm" (ngSubmit)="onSubmitCompany()">
 
-                <div class="form-row">
-                  <mat-form-field class="form-field" appearance="standard">
-                    <mat-icon matPrefix class="aligned-icon">business</mat-icon>
-                    <mat-label>Company Name</mat-label>
-                    <input matInput formControlName="company" required>
-                  </mat-form-field>
-
-                  <!-- company website -->
-
-                  <mat-form-field class="form-field" appearance="standard">
-                    <mat-icon matPrefix class="aligned-icon">language</mat-icon>
-                    <mat-label>Company's Website:</mat-label>
-                    <input matInput type="text" formControlName="companywebsite" required>
-                    <mat-error *ngIf="companyForm.get('companywebsite')?.hasError('required')">
-                      Please enter a domain like 'abc.com'.
-                    </mat-error>
-                    <mat-error *ngIf="companyForm.get('companywebsite')?.hasError('invalidDomain')">
-                      Only .com domains are allowed (e.g., 'abc.com').
-                    </mat-error>
-                  </mat-form-field>
-
+                <div class="row">
+                  <div class="col-6">
+                    <mat-form-field class="form-field" appearance="standard">
+                      <mat-icon matPrefix class="aligned-icon">business</mat-icon>
+                      <mat-label>Company Name</mat-label>
+                      <input matInput formControlName="company" required>
+                    </mat-form-field>
+                  </div>
+                  <div class="col-6">
+                    <mat-form-field class="form-field" appearance="standard">
+                      <mat-icon matPrefix class="aligned-icon">language</mat-icon>
+                      <mat-label>Company's Website:</mat-label>
+                      <input matInput type="text" formControlName="companywebsite" required>
+                      <mat-error *ngIf="companyForm.get('companywebsite')?.hasError('required')">
+                        Please enter a domain like 'abc.com'.
+                      </mat-error>
+                      <mat-error *ngIf="companyForm.get('companywebsite')?.hasError('invalidDomain')">
+                        Only .com domains are allowed (e.g., 'abc.com').
+                      </mat-error>
+                    </mat-form-field>
+                  </div>
                 </div>
 
-                <div class="form-row">
-                  <!-- industry -->
-                  <mat-form-field class="form-field" appearance="standard">
-                    <mat-icon matPrefix class="aligned-icon">business</mat-icon>
-                    <mat-label>Company Industry:</mat-label>
-                    <mat-select formControlName="industry" required>
-                      <mat-option *ngFor="let industry of industries" [value]="industry">
-                        {{ industry }}
-                      </mat-option>
-                    </mat-select>
-                  </mat-form-field>
-
-                  <!-- designation -->
-                  <mat-form-field class="form-field" appearance="standard">
-                    <mat-icon matPrefix class="aligned-icon">work</mat-icon>
-                    <mat-label>Your Designation</mat-label>
-                    <input matInput formControlName="designation" required>
-                  </mat-form-field>
-
+                <div class="row">
+                  <div class="col-6">
+                    <mat-form-field class="form-field" appearance="standard">
+                      <mat-icon matPrefix class="aligned-icon">business</mat-icon>
+                      <mat-label>Company Industry:</mat-label>
+                      <mat-select formControlName="industry" required>
+                        <mat-option *ngFor="let industry of industries" [value]="industry">
+                          {{ industry }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                  <div class="col-6">
+                    <mat-form-field class="form-field" appearance="standard">
+                      <mat-icon matPrefix class="aligned-icon">work</mat-icon>
+                      <mat-label>Your Designation</mat-label>
+                      <input matInput formControlName="designation" required>
+                    </mat-form-field>
+                  </div>
                 </div>
 
                 <!-- Firstname and Family Name Fields -->
-                <div class="form-row">
-                  <mat-form-field class="form-field" appearance="standard">
-                    <mat-icon matPrefix class="aligned-icon">person</mat-icon>
-                    <mat-label>First Name</mat-label>
-                    <input matInput formControlName="fname" required>
-                  </mat-form-field>
-
-                  <mat-form-field class="form-field" appearance="standard">
-                    <mat-icon matPrefix class="aligned-icon">person</mat-icon>
-                    <mat-label>Family Name</mat-label>
-                    <input matInput formControlName="lname" required>
-                  </mat-form-field>
+                <div class="row">
+                  <div class="col-6">
+                    <mat-form-field class="form-field" appearance="standard">
+                      <mat-icon matPrefix class="aligned-icon">person</mat-icon>
+                      <mat-label>First Name</mat-label>
+                      <input matInput formControlName="fname" required>
+                    </mat-form-field>
+                  </div>
+                  <div class="col-6">
+                    <mat-form-field class="form-field" appearance="standard">
+                      <mat-icon matPrefix class="aligned-icon">person</mat-icon>
+                      <mat-label>Family Name</mat-label>
+                      <input matInput formControlName="lname" required>
+                    </mat-form-field>
+                  </div>
                 </div>
 
 
-                <div class="form-row">
-                  <!-- email -->
-                  <mat-form-field class="half-width" appearance="standard">
-                    <mat-icon matPrefix class="aligned-icon">email</mat-icon>
-                    <mat-label>Email:</mat-label>
-                    <input matInput type="email" formControlName="email" required>
-                  </mat-form-field>
-
-                  <!-- country code -->
-                  <mat-form-field appearance="standard" class="country-field">
-                    <mat-icon matPrefix class="aligned-icon">flag</mat-icon>
-                    <mat-label>Code</mat-label>
-                    <mat-select formControlName="countryCode" required>
-                      <mat-option *ngFor="let country of countryCodes" [value]="country.code">
-                        {{ country.code }}
-                      </mat-option>
-                    </mat-select>
-                  </mat-form-field>
-
-                  <mat-form-field class="half-width" appearance="standard">
-                    <mat-icon matPrefix class="aligned-icon">phone</mat-icon>
-                    <mat-label>Contact Number</mat-label>
-                    <input matInput type="text" formControlName="contactno" required>
-                  </mat-form-field>
+                <div class="row">
+                  <div class="col-6">
+                    <mat-form-field class="form-field" appearance="standard">
+                      <mat-icon matPrefix class="aligned-icon">email</mat-icon>
+                      <mat-label>Email:</mat-label>
+                      <input matInput type="email" formControlName="email" required>
+                    </mat-form-field>
+                  </div>
+                  <div class="col-6 contact-group">
+                    <mat-form-field appearance="standard" class="country-field">
+                      <mat-icon matPrefix class="aligned-icon">flag</mat-icon>
+                      <mat-label>Code</mat-label>
+                      <mat-select formControlName="countryCode" required>
+                        <mat-option *ngFor="let country of countryCodes" [value]="country.code">
+                          {{ country.code }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                    <mat-form-field class="phone-field" appearance="standard">
+                      <mat-icon matPrefix class="aligned-icon">phone</mat-icon>
+                      <mat-label>Contact Number</mat-label>
+                      <input matInput type="text" formControlName="contactno" required>
+                    </mat-form-field>
+                  </div>
                 </div>
-                <div class="form-row">
-                  <!-- password -->
-                  <mat-form-field appearance="standard" class="form-field">
-                    <mat-label>Password</mat-label>
-                    <mat-icon class="aligned-icon" matPrefix>lock</mat-icon>
-                    <input matInput [type]="passwordVisible ? 'text' : 'password'" formControlName="password" required
-                      pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
-                      placeholder="Enter your password" />
-                    <mat-icon matSuffix (click)="togglePasswordVisibility()" style="cursor: pointer;">
-                      {{ passwordVisible ? 'visibility_off' : 'visibility' }}
-                    </mat-icon>
+                <div class="row">
+                  <div class="col-6">
+                    <mat-form-field appearance="standard" class="form-field">
+                      <mat-label>Password</mat-label>
+                      <mat-icon class="aligned-icon" matPrefix>lock</mat-icon>
+                      <input matInput [type]="passwordVisible ? 'text' : 'password'" formControlName="password" required
+                        pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+                        placeholder="Enter your password" />
+                      <mat-icon matSuffix (click)="togglePasswordVisibility()" style="cursor: pointer;">
+                        {{ passwordVisible ? 'visibility_off' : 'visibility' }}
+                      </mat-icon>
 
-                    <!-- Error messages -->
-                    <mat-error *ngIf="userForm.get('password')?.hasError('required')">
-                      Password is required.
-                    </mat-error>
-                    <mat-error *ngIf="userForm.get('password')?.hasError('pattern')">
-                      Password must be at least 8 characters long, include uppercase, lowercase, a number, and a special
-                      character.
-                    </mat-error>
-                  </mat-form-field>
+                      <!-- Error messages -->
+                      <mat-error *ngIf="userForm.get('password')?.hasError('required')">
+                        Password is required.
+                      </mat-error>
+                      <mat-error *ngIf="userForm.get('password')?.hasError('pattern')">
+                        Password must be at least 8 characters long, include uppercase, lowercase, a number, and a special
+                        character.
+                      </mat-error>
+                    </mat-form-field>
+                  </div>
+                  <div class="col-6">
+                    <mat-form-field class="form-field" appearance="standard">
+                      <mat-icon matPrefix class="aligned-icon">lock</mat-icon>
+                      <mat-label>Confirm Password</mat-label>
+                      <input matInput [type]="passwordVisible ? 'text' : 'password'"
+                        formControlName="password_confirmation" required
+                        pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$">
 
+                      <mat-icon matSuffix (click)="togglePasswordVisibility()" style="cursor: pointer;">
+                        {{ passwordVisible ? 'visibility_off' : 'visibility' }}
+                      </mat-icon>
 
-                  <mat-form-field class="form-field" appearance="standard">
-                    <mat-icon matPrefix class="aligned-icon">lock</mat-icon>
-                    <mat-label>Confirm Password</mat-label>
-                    <input matInput [type]="passwordVisible ? 'text' : 'password'"
-                      formControlName="password_confirmation" required
-                      pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$">
+                      <mat-error *ngIf="userForm.get('password_confirmation')?.hasError('required')">
+                        Confirm Password is required.
+                      </mat-error>
+                      <mat-error *ngIf="userForm.get('password_confirmation')?.hasError('pattern')">
+                        Confirm Password must be at least 8 characters long, include uppercase, lowercase, a number, and a
+                        special character.
+                      </mat-error>
 
-                    <mat-icon matSuffix (click)="togglePasswordVisibility()" style="cursor: pointer;">
-                      {{ passwordVisible ? 'visibility_off' : 'visibility' }}
-                    </mat-icon>
-
-                    <mat-error *ngIf="userForm.get('password_confirmation')?.hasError('required')">
-                      Confirm Password is required.
-                    </mat-error>
-                    <mat-error *ngIf="userForm.get('password_confirmation')?.hasError('pattern')">
-                      Confirm Password must be at least 8 characters long, include uppercase, lowercase, a number, and a
-                      special character.
-                    </mat-error>
-
-                  </mat-form-field>
-
+                    </mat-form-field>
+                  </div>
                 </div>
 
                 <!-- Agreement Checkboxes -->

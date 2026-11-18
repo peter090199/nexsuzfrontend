@@ -1,3 +1,4 @@
+import { NexsuzTestingModule } from 'src/testing/nexsuz-testing.module';
 import { TestBed } from '@angular/core/testing';
 
 import { InactivityService } from './inactivity.service';
@@ -6,7 +7,9 @@ describe('InactivityService', () => {
   let service: InactivityService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      imports: [NexsuzTestingModule]
+    });
     service = TestBed.inject(InactivityService);
   });
 

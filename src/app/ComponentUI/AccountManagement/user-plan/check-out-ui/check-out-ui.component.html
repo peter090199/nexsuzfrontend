@@ -1,117 +1,177 @@
 <div class="checkout-page">
-    <button mat-button class="back-btn" (click)="sharedService.goBack()">
-        <mat-icon>arrow_back</mat-icon>
-        Back
+
+    <!-- Top bar -->
+    <header class="co-topbar">
+        <div class="brand">
+            <img src="assets/images/logo.png" alt="NEXSUZ" class="brand-logo">
+            <span class="brand-name">NEXSUZ</span>
+        </div>
+        <div class="secure-pill">
+            <mat-icon>lock</mat-icon> Secure checkout
+        </div>
+    </header>
+
+    <button mat-button class="back-btn" (click)="sharedService.goBack()" *ngIf="!isSuccess">
+        <mat-icon>arrow_back</mat-icon> Back
     </button>
 
-    <div class="checkout-container">
-        <mat-card class="payment-card">
-            <h3>
-                <mat-icon>payments</mat-icon>
-                Payment Method
-            </h3>
-
-            <mat-radio-group class="payment-list" [(ngModel)]="selectedPayment">
-
-                <mat-radio-button value="gcash" class="payment-option">
-                    <img src="assets/images/gcash.png" class="pay-logo">
-                    <span>GCash</span>
-                </mat-radio-button>
-
-                <mat-radio-button value="paypal" class="payment-option">
-                    <img src="assets/images/paypal.png" class="pay-logo">
-                    <span>PayPal</span>
-                </mat-radio-button>
-
-                <mat-radio-button value="card" class="payment-option">
-                    <mat-icon>credit_card</mat-icon>
-                    <span>Credit / Debit Card</span>
-                </mat-radio-button>
-
-            </mat-radio-group>
-
-            <div *ngIf="selectedPayment=='card'" class="card-form">
-
-                <mat-form-field appearance="outline">
-                    <mat-label>Card Number</mat-label>
-                    <input matInput>
-                </mat-form-field>
-
-                <div class="row">
-
-                    <mat-form-field appearance="outline">
-                        <mat-label>MM / YY</mat-label>
-                        <input matInput>
-                    </mat-form-field>
-
-                    <mat-form-field appearance="outline">
-                        <mat-label>CVV</mat-label>
-                        <input matInput>
-                    </mat-form-field>
-
-                </div>
-
-            </div>
-
-        </mat-card>
-
-        <!-- Summary Card -->
-        <mat-card class="summary-card">
-
-            <div class="plan-header">
-
-                <span class="plan-badge">
-                    {{plan?.tag}}
-                </span>
-
-                <h2>{{plan?.plan_name}}</h2>
-
-                <div class="plan-price">
-                    ₱{{plan?.price}}
-                    <small>/{{plan?.tagmonthYear}}</small>
-                </div>
-            </div>
-            <mat-divider></mat-divider>
-            <div class="feature-list">
-                <div class="feature-item" *ngFor="let feature of plan?.features">
-                    <mat-icon color="primary">check_circle</mat-icon>
-                    <span>{{feature.feature_name}}</span>
-                </div>
-
-            </div>
-            <div class="pricing">
-                <div class="price-row">
-                    <span>Subscription</span>
-                    <strong>₱{{plan?.price}}</strong>
-                </div>
-                <div class="price-row">
-                    <span>VAT</span>
-                    <strong>₱{{vat}}</strong>
-                </div>
-                <div class="price-row total">
-                    <span>Total</span>
-                    <strong>₱{{total}}</strong>
-                </div>
-            </div>
-            <button mat-raised-button color="primary" class="subscribe-btn" (click)="subscribe()"
-                [disabled]="isSubmitting || isLoading">
-
-                <mat-spinner *ngIf="isSubmitting" diameter="20">
-                </mat-spinner>
-
-                <ng-container *ngIf="!isSubmitting">
-                    <mat-icon>lock</mat-icon>
-                    Secure Checkout
-                </ng-container>
-
-            </button>
-            <div class="secure-note">
-                <mat-icon color="primary">verified_user</mat-icon>
-                <span>Your payment is protected with SSL encryption.</span>
-            </div>
-
-        </mat-card>
-
+    <!-- Loading -->
+    <div class="state-card" *ngIf="isLoading">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Loading your plan…</p>
     </div>
 
+    <!-- Plan unavailable -->
+    <div class="state-card" *ngIf="planNotFound && !isLoading">
+        <mat-icon class="state-icon warn">error_outline</mat-icon>
+        <h2>Plan unavailable</h2>
+        <p>The selected plan doesn't exist or is no longer available.</p>
+        <button mat-flat-button class="btn-primary" (click)="viewPlans()">View available plans</button>
+    </div>
+
+    <!-- Success -->
+    <div class="state-card success" *ngIf="isSuccess">
+        <mat-icon class="state-icon ok">check_circle</mat-icon>
+        <h2>You're subscribed!</h2>
+        <p>Your <strong>{{ plan?.plan_name }}</strong> plan is now active.</p>
+        <p class="muted" *ngIf="successData?.end_date">Valid until {{ successData.end_date | date:'mediumDate' }}</p>
+        <button mat-flat-button class="btn-primary" (click)="goToDashboard()">Go to dashboard</button>
+    </div>
+
+    <!-- Checkout -->
+    <div class="co-grid" *ngIf="plan && !isSuccess && !isLoading">
+
+        <!-- LEFT -->
+        <div class="co-left">
+
+            <h1 class="co-title">Complete your subscription</h1>
+            <p class="co-sub">Review your details and choose how you'd like to pay.</p>
+
+            <!-- Account -->
+            <section class="card" style="animation-delay:.05s">
+                <h3><span class="step">1</span> Account information</h3>
+                <div class="account" *ngIf="account; else noAccount">
+                    <div class="avatar">{{ (accountName || account.email || '?').charAt(0) | uppercase }}</div>
+                    <div>
+                        <div class="acc-name">{{ accountName }}</div>
+                        <div class="acc-email">{{ account.email }}</div>
+                    </div>
+                    <span class="verified"><mat-icon>verified_user</mat-icon> Signed in</span>
+                </div>
+                <ng-template #noAccount>
+                    <p class="muted">Subscribing with your signed-in NEXSUZ account.</p>
+                </ng-template>
+            </section>
+
+            <!-- Payment -->
+            <section class="card" style="animation-delay:.12s">
+                <h3><span class="step">2</span> Payment method</h3>
+
+                <div class="free-note" *ngIf="isFree">
+                    <mat-icon>celebration</mat-icon>
+                    No payment required for this plan.
+                </div>
+
+                <div class="pay-list" role="radiogroup" aria-label="Payment method" *ngIf="!isFree">
+                    <button type="button" class="pay-option" *ngFor="let m of paymentMethods" role="radio"
+                        [attr.aria-checked]="selectedPayment === m.value" [class.selected]="selectedPayment === m.value"
+                        (click)="selectPayment(m.value)">
+                        <span class="pay-icon"><mat-icon>{{ m.icon }}</mat-icon></span>
+                        <span class="pay-text">
+                            <strong>{{ m.label }}</strong>
+                            <small>{{ m.hint }}</small>
+                        </span>
+                        <span class="radio-dot"></span>
+                    </button>
+                </div>
+                <div class="field-error" *ngIf="submitted && paymentInvalid">
+                    <mat-icon>error</mat-icon> Please select a payment method.
+                </div>
+            </section>
+
+            <!-- Agreement -->
+            <section class="card" style="animation-delay:.19s">
+                <h3><span class="step">3</span> Review &amp; agree</h3>
+                <mat-checkbox [(ngModel)]="agreed" class="agree">
+                    I agree to the
+                    <a (click)="openTerms(); $event.stopPropagation()">Terms of Use</a> and
+                    <a (click)="openPrivacy(); $event.stopPropagation()">Privacy Policy</a>.
+                </mat-checkbox>
+                <div class="field-error" *ngIf="submitted && agreementInvalid">
+                    <mat-icon>error</mat-icon> You must accept the terms to continue.
+                </div>
+            </section>
+
+            <div class="cta-mobile">
+                <div class="mobile-total"><span>Total due today</span><strong>₱{{ total | number:'1.2-2' }}</strong></div>
+                <ng-container *ngTemplateOutlet="ctaTpl"></ng-container>
+            </div>
+
+        </div>
+
+        <!-- RIGHT -->
+        <aside class="co-right">
+            <section class="card summary" style="animation-delay:.1s">
+
+                <div class="sum-head">
+                    <span class="plan-badge">{{ plan.tag }}</span>
+                    <h2>{{ plan.plan_name }}</h2>
+                    <p class="plan-desc" *ngIf="plan.description">{{ plan.description }}</p>
+                    <div class="plan-price">
+                        ₱{{ price | number:'1.2-2' }}<small> / {{ plan.tagmonthYear | lowercase }}</small>
+                    </div>
+                </div>
+
+                <div class="features" *ngIf="plan.features?.length">
+                    <div class="features-title">What's included</div>
+                    <div class="feature" *ngFor="let f of plan.features">
+                        <mat-icon>check_circle</mat-icon><span>{{ f.feature_name }}</span>
+                    </div>
+                </div>
+
+                <div class="lines">
+                    <div class="line"><span>Billing period</span><strong>{{ plan.tagmonthYear }}</strong></div>
+                    <div class="line"><span>Subscription</span><strong>₱{{ price | number:'1.2-2' }}</strong></div>
+                    <div class="line discount" *ngIf="discount > 0">
+                        <span>Discount</span><strong>−₱{{ discount | number:'1.2-2' }}</strong>
+                    </div>
+                    <div class="line"><span>Subtotal</span><strong>₱{{ subtotal | number:'1.2-2' }}</strong></div>
+                    <div class="line"><span>VAT ({{ vatRate * 100 }}%)</span><strong>₱{{ vat | number:'1.2-2' }}</strong></div>
+                    <div class="line total"><span>Total due today</span><strong>₱{{ total | number:'1.2-2' }}</strong></div>
+                </div>
+
+                <div class="renewal">
+                    <mat-icon>event_repeat</mat-icon>
+                    <span>Access runs for one month, until <strong>{{ periodEnd | date:'mediumDate' }}</strong>.
+                        Change or upgrade your plan anytime.</span>
+                </div>
+
+                <div class="cta-desktop">
+                    <ng-container *ngTemplateOutlet="ctaTpl"></ng-container>
+                </div>
+            </section>
+        </aside>
+
+    </div>
 </div>
+
+<ng-template #ctaTpl>
+            <div class="error-box" *ngIf="errorMessage" role="alert">
+                <mat-icon>error_outline</mat-icon> {{ errorMessage }}
+            </div>
+
+            <button mat-flat-button class="btn-primary cta" (click)="subscribe()" [disabled]="isSubmitting">
+                <mat-spinner *ngIf="isSubmitting" diameter="20"></mat-spinner>
+                <ng-container *ngIf="!isSubmitting"><mat-icon>lock</mat-icon> Complete Subscription</ng-container>
+                <span *ngIf="isSubmitting">Processing…</span>
+            </button>
+
+            <div class="secure-note">
+                <mat-icon>verified_user</mat-icon>
+                <span>Secure, encrypted checkout. We never store your card details.</span>
+            </div>
+            <div class="legal">
+                By subscribing you accept our <a (click)="openTerms()">Terms</a> and
+                <a (click)="openPrivacy()">Privacy Policy</a>.
+            </div>
+</ng-template>

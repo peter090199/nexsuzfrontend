@@ -88,7 +88,7 @@
 
 .connection-info p {
   font-size: 0.85rem;
-  color: #777;
+  color: var(--nexsuz-muted);
   margin: 4px 0 12px 0;
 }
 
@@ -115,8 +115,8 @@
 }
 
 .connection-info button[mat-flat-button][color="primary"] {
-  background: #f0f2f5;
-  color: #1877f2;
+  background: var(--nexsuz-background);
+  color: var(--nexsuz-primary);
 }
 
 .connection-info button[mat-flat-button][color="primary"]:hover {

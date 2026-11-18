@@ -89,7 +89,7 @@ html, body {
   display: block;
   margin: 15px 0;
   padding: 10px;
-  border: 2px dashed #ccc;
+  border: 2px dashed var(--nexsuz-border);
   border-radius: 8px;
   background-color: #fafafa;
   width: 100%;
@@ -100,7 +100,7 @@ html, body {
 }
 
 #fileUpload:hover {
-  border-color: #3f51b5;
+  border-color: var(--nexsuz-primary);
   background-color: #f0f4ff;
 }
 
@@ -129,7 +129,7 @@ html, body {
   max-height: 250px;
   border-radius: 8px;
   object-fit: cover;
-  border: 1px solid #ddd;
+  border: 1px solid var(--nexsuz-border);
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
 }
 

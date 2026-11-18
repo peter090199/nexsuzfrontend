@@ -91,7 +91,7 @@
 
 .thumb-video.active {
   opacity: 1;
-  border-color: #3f51b5;
+  border-color: var(--nexsuz-primary);
 }
 
 /* Warning style */

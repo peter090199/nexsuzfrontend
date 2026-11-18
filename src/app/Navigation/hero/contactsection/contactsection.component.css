@@ -25,7 +25,7 @@
 }
 
 .section-heading h2 span {
-  color: #00bcd4;
+  color: var(--nexsuz-accent);
 }
 
 .section-subtitle {
@@ -126,7 +126,7 @@
 }
 
 .contact-socials a:hover {
-  background-color: #00bcd4;
+  background-color: var(--nexsuz-accent);
   color: #ffffff;
   transform: translateY(-3px);
 }
@@ -176,7 +176,7 @@
 
 .form-control:focus {
   outline: none;
-  border-color: #00bcd4;
+  border-color: var(--nexsuz-accent);
   box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.15);
   background-color: #ffffff;
 }
@@ -192,7 +192,7 @@ textarea.form-control {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background-color: #00bcd4 !important;
+  background-color: var(--nexsuz-accent) !important;
   color: #ffffff !important;
   border-radius: 10px !important;
   font-weight: 600 !important;

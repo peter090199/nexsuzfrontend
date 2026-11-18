@@ -4,10 +4,25 @@
       New Posts
     </button>
 
+  <div class="feed-state" *ngIf="isLoadingPosts">
+    <mat-spinner diameter="32"></mat-spinner>
+    <span>Loading your feed…</span>
+  </div>
+  <div class="feed-state error" *ngIf="!isLoadingPosts && loadError" role="alert">
+    <mat-icon>error_outline</mat-icon>
+    <span>{{ loadError }}</span>
+    <button mat-stroked-button color="primary" (click)="loadPosts()">Try again</button>
+  </div>
+  <div class="feed-state" *ngIf="!isLoadingPosts && !loadError && !posts.length">
+    <mat-icon>forum</mat-icon>
+    <strong>No posts yet</strong>
+    <span>Share an update or connect with people to see posts here.</span>
+  </div>
+
   <mat-card *ngFor="let post of posts">
     <div class="post-header">
 
-      <img class="avatar" [src]="post.photo_pic || 'assets/images/default.png'" [alt]="post.fullname">
+      <img class="avatar" [src]="post.photo_pic || 'assets/images/default.png'" nxFallback [alt]="post.fullname">
 
       <div class="user-info">
         <h4 class="name">
@@ -21,7 +36,8 @@
         </div>
       </div>
 
-      <!-- optional 3-dot menu like Facebook -->
+      <!-- options are only offered on your own posts -->
+      <ng-container *ngIf="post.is_owner">
       <button mat-icon-button class="more-btn" [matMenuTriggerFor]="menu" class="menu-btn" aria-label="Post Options">
         <mat-icon>more_horiz</mat-icon>
       </button>
@@ -35,7 +51,7 @@
           </ng-template>
         </button>
       </mat-menu>
-
+      </ng-container>
 
     </div>
     <!-- CAPTION -->
@@ -47,74 +63,50 @@
     </p>
 
     <!-- IMAGES -->
-    <img *ngFor="let img of post.images" [src]="img.path_url" (click)="openImages(post.images)">
+    <div class="post-gallery" *ngIf="post.images?.length"
+      [attr.data-count]="post.images.length > 4 ? 4 : post.images.length">
+      <figure *ngFor="let img of post.images | slice:0:4; let i = index" tabindex="0" role="button"
+        [attr.aria-label]="'Open picture ' + (i + 1) + ' of ' + post.images.length"
+        (click)="openImages(post.images, i); $event.stopPropagation()"
+        (keydown.enter)="openImages(post.images, i); $event.preventDefault()">
+        <img [src]="img.path_url" alt="Post image" loading="lazy">
+        <figcaption class="more" *ngIf="i === 3 && post.images.length > 4">+{{ post.images.length - 4 }}</figcaption>
+      </figure>
+    </div>
 
     <!-- VIDEOS -->
     <video *ngFor="let v of post.videos" #videoEl controls [src]="v.path_url">
     </video>
 
-    <!-- REACTIONS -->
-    <div class="reactions-summary"
-      *ngIf="postReactions[post.id]?.reactions?.length || postReactions[post.id]?.totalCount">
-      <div class="emoji-stack" style="position: relative; height: 24px;">
-        <ng-container *ngFor="let reaction of postReactions[post.id]?.reactions; let i = index">
-          <span class="emoji-item" [ngStyle]="{
-                'position': 'absolute',
-                'z-index': postReactions[post.id].reactions.length - i,
-                'left.px': i * 15
-              }">{{ reaction.emoji }}</span>
-        </ng-container>
-      </div>
-
-        <!-- <a *ngIf="postReactions[post.id]?.totalCount" class="reaction-count-text"
-          (mouseenter)="sharedRoutinesService.showHoverNames(post.id, $event)" (mouseleave)="sharedRoutinesService.hideHoverNames()"
-          (click)="sharedRoutinesService.openReactionsModal(post.id)"
-          [ngStyle]="{'margin-left.px': 17 * postReactions[post.id].totalCount, 'cursor': 'pointer'}">
-          {{ postReactions[post.id].totalCount }}
-        </a> -->
-      <a *ngIf="postReactions[post.id]?.totalCount" class="reaction-count-text"
-        (mouseenter)="sharedRoutinesService.showHoverNames(post.id, $event)" (mouseleave)="sharedRoutinesService.hideHoverNames()"
-        (click)="sharedRoutinesService.openReactionsModal(post.id)"
-        [ngStyle]="{'margin-left.px': 17 * postReactions[post.id].totalCount, 'cursor': 'pointer'}">
-        {{ postReactions[post.id]?.totalCount }}
-      </a>
-      <div *ngIf="hoverVisible && hoveredPostId === post.id" class="reaction-tooltip"
-        [ngStyle]="{'top.px': hoverPosition.y, 'left.px': hoverPosition.x}">
-        <div *ngFor="let reaction of hoveredReactions2">
-          <div *ngFor="let person of reaction.person" class="reaction-user">
-            <span>{{ person.fullname }}</span>
-          </div>
-          <div *ngIf="reaction.person.length > 11" class="reaction-more">
-            +{{ reaction.person.length - 11 }} more
-          </div>
-        </div>
-      </div>
+    <!-- REACTION AND COMMENT COUNTS -->
+    <div class="counts" *ngIf="post.reaction_summary?.total || post.comments_count">
+      <app-reaction-summary [summary]="post.reaction_summary" (openList)="openReactions(post.id)"></app-reaction-summary>
+      <span class="spacer"></span>
+      <button type="button" class="count-btn" *ngIf="post.comments_count" (click)="toggleComments(post)">
+        {{ post.comments_count }} {{ post.comments_count === 1 ? 'comment' : 'comments' }}
+      </button>
     </div>
 
     <!-- ACTIONS -->
     <div class="actions">
-
-      <div (mouseenter)="isPopupVisible[post.id]=true" (mouseleave)="isPopupVisible[post.id]=false">
-
-        <button mat-button>
-          {{ userReactions[post.id]?.emoji || '👍' }}
-          {{ userReactions[post.id]?.label || 'Like' }}
-        </button>
-
-        <div *ngIf="isPopupVisible[post.id]">
-          <span *ngFor="let r of reaction" (click)="selectReaction(post.id, r)">
-            {{ r.emoji }}
-          </span>
-        </div>
-
-      </div>
-
-      <button mat-button (click)="openComments(post)">
-        💬 Comment
+      <app-reaction-button [myReaction]="post.my_reaction" [disabled]="post.reactBusy" (react)="onReact(post, $event)"
+        (unreact)="onUnreact(post)"></app-reaction-button>
+      <button type="button" class="act-btn" [class.active]="post.showComments" (click)="toggleComments(post)"
+        [attr.aria-expanded]="!!post.showComments">
+        <mat-icon>chat_bubble_outline</mat-icon> Comment
       </button>
-
     </div>
 
+    <!-- COMMENTS -->
+    <app-post-comments *ngIf="post.showComments" [postUuid]="post.posts_uuid"
+      (countChange)="post.comments_count = $event"></app-post-comments>
+
   </mat-card>
+
+  <div class="feed-more" *ngIf="hasMore && !loadError">
+    <button mat-stroked-button color="primary" (click)="loadMore()" [disabled]="loadingMore">
+      {{ loadingMore ? 'Loading…' : 'Load more posts' }}
+    </button>
+  </div>
 </div>
 </section>

@@ -86,7 +86,9 @@ export class SignInUIComponent implements OnInit {
 
         // Came from some other protected page -> go back there
         if (this.returnUrl) {
-          this.redirectTo([this.returnUrl]);
+          this.isRedirecting = true;
+          const target = this.returnUrl;
+          setTimeout(() => this.router.navigateByUrl(target), 1200);
           return;
         }
 

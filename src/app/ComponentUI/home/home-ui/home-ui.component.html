@@ -1,175 +1,107 @@
-<mat-sidenav-container class="section-container">
-  <div class="windows-loading" *ngIf="isPageLoading">
-    <div class="loading-content">
+<!-- LinkedIn-style feed: left profile/shortcuts | center feed | right suggestions -->
+<div class="home-page">
+  <div class="nx-container home-grid">
 
-      <div class="win-spinner">
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
+    <!-- LEFT: profile summary + shortcuts -->
+    <aside class="home-left" *ngIf="!isMobile">
+
+      <!-- loading skeleton -->
+      <div class="nx-card profile-card skeleton-card" *ngIf="isLoading">
+        <div class="skeleton-avatar"></div>
+        <div class="skeleton-line medium"></div>
+        <div class="skeleton-line short"></div>
+        <div class="skeleton-btn"></div>
       </div>
 
-      <h2>Loading</h2>
-      <p>Please wait...</p>
-
-    </div>
-  </div>
-
-  <!-- LEFT SIDENAV -->
-  <mat-sidenav #leftSidenav class="side-nav-left" [mode]="isMobile ? 'over' : 'side'" [opened]="!isMobile"
-    [fixedInViewport]="isMobile">
-
-    <div class="left-sidebar">
-
-      <!-- LOADING -->
-      <ng-container *ngIf="isLoading">
-
-        <mat-card class="profile-card skeleton-card">
-
-          <div class="skeleton-avatar"></div>
-
-          <mat-card-title class="skeleton-line medium"></mat-card-title>
-
-          <mat-card-subtitle class="skeleton-line short"></mat-card-subtitle>
-
-          <mat-card-content>
-            <div class="button-gap">
-              <div class="skeleton-btn"></div>
-              <div class="skeleton-btn"></div>
-            </div>
-          </mat-card-content>
-
-        </mat-card>
-
-      </ng-container>
-
-      <!-- PROFILE -->
-      <mat-card class="profile-card left-column" *ngIf="!isLoading && !isMobile">
-
-        <!-- COVER -->
+      <div class="nx-card profile-card" *ngIf="!isLoading">
         <div class="profile-cover"></div>
 
-        <!-- AVATAR -->
         <div class="profile-avatar">
-
-          <div class="avatar-container" (click)="uploadPic()">
-
-            <img *ngIf="profile_pic?.photo_pic; else defaultAvatar" [src]="profile_pic.photo_pic" class="profile-pic" />
-
+          <div class="avatar-container" (click)="uploadPic()" title="Change profile picture">
+            <img *ngIf="profile_pic?.photo_pic; else defaultAvatar" [src]="profile_pic.photo_pic" nxFallback class="profile-pic"
+              alt="Profile picture" />
             <ng-template #defaultAvatar>
-              <img src="assets/images/default.png" class="profile-pic" />
+              <img src="assets/images/default.png" class="profile-pic" alt="Profile picture" />
             </ng-template>
-
           </div>
-
         </div>
 
-        <!-- USER INFO -->
         <div class="profile-info">
-
-          <h3 class="profile-name">
-            {{ profiles?.fname }} {{ profiles?.lname }}
-          </h3>
-
-          <p class="profile-profession">
-            {{ profiles?.profession }}
-          </p>
-
+          <h3 class="profile-name">{{ profiles?.fname }} {{ profiles?.lname }}</h3>
+          <p class="profile-profession">{{ profiles?.profession }}</p>
         </div>
 
-        <!-- BUTTONS -->
         <div class="profile-actions">
-
-          <button mat-button class="profile-btn"
-            [routerLink]="['/' + sharedRoutines.getRole() + '/profile', profiles.code]">
+          <button mat-flat-button color="primary" class="profile-btn"
+            [routerLink]="['/' + sharedRoutines.getRole() + '/profile', profiles?.code]">
             View Profile
           </button>
-
-          <button mat-button class="profile-btn" (click)="printCV()" *ngIf="showDefUserButtons">
+          <button mat-stroked-button color="primary" class="profile-btn" (click)="printCV()"
+            *ngIf="showDefUserButtons">
             View CV
           </button>
+        </div>
+      </div>
 
+      <!-- Shortcuts -->
+      <nav class="nx-card shortcuts" *ngIf="!isLoading" aria-label="Shortcuts">
+        <h4 class="nx-card-title">Shortcuts</h4>
+        <a class="shortcut" [routerLink]="['/' + sharedRoutines.getRole() + '/network']">
+          <mat-icon>groups</mat-icon> My Network
+        </a>
+        <a class="shortcut" [routerLink]="['/' + sharedRoutines.getRole() + '/message']">
+          <mat-icon>chat</mat-icon> Messaging
+        </a>
+        <a class="shortcut" [routerLink]="['/' + sharedRoutines.getRole() + '/jobs']" *ngIf="showDefUserButtons">
+          <mat-icon>work</mat-icon> Jobs
+        </a>
+        <a class="shortcut" [routerLink]="['/' + sharedRoutines.getRole() + '/applied-jobs']"
+          *ngIf="showDefUserButtons">
+          <mat-icon>assignment_turned_in</mat-icon> Applied jobs
+        </a>
+        <a class="shortcut" [routerLink]="['/' + sharedRoutines.getRole() + '/settings']">
+          <mat-icon>settings</mat-icon> Settings
+        </a>
+      </nav>
+    </aside>
+
+    <!-- CENTER: create post + feed -->
+    <main class="home-center">
+
+      <section class="nx-card post-top-container" *ngIf="!isLoading">
+        <div class="input-section">
+          <img class="composer-avatar" [src]="profile_pic?.photo_pic || 'assets/images/default.png'" nxFallback alt="" />
+          <input type="text" placeholder="Start a post" aria-label="Create a post" class="post-input" readonly
+            (click)="createPost()" />
         </div>
 
-      </mat-card>
+        <div class="actions-section">
+          <button type="button" class="action-btn photo" (click)="createPost()">
+            <mat-icon>image</mat-icon> Photo
+          </button>
+          <button type="button" class="action-btn video" (click)="createPost()">
+            <mat-icon>videocam</mat-icon> Video
+          </button>
+          <button type="button" class="action-btn event" (click)="createPost()">
+            <mat-icon>event</mat-icon> Event
+          </button>
+        </div>
+      </section>
 
-    </div>
+      <app-public-post></app-public-post>
+    </main>
 
-  </mat-sidenav>
+    <!-- RIGHT: suggestions -->
+    <aside class="home-right nx-sticky" *ngIf="!isMobile">
+      <section class="nx-card right-column">
+        <h4 class="nx-card-title">People you may know</h4>
 
-  <!-- MAIN CONTENT -->
-  <mat-sidenav-content>
+        <ng-container *ngIf="!isLoading && users?.length > 0; else noData">
+          <div *ngFor="let user of users" class="client-item">
 
-    <!-- MOBILE TOPBAR -->
-    <!-- <div class="mobile-toolbar" *ngIf="isMobile">
+            <img [src]="user.photo_pic || 'assets/images/default.png'" nxFallback alt="" class="mat-avatar" />
 
-      <button mat-icon-button (click)="leftSidenav.toggle()">
-        <mat-icon>menu</mat-icon>
-      </button>
-
-      <span class="toolbar-title">Home</span>
-
-      <button mat-icon-button (click)="rightSidenav.toggle()">
-        <mat-icon>group</mat-icon>
-      </button>
-
-    </div> -->
-
-    <!-- POST INPUT -->
-    <div class="post-top-container" *ngIf="!isLoading">
-
-      <div class="input-section">
-        <input type="text" placeholder="Create your post?" class="post-input" readonly (click)="createPost()" />
-      </div>
-
-      <div class="actions-section">
-
-        <button class="action-btn live-video">
-          <span class="icon">🎥</span> Photo
-        </button>
-
-        <button class="action-btn photo-video">
-          <span class="icon">📷</span> Video
-        </button>
-
-        <button class="action-btn reel">
-          <span class="icon">🎞️</span> Events
-        </button>
-
-      </div>
-
-    </div>
-
-    <!-- FEED -->
-    <app-public-post></app-public-post>
-
-  </mat-sidenav-content>
-
-  <!-- RIGHT SIDENAV -->
-  <mat-sidenav #rightSidenav position="end" class="side-nav-right" [mode]="isMobile ? 'over' : 'side'"
-    [opened]="!isMobile" [fixedInViewport]="isMobile">
-
-    <div class="right-column" *ngIf="!isMobile || rightSidenav.opened">
-
-      <mat-card-header>
-        <mat-card-title>Suggested History</mat-card-title>
-      </mat-card-header>
-
-      <ng-container *ngIf="!isLoading && users?.length > 0; else noData">
-
-        <div *ngFor="let user of users" class="client-item">
-
-          <img *ngIf="user.photo_pic" [src]="user.photo_pic || 'assets/images/default.png'" alt="no image"
-            class="mat-avatar" />
-
-          <div class="client-info">
-
-            <h3 class="client-name">
-
+            <div class="client-info">
               <a class="custom-title" [routerLink]="
                   user.role_code === 'DEF-USERS'
                     ? ['/' + sharedRoutines.getRole() + '/profile', user.code]
@@ -177,34 +109,23 @@
                 ">
                 {{ user.fullname }}
               </a>
+            </div>
 
-            </h3>
-
-          </div>
-
-          <div class="client-action" *ngIf="currentUserCode !== user.code">
-
-            <button mat-button [color]="user.follow_status === 'accepted' ? 'accent' : 'primary'"
-              (click)="AddConnect(user.code, user.fullname, user.follow_status, user.id)">
-              {{ user.follow_status === 'not_following' ? 'Connect' : 'Connected' }}
-            </button>
+            <div class="client-action" *ngIf="currentUserCode !== user.code">
+              <button mat-stroked-button [color]="user.follow_status === 'accepted' ? 'accent' : 'primary'"
+                class="connect-btn" (click)="AddConnect(user.code, user.fullname, user.follow_status, user.id)">
+                {{ user.follow_status === 'not_following' ? 'Connect' : 'Connected' }}
+              </button>
+            </div>
 
           </div>
+        </ng-container>
 
-        </div>
+        <ng-template #noData>
+          <p class="no-data-text nx-muted" *ngIf="!isLoading">No suggestions available.</p>
+        </ng-template>
+      </section>
+    </aside>
 
-      </ng-container>
-
-      <ng-template #noData>
-
-        <p class="no-data-text" *ngIf="!isLoading">
-          No suggested history available.
-        </p>
-
-      </ng-template>
-
-    </div>
-
-  </mat-sidenav>
-
-</mat-sidenav-container>
+  </div>
+</div>

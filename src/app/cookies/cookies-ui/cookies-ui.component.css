@@ -38,12 +38,12 @@
   }
   
   .cookie-consent .btn-primary {
-    background-color: #007bff;
+    background-color: var(--nexsuz-primary);
     color: white;
   }
   
   .cookie-consent .btn-primary:hover {
-    background-color: #0056b3;
+    background-color: var(--nexsuz-primary-dark);
   }
   
   .cookie-consent .btn-secondary {

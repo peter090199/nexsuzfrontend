@@ -39,7 +39,7 @@
     <ng-container matColumnDef="applied_status">
       <mat-header-cell *matHeaderCellDef mat-sort-header>Status</mat-header-cell>
       <mat-cell *matCellDef="let job">
-        <span class="status" [ngClass]="job.applied_status.toLowerCase()" style="font-weight:bold">
+        <span class="status" [ngClass]="job.applied_status?.toLowerCase()" style="font-weight:bold">
           {{ job.applied_status }}
         </span>
       </mat-cell>
@@ -50,7 +50,7 @@
       <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
       <mat-cell *matCellDef="let job" style="display:flex; gap:6px; padding-left:0">
         <!-- <button mat-icon-button color="accent" matTooltip="Schedule Interview"
-                *ngIf="job.applied_status.toLowerCase() !== 'interview'"
+                *ngIf="job.applied_status?.toLowerCase() !== 'interview'"
                 (click)="scheduleInterview(job)">
           <mat-icon>event</mat-icon>
         </button> -->

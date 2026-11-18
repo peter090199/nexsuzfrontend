@@ -1,97 +1,127 @@
-<div class="spinner-overlay" *ngIf="isUploading">
-  <mat-progress-spinner color="primary" mode="indeterminate" diameter="50">
-  </mat-progress-spinner>
-</div>
+<div class="composer">
 
-<button mat-icon-button class="close-button" [mat-dialog-close]="true">
-  <mat-icon class="close-icon" color="warn">close</mat-icon>
-</button>
+  <!-- header -->
+  <div class="composer-head">
+    <img [src]="getProfileImage(profiles?.photo_pic)" nxFallback alt="" class="composer-avatar" />
+    <div class="composer-who">
+      <strong>{{ profiles2?.fname }} {{ profiles2?.lname }}</strong>
+      <span class="mode-label" *ngIf="isEdit">Editing your post</span>
+      <form [formGroup]="postForm" class="visibility">
+        <mat-icon>{{ postForm.get('status')?.value === 0 ? 'lock' : 'public' }}</mat-icon>
+        <select formControlName="status" aria-label="Who can see this post">
+          <option *ngFor="let option of statusOptions" [ngValue]="option.value">{{ option.label }}</option>
+        </select>
+      </form>
+    </div>
+    <button type="button" mat-icon-button class="composer-close" (click)="cancel()" [disabled]="isUploading"
+      aria-label="Close">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
 
-<div class="form-container">
-  <form [formGroup]="postForm">
-    <div class="profile-info">
-      <div class="profile-name">
-        <img [src]="getProfileImage(profiles?.photo_pic)" alt="Profile Picture" class="profile-img" />
-        <mat-form-field appearance="standard" class="status-dropdown">
-          <mat-label>Status</mat-label>
-          <mat-select formControlName="status" required>
-            <mat-option value="" disabled selected>Select Status</mat-option>
-            <mat-option *ngFor="let option of statusOptions" [value]="option.value">
-              {{ option.label }}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-      </div>
-
-      <span class="post-status" *ngIf="profiles2">
-        Create Post to {{ getSelectedStatus() }} {{ profiles2.fname }}
-      </span>
+  <!-- body -->
+  <form [formGroup]="postForm" class="composer-body">
+    <textarea formControlName="caption" class="composer-text" rows="5" maxlength="5000"
+      placeholder="What do you want to talk about?" aria-label="Post text"></textarea>
+    <div class="field-error" *ngIf="postForm.get('caption')?.touched && !canPost">
+      <mat-icon>error</mat-icon> Write something or attach an image or video.
     </div>
 
-    <mat-dialog-content class="post-content">
-      <mat-form-field appearance="outline" class="full-width">
-        <textarea matInput placeholder="What do you want to talk about?" formControlName="caption" required></textarea>
-        <mat-error *ngIf="postForm.get('caption')?.hasError('required')">
-          Post is required.
-        </mat-error>
-      </mat-form-field>
+    <!-- empty state -->
+    <button type="button" class="empty-drop" *ngIf="!totalImages && !videoPreviewUrl && !existingVideo" (click)="imageInput.click()"
+      [disabled]="isUploading">
+      <mat-icon>add_photo_alternate</mat-icon>
+      <strong>No photos selected</strong>
+      <span>Click to add JPG, PNG or WEBP images</span>
+    </button>
 
-      <div class="post-actions">
-        <!-- Images -->
-        <!-- <button mat-icon-button (click)="uploadImage2(data.images)"  class="action-btn">
-          <mat-icon>image</mat-icon>
-        </button> -->
-        <button mat-button class="action-btn" (click)="uploadImage2(uploadedImages)">
-          <mat-icon>image</mat-icon>
+    <!-- images: saved ones (edit mode) first, then newly chosen ones. Click to enlarge, X to remove -->
+    <div class="preview-grid" *ngIf="totalImages" [attr.data-count]="totalImages">
+      <figure class="preview saved" *ngFor="let e of existingImages; let i = index">
+        <img [src]="e.path_url" [alt]="'Saved image ' + (i + 1)" (click)="openPreview(i)" title="Click to enlarge" />
+        <span class="saved-badge">Saved</span>
+        <button type="button" class="remove" (click)="removeExistingImage(i); $event.stopPropagation()" [disabled]="isUploading"
+          [attr.aria-label]="'Remove saved image ' + (i + 1)">
+          <mat-icon>close</mat-icon>
         </button>
-        <!-- Video -->
-        <!-- <button mat-button class="action-btn" (click)="onVideoSelected(data)">
-          <mat-icon>videocam</mat-icon>
-        </button> -->
-
-
-
-        <input type="file" accept="video/mp4" #videoInput style="display: none" (change)="onVideoSelected($event)" />
-        <button mat-button class="action-btn" (click)="videoInput.click()">
-          <mat-icon>videocam</mat-icon>
+      </figure>
+      <figure class="preview" *ngFor="let p of previews; let i = index">
+        <img [src]="p.safe" [alt]="p.file.name" (click)="openPreview(existingImages.length + i)" title="Click to enlarge" />
+        <span class="saved-badge new" *ngIf="isEdit">New</span>
+        <button type="button" class="remove" (click)="removeImage(i); $event.stopPropagation()" [disabled]="isUploading"
+          [attr.aria-label]="'Remove ' + p.file.name">
+          <mat-icon>close</mat-icon>
         </button>
-        <div *ngIf="videoWarning" class="warning-box">
-          {{ videoWarning }}
-        </div>
-
-        <!-- Settings -->
-        <!-- <button mat-icon-button class="action-btn">
-          <mat-icon>settings</mat-icon>
-        </button> -->
-      </div>
-
-
-    </mat-dialog-content>
-
-    <div *ngIf="postForm">
-      <!-- Images -->
-      <!-- <div *ngIf="data?.images?.length">
-        <img *ngFor="let img of data.images" [src]="img.path_url" alt="Post Image" />
-      </div> -->
-
-      <!-- Videos
-      <div *ngIf="data?.videos?.length">
-        <video #videoPlayer width="100%" height="auto" controls preload="metadata" (play)="onPlay()" (pause)="onPause()"
-          (ended)="onPause()" (timeupdate)="updateProgress2(videoPlayer)">
-          <source [src]="data.videos[0]?.path_url" type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
-      </div> -->
+      </figure>
+      <button type="button" class="preview add-more" *ngIf="totalImages < maxImages" (click)="imageInput.click()"
+        [disabled]="isUploading" aria-label="Add more photos">
+        <mat-icon>add</mat-icon><span>Add more</span>
+      </button>
     </div>
 
+    <!-- the post's saved video (edit mode) -->
+    <div class="video-preview" *ngIf="existingVideo && !selectedVideoFile">
+      <video [src]="existingVideoSafe" controls preload="metadata"></video>
+      <button type="button" class="remove" (click)="removeExistingVideo()" [disabled]="isUploading" aria-label="Remove saved video">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
 
+    <!-- video preview -->
+    <div class="video-preview" *ngIf="videoPreviewUrl">
+      <video [src]="videoPreviewUrl" controls preload="metadata"></video>
+      <button type="button" class="remove" (click)="removeVideo()" [disabled]="isUploading" aria-label="Remove video">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div class="field-error warn" *ngIf="videoWarning"><mat-icon>warning</mat-icon> {{ videoWarning }}</div>
+
+    <!-- validation / server errors -->
+    <div class="field-error" *ngFor="let e of imageErrors"><mat-icon>error</mat-icon> {{ e }}</div>
+    <div class="error-box" *ngIf="errorMessage" role="alert"><mat-icon>error_outline</mat-icon> {{ errorMessage }}</div>
+
+    <!-- upload progress -->
+    <div class="progress" *ngIf="isUploading">
+      <mat-progress-bar mode="determinate" [value]="uploadPercent"></mat-progress-bar>
+      <span>{{ uploadPercent < 100 ? 'Uploading… ' + uploadPercent + '%' : 'Saving your post…' }}</span>
+    </div>
   </form>
 
+  <!-- footer -->
+  <div class="composer-foot">
+    <div class="tools">
+      <input type="file" #imageInput accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden
+        (change)="onImagesSelected($event)" />
+      <button type="button" class="tool" (click)="imageInput.click()" [disabled]="isUploading || totalImages >= maxImages"
+        title="Add photos">
+        <mat-icon>image</mat-icon><span>Photo</span>
+      </button>
 
+      <input type="file" accept="video/mp4" #videoInput hidden (change)="onVideoSelected($event)" />
+      <button type="button" class="tool" (click)="videoInput.click()" [disabled]="isUploading" title="Add video">
+        <mat-icon>videocam</mat-icon><span>Video</span>
+      </button>
+      <small class="hint">{{ totalImages }}/{{ maxImages }} · JPG, PNG, WEBP or GIF · max {{ maxImageMB }} MB each</small>
+    </div>
+
+    <button type="button" mat-flat-button color="primary" class="post-btn" (click)="postData()"
+      [disabled]="!canPost || isUploading">
+      <mat-spinner *ngIf="isUploading" diameter="18"></mat-spinner>
+      <span *ngIf="!isUploading">{{ btnSave }}</span>
+    </button>
+  </div>
 </div>
-<br>
-<div class="button-end">
-  <button mat-flat-button color="primary" [disabled]="postForm.invalid || isUploading" (click)="postData()">
-    {{btnSave}}
+
+<!-- lightbox -->
+<div class="lightbox" *ngIf="lightboxIndex !== null && gallery[lightboxIndex] as current" (click)="closePreview()"
+  role="dialog" aria-label="Image preview">
+  <button type="button" class="lb-btn lb-close" (click)="closePreview()" aria-label="Close preview">
+    <mat-icon>close</mat-icon>
   </button>
+  <button type="button" class="lb-btn lb-prev" *ngIf="gallery.length > 1" (click)="stepPreview(-1); $event.stopPropagation()"
+    aria-label="Previous image"><mat-icon>chevron_left</mat-icon></button>
+  <img [src]="current.src" [alt]="current.name" (click)="$event.stopPropagation()" />
+  <button type="button" class="lb-btn lb-next" *ngIf="gallery.length > 1" (click)="stepPreview(1); $event.stopPropagation()"
+    aria-label="Next image"><mat-icon>chevron_right</mat-icon></button>
+  <span class="lb-count" *ngIf="gallery.length > 1">{{ lightboxIndex + 1 }} / {{ gallery.length }}</span>
 </div>

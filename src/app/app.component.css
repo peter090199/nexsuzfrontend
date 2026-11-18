@@ -68,7 +68,7 @@
   .danger:hover {background: #da190b;}
   
   .default {background-color: #e7e7e7; color: black;} /* Gray */
-  .default:hover {background: #ddd;}
+  .default:hover {background: var(--nexsuz-border);}
   
 
   .spinner-overlay {
@@ -84,8 +84,8 @@
 .spinner {
   width: 50px;
   height: 50px;
-  border: 6px solid #ccc;
-  border-top-color: #007bff;
+  border: 6px solid var(--nexsuz-border);
+  border-top-color: var(--nexsuz-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }

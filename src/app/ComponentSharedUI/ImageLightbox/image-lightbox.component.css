@@ -1,0 +1,101 @@
+/*
+  Class names are prefixed "nxlb" on purpose: styles.css still carries old global .lightbox / .modal / .overlay
+  rules (position: fixed, z-index: 9999) that silently apply to any element that happens to use those names.
+*/
+:host { display: block; font-family: var(--nx-font); }
+
+.nxlb {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  background: rgba(0, 0, 0, .88);
+  animation: nxlb-in .18s ease;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  cursor: zoom-out;
+}
+
+.nxlb-stage {
+  position: relative;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 90vw;
+  max-height: 85vh;
+  cursor: default;
+}
+
+/* the actual size limit: whatever the original dimensions, it fits the viewport */
+.nxlb-media {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 90vw;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #000;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, .5);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.nxlb-hidden { visibility: hidden; position: absolute; }        /* while loading: no layout jump */
+
+.nxlb-spinner { position: absolute; }
+.nxlb-spinner ::ng-deep circle { stroke: #fff; }
+.nxlb-error { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 32px; color: #fff; font-size: 14px; text-align: center; }
+.nxlb-error mat-icon { font-size: 44px; width: 44px; height: 44px; opacity: .7; }
+
+.nxlb-btn {
+  position: absolute;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .16);
+  color: #fff;
+  cursor: pointer;
+  transition: background .2s;
+}
+.nxlb-btn:hover { background: rgba(255, 255, 255, .3); }
+.nxlb-btn:focus-visible { outline: 2px solid #70b5f9; outline-offset: 2px; }
+.nxlb-close { top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); }
+.nxlb-nav { top: 50%; transform: translateY(-50%); }
+.nxlb-prev { left: max(12px, env(safe-area-inset-left)); }
+.nxlb-next { right: max(12px, env(safe-area-inset-right)); }
+
+.nxlb-count {
+  position: absolute;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 12px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, .55);
+  color: #fff;
+  font-size: 12px;
+  cursor: default;
+}
+
+@keyframes nxlb-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* phones: use the dynamic viewport so the browser bars never hide part of the picture; arrows move off the picture */
+@media (max-width: 600px) {
+  .nxlb-media, .nxlb-stage { max-width: 90vw; max-height: 80vh; }
+  @supports (height: 100dvh) { .nxlb-media, .nxlb-stage { max-height: 80dvh; } }
+  .nxlb-nav { top: auto; bottom: max(12px, env(safe-area-inset-bottom)); transform: none; }
+  .nxlb-prev { left: 24px; }
+  .nxlb-next { right: 24px; }
+}
+@media (prefers-reduced-motion: reduce) { .nxlb { animation: none; } }

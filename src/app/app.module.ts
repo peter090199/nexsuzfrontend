@@ -1,6 +1,13 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { MaterialModule } from 'src/Material/Material.module';
+import { AutoHideOnScrollDirective } from './directives/auto-hide-on-scroll.directive';
+import { ImgFallbackDirective } from './directives/img-fallback.directive';
+import { ImageLightboxComponent } from './ComponentSharedUI/ImageLightbox/image-lightbox.component';
+import { ImageCropperDialogComponent } from './ComponentSharedUI/ImageCropper/image-cropper-dialog.component';
+import { ReactionButtonComponent } from './ComponentSharedUI/Reactions/reaction-button/reaction-button.component';
+import { ReactionSummaryComponent } from './ComponentSharedUI/Reactions/reaction-summary/reaction-summary.component';
+import { PostCommentsComponent } from './ComponentSharedUI/Comments/post-comments/post-comments.component';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { ToastrModule } from 'ngx-toastr';
@@ -164,6 +171,13 @@ export function HttpLoaderFactory(http: HttpClient) {
 
 @NgModule({
   declarations: [
+    AutoHideOnScrollDirective,
+    ImgFallbackDirective,
+    ImageLightboxComponent,
+    ImageCropperDialogComponent,
+    ReactionButtonComponent,
+    ReactionSummaryComponent,
+    PostCommentsComponent,
     AppComponent,
     UserhomepageComponent,
     FooterComponent,

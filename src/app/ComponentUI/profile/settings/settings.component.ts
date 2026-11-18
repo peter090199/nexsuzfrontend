@@ -1,3 +1,4 @@
+import { _url } from 'src/global-variables';
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { ChangePasswordComponent } from 'src/app/ComponentSharedUI/forgot-password-ui/ChangePassword/change-password.component';
@@ -112,7 +113,7 @@ export class SettingsComponent implements OnInit {
 
     try {
       const res = await firstValueFrom(
-        this.http.post<any>('https://exploredition.com/public/api/uploadCoverPhoto', formData, {
+        this.http.post<any>(`${_url}uploadCoverPhoto`, formData, {
           headers: {
             Authorization: `Bearer ${sessionStorage.getItem('token')}` // if using auth
           }

@@ -22,7 +22,7 @@ mat-card-footer {
   justify-content: space-around;
   align-items: center;
   padding: 8px 0;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--nexsuz-border);
   width: 100%;
 }
 
@@ -38,7 +38,7 @@ mat-card-footer {
   justify-content: space-around; /* Even spacing like FB */
   align-items: center;
   padding: 8px 0;
-  border-top: 1px solid #ddd; /* Divider line like FB */
+  border-top: 1px solid var(--nexsuz-border); /* Divider line like FB */
   position: relative; /* Not fixed, so it auto-adjusts */
   width: 100%;
   margin-top: auto; /* Push to bottom after content */
@@ -49,7 +49,7 @@ mat-card-footer button {
   justify-content: center;
   text-transform: none; /* Normal case text */
   font-weight: 500;
-  color: #65676b; /* FB gray */
+  color: var(--nexsuz-muted); /* FB gray */
 }
 
 mat-card-footer button mat-icon {
@@ -199,7 +199,7 @@ h2{
   right: 10px;
   background-color: white;
   color: black;
-  border: 1px solid #ccc;
+  border: 1px solid var(--nexsuz-border);
   padding: 5px 10px; /* Add padding */
   border-radius: 4px;
   cursor: pointer;
@@ -328,7 +328,7 @@ h2{
   width: 100%;
   margin: 60px;
   text-align: center;
-  font-family: arial;
+  font-family: var(--nx-font);
 }
 
 .title {
@@ -382,7 +382,7 @@ mat-tab-label {
   font-weight: bold; /* Make the text bold */
   margin-top: 45px; /* Horizontal margin to space out the tabs */
   padding: 10px 0; /* Vertical padding for better spacing */
-  color: #333; /* Default text color */
+  color: var(--nexsuz-text); /* Default text color */
 }
 
 /* Optional: Add hover effect for tab labels */
@@ -531,7 +531,7 @@ mat-tab[label="Work Experience"] .mat-tab-label {
 .mat-tab{
   display: block !important;  /* Override default flex behavior */
   width: 100%;
-  background-color: #f5f5f5;
+  background-color: var(--nexsuz-background);
 }
 
 @media (max-width: 600px) {
@@ -565,7 +565,7 @@ mat-tab[label="Work Experience"] .mat-tab-label {
   text-decoration: underline;
 }
 .skeleton {
-  background: linear-gradient(90deg, #e0e0e0 25%, #f5f5f5 50%, #e0e0e0 75%);
+  background: linear-gradient(90deg, var(--nexsuz-border) 25%, var(--nexsuz-background) 50%, var(--nexsuz-border) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 6px;
@@ -684,7 +684,7 @@ mat-tab[label="Work Experience"] .mat-tab-label {
 
 .create-post-card input {
   width: 100%;
-  background: #f0f2f5;
+  background: var(--nexsuz-background);
   border: none;
   border-radius: 25px;
   padding: 10px 16px;
@@ -727,13 +727,13 @@ mat-tab[label="Work Experience"] .mat-tab-label {
 .user-name {
   font-weight: 600;
   font-size: 15px;
-  color: #050505;
+  color: var(--nexsuz-text);
   cursor: pointer;
 }
 
 .post-time {
   font-size: 12px;
-  color: #65676b;
+  color: var(--nexsuz-muted);
 }
 
 /* Caption */
@@ -741,12 +741,12 @@ mat-tab[label="Work Experience"] .mat-tab-label {
   margin-top: 10px;
   font-size: 14px;
   line-height: 1.5;
-  color: #050505;
+  color: var(--nexsuz-text);
   white-space: pre-line;
 }
 
 .see-more {
-  color: #1877f2;
+  color: var(--nexsuz-primary);
   font-weight: 500;
   cursor: pointer;
 }
@@ -816,7 +816,7 @@ mat-tab[label="Work Experience"] .mat-tab-label {
 
 .reaction-count {
   font-size: 13px;
-  color: #65676b;
+  color: var(--nexsuz-muted);
   cursor: pointer;
 }
 
@@ -825,14 +825,14 @@ mat-tab[label="Work Experience"] .mat-tab-label {
   display: flex;
   justify-content: space-around;
   margin-top: 10px;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid var(--nexsuz-border);
   padding-top: 6px;
 }
 
 .post-footer button {
   flex: 1;
   font-size: 14px;
-  color: #65676b;
+  color: var(--nexsuz-muted);
   text-transform: none;
 }
 /* ===========================
@@ -913,7 +913,7 @@ mat-tab[label="Work Experience"] .mat-tab-label {
   font-size: 14px;
   padding: 8px;
   line-height: 1.3;
-  color: #333;
+  color: var(--nexsuz-text);
   text-align: center;
 }
 
@@ -1028,20 +1028,20 @@ mat-tab[label="Work Experience"] .mat-tab-label {
 .company-info small {
   display: block;
   font-size: 14px;
-  color: #555;
+  color: var(--nexsuz-muted);
   margin-top: 4px;
 }
 
 .company-meta {
   font-size: 14px;
-  color: #666;
+  color: var(--nexsuz-muted);
   margin: 6px 0;
 }
 
 .company-website {
   display: inline-block;
   font-size: 14px;
-  color: #1877f2;
+  color: var(--nexsuz-primary);
   text-decoration: none;
   font-weight: 500;
 }
@@ -1058,12 +1058,12 @@ mat-tab[label="Work Experience"] .mat-tab-label {
 .about-section h3 {
   font-size: 18px;
   margin-bottom: 8px;
-  color: #222;
+  color: var(--nexsuz-text);
 }
 
 .about-section p {
   font-size: 15px;
-  color: #333;
+  color: var(--nexsuz-text);
   line-height: 1.5;
 }
 
@@ -1075,12 +1075,12 @@ mat-tab[label="Work Experience"] .mat-tab-label {
 .location-section h3 {
   font-size: 18px;
   margin-bottom: 8px;
-  color: #222;
+  color: var(--nexsuz-text);
 }
 
 .location-section p {
   font-size: 15px;
-  color: #555;
+  color: var(--nexsuz-muted);
 }
 
 /* Responsive */

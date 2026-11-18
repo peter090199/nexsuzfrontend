@@ -4,6 +4,7 @@ import { AuthService } from 'src/app/services/auth.service';
 import { NotificationsService } from 'src/app/services/Global/notifications.service';
 import { ClientsService } from 'src/app/services/Networking/clients.service';
 import { ReactionEmojiService } from 'src/app/services/Reaction/reaction-emoji.service';
+import { CommentService } from 'src/app/services/comment/comment.service';
 
 
 @Component({
@@ -13,11 +14,19 @@ import { ReactionEmojiService } from 'src/app/services/Reaction/reaction-emoji.s
 })
 export class ReactionPostComponent implements OnInit {
   postId: number = 0;
+  /** what the list is for: a post (data = post id) or a comment / reply (data = { type, ref }) */
+  target: { type: 'post' | 'comment' | 'reply'; ref: any } = { type: 'post', ref: 0 };
 
   constructor(private reactionService: ReactionEmojiService, private authService: AuthService,
     @Inject(MAT_DIALOG_DATA) public data: any, private alert: NotificationsService, private clientsService: ClientsService,
+    private commentService: CommentService,
   ) {
-    this.postId = data;
+    if (data && typeof data === 'object') {
+      this.target = { type: data.type, ref: data.ref };
+    } else {
+      this.postId = data;
+      this.target = { type: 'post', ref: data };
+    }
   }
 
   isLoading: boolean = false;
@@ -30,6 +39,7 @@ export class ReactionPostComponent implements OnInit {
     Love: '❤️',
     Haha: '😂',
     Angry: '😡',
+    Care: '🤗',
   };
 
   allPersons2: any[] = [];
@@ -72,7 +82,10 @@ getPeopleRecentActivity(): void {
 
 getReactionByPostId(): void {
   this.isLoading = true;
-  this.reactionService.getReactionByPostId(this.postId).subscribe({
+  const request$ = this.target.type === 'post'
+    ? this.reactionService.getReactionByPostId(this.postId)
+    : this.commentService.reactors(this.target.type, this.target.ref);
+  request$.subscribe({
     next: (res) => {
       this.react = res.react || [];
       this.allPersonsList = res.allPersons || this.allPersonsList;

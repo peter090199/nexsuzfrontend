@@ -19,6 +19,8 @@ import { SharedRoutinesService } from 'src/app/services/Function/shared-routines
 import { ProfileService } from 'src/app/services/Profile/profile.service';
 import { CurriculumVitaeService } from 'src/app/services/CV/curriculum-vitae.service';
 import { FeatureService } from 'src/app/services/AccountPlan/feature.service';
+import { ProfileImageService } from 'src/app/services/Profile/profile-image.service';
+import { filter } from 'rxjs/operators';
 
 export interface User {
   name: string;
@@ -81,6 +83,7 @@ export class TopNavigationComponent implements OnInit, OnDestroy {
   idleRefreshCount = 0;
   refreshingIcon: string | null = null;
   profileservices: any;
+  private photoSub?: Subscription;
   error: any;
 
   searchKeyword = '';
@@ -104,7 +107,8 @@ export class TopNavigationComponent implements OnInit, OnDestroy {
     private profile: ProfileService,
     private cvService: CurriculumVitaeService,
     public feature: FeatureService,
-    public sharedService: SharedRoutinesService
+    public sharedService: SharedRoutinesService,
+    private profileImages: ProfileImageService
   ) {
     this.sharedRoutines.onNewPostsDetected = (count: number) => {
       this.homeNewDataCount = count;
@@ -113,6 +117,11 @@ export class TopNavigationComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.getProfile();
+
+    // a new / removed profile photo shows in the bar at once
+    this.photoSub = this.profileImages.photo$.pipe(filter(url => url !== undefined)).subscribe(url => {
+      this.profileservices = { ...(this.profileservices || {}), photo_pic: url };
+    });
 
     this.inactivityCheck = setInterval(() => this.checkInactivity(), INACTIVITY_CHECK_INTERVAL_MS);
     setTimeout(() => (this.isLoading = false), 5000);
@@ -134,6 +143,7 @@ export class TopNavigationComponent implements OnInit, OnDestroy {
     }
     this.countsSubscription?.unsubscribe();
     this.chatUpdateSub?.unsubscribe();
+    this.photoSub?.unsubscribe();
   }
 
   @HostListener('document:click')

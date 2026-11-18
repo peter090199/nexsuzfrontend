@@ -18,7 +18,7 @@
 
 .skeleton {
   border-radius: 8px;
-  background-color: #e0e0e0;
+  background-color: var(--nexsuz-border);
   margin-bottom: 8px;
 }
 
@@ -125,13 +125,13 @@
   font-size: 0.95rem;
   margin: 4px 0;
   text-align: center;
-  color: #333;
+  color: var(--nexsuz-text);
   text-decoration: none;
 }
 
 mat-card-subtitle {
   font-size: 0.8rem;
-  color: #666;
+  color: var(--nexsuz-muted);
   text-align: center;
 }
 
@@ -340,7 +340,7 @@ mat-card-subtitle {
     max-width: 60%;
     padding: 6px 14px;
     border-radius: 999px;
-    background: linear-gradient(135deg, #6b7280, #4b5563);
+    background: linear-gradient(135deg, var(--nexsuz-muted), #4b5563);
     color: #fff;
     font-size: 10px;
     font-weight: 700;
@@ -356,7 +356,7 @@ mat-card-subtitle {
     display: block;
     font-size: 1.05rem;
     font-weight: 700;
-    color: #1a1a1a;
+    color: var(--nexsuz-text);
     text-decoration: none;
     margin-bottom: 6px;
     text-transform: uppercase;
@@ -371,7 +371,7 @@ mat-card-subtitle {
     align-items: center;
     gap: 8px;
     font-size: 0.85rem;
-    color: #6b7280;
+    color: var(--nexsuz-muted);
     margin: 0 0 10px;
 
     i {
@@ -439,7 +439,7 @@ mat-card-subtitle {
 }
 
 .skeleton {
-    background: linear-gradient(90deg, #eee 25%, #f5f5f5 37%, #eee 63%);
+    background: linear-gradient(90deg, var(--nexsuz-border) 25%, var(--nexsuz-background) 37%, var(--nexsuz-border) 63%);
     background-size: 400% 100%;
     animation: shimmer 1.4s ease infinite;
     border-radius: 8px;

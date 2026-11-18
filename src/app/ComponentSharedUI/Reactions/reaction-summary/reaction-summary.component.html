@@ -1,0 +1,5 @@
+<button type="button" class="rs" *ngIf="total > 0" [class.compact]="compact" [title]="tooltip"
+  [attr.aria-label]="total + (total === 1 ? ' reaction' : ' reactions') + ', show who reacted'" (click)="openList.emit()">
+  <span class="faces"><span class="face" *ngFor="let f of faces; let i = index" [style.z-index]="3 - i">{{ f }}</span></span>
+  <span class="count">{{ total }}</span>
+</button>

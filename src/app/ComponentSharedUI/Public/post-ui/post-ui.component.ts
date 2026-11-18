@@ -547,19 +547,22 @@
 // }
 
 
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, HostListener, Inject, OnDestroy, OnInit } from '@angular/core';
 import { MatDialog, MatDialogRef, MatDialogConfig, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { ProfileService } from 'src/app/services/Profile/profile.service';
 import { PostUploadImageComponent } from '../post-upload-image/post-upload-image.component';
 import { PostUploadImagesService } from 'src/app/services/post-upload-images.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpEventType } from '@angular/common/http';
+import { Subscription } from 'rxjs';
 import { NotificationsService } from 'src/app/services/Global/notifications.service';
-import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { DomSanitizer, SafeResourceUrl, SafeUrl } from '@angular/platform-browser';
 import { ThemePalette } from '@angular/material/core';
 import { ProgressSpinnerMode } from '@angular/material/progress-spinner';
 import { PostUploadVideosComponent } from '../post-upload-videos/post-upload-videos.component';
 import { SightengineWorkflowService } from 'src/app/services/DetectorAI/sightengine-workflow.service';
+import { ProfileImageService } from 'src/app/services/Profile/profile-image.service';
+import { filter } from 'rxjs/operators';
 
 
 @Component({
@@ -567,7 +570,7 @@ import { SightengineWorkflowService } from 'src/app/services/DetectorAI/sighteng
   templateUrl: './post-ui.component.html',
   styleUrls: ['./post-ui.component.css']
 })
-export class PostUIComponent implements OnInit {
+export class PostUIComponent implements OnInit, OnDestroy {
   postForm!: FormGroup;
   profiles: any;
   profiles2: any = [];
@@ -577,7 +580,49 @@ export class PostUIComponent implements OnInit {
   videoPreviewUrl: SafeUrl | null = null;
   imagePreviewUrl: string | null = null;
 
+  // ----- image picker (limits mirror the Laravel validation in PostController) -----
+  readonly maxImages = 10;
+  readonly maxImageMB = 3;
+  readonly allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  lightboxIndex: number | null = null;   // index of the preview shown enlarged
+  // "url" is the raw object URL (revoked on remove/destroy); "safe" is what the template binds.
+  // Angular rewrites blob: URLs in [src] to "unsafe:blob:..." unless they are marked trusted,
+  // which is what broke the image previews. The URL comes from URL.createObjectURL(File), so it is safe.
+  previews: { file: File; url: string; safe: SafeUrl }[] = [];
+  imageErrors: string[] = [];
+  uploadPercent = 0;
+  errorMessage = '';
+
   btnSave: string = "Post";
+  private photoSub?: Subscription;
+
+  // ----- edit mode: what the post already has, and what the user detached -----
+  existingImages: { posts_uuind: string; path_url: string }[] = [];
+  existingVideo: { posts_uuind: string; path_url: string } | null = null;
+  existingVideoSafe: SafeResourceUrl | null = null;
+  removedAttachmentIds: string[] = [];
+
+  get isEdit(): boolean { return !!this.data?.id; }
+
+  /** Every image currently shown (saved ones first, then newly chosen ones) for the enlarged preview. */
+  get gallery(): { name: string; src: any }[] {
+    return [
+      ...this.existingImages.map((e, i) => ({ name: 'Saved image ' + (i + 1), src: e.path_url })),
+      ...this.previews.map(p => ({ name: p.file.name, src: p.safe }))
+    ];
+  }
+
+  get totalImages(): number { return this.existingImages.length + this.previews.length; }
+
+  get hasMedia(): boolean {
+    return this.totalImages > 0 || !!this.selectedVideoFile || (!!this.existingVideo);
+  }
+
+  /** A post needs text, or at least one image/video. */
+  get canPost(): boolean {
+    const text = String(this.postForm?.get('caption')?.value ?? '').trim();
+    return (text.length > 0 || this.hasMedia) && !!this.postForm?.get('status')?.valid;
+  }
   isUploading: boolean = false;
   progressValue = 0;
   currentTime = 0;
@@ -602,15 +647,20 @@ export class PostUIComponent implements OnInit {
     private alert: NotificationsService,
     private sanitizer: DomSanitizer,
     private imageUploadService: PostUploadImagesService,
-    @Inject(MAT_DIALOG_DATA) public data: any, private sightService: SightengineWorkflowService
+    @Inject(MAT_DIALOG_DATA) public data: any, private sightService: SightengineWorkflowService,
+    private profileImages: ProfileImageService
   ) { }
 
   ngOnInit(): void {
     this.postForm = this.fb.group({
-      caption: ['', Validators.required],
+      caption: [''],
       status: ['', Validators.required],
       image: [''],
       video: ['']
+    });
+
+    this.photoSub = this.profileImages.photo$.pipe(filter(url => url !== undefined)).subscribe(url => {
+      this.profiles = { ...(this.profiles || {}), photo_pic: url };
     });
 
     this.loadUserProfile();
@@ -618,22 +668,12 @@ export class PostUIComponent implements OnInit {
 
     // ✅ If editing an existing post
     if (this.data?.id) {
-      this.btnSave = "Update Post";
-      console.log(this.data);
+      this.btnSave = "Save changes";
       this.fillFormData();
     }
 
-    // ✅ Listen for uploaded images from image dialog
-    this.imageUploadService.images$.subscribe((formData: FormData | null) => {
-      if (formData) {
-        this.uploadedImages = [];
-        formData.forEach((file) => {
-          if (file instanceof File) {
-            this.uploadedImages.push(file);
-          }
-        });
-      }
-    });
+    // start every composer with a clean image state
+    this.imageUploadService.clearImages();
   }
 
   /** 🔹 Pre-fill data when editing */
@@ -645,14 +685,18 @@ export class PostUIComponent implements OnInit {
       caption: this.data.caption ?? '',
     });
 
-    if (this.data.images) {
-      this.imagePreviewUrl = this.data.images;
-    }
-    if (this.data.videos) {
-      this.videoPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.data.videos.path_url);
+    // current images/video: shown in the editor, kept unless the user removes them
+    const images = Array.isArray(this.data.images) ? this.data.images : [];
+    this.existingImages = images
+      .filter((i: any) => i?.posts_uuind && i?.path_url)
+      .map((i: any) => ({ posts_uuind: i.posts_uuind, path_url: i.path_url }));
+
+    const video = Array.isArray(this.data.videos) ? this.data.videos[0] : this.data.videos;
+    if (video?.posts_uuind && video?.path_url) {
+      this.existingVideo = { posts_uuind: video.posts_uuind, path_url: video.path_url };
+      this.existingVideoSafe = this.sanitizer.bypassSecurityTrustResourceUrl(video.path_url);
     }
   }
-
 
   /** 🔹 Get profile info */
   loadUserProfile(): void {
@@ -802,60 +846,164 @@ export class PostUIComponent implements OnInit {
   }
 
   postData() {
-    if (!this.postForm.valid) {
-      this.alert.toastrWarning("Please fill in required fields.");
+    if (this.isUploading) {
+      return; // prevent duplicate submissions
+    }
+    if (!this.canPost) {
+      this.alert.toastrWarning("Write something or attach an image or video.");
       return;
     }
 
-    if (this.postForm.valid) {
-      this.isUploading = true; // show progress bar
+    this.errorMessage = '';
+    this.uploadPercent = 0;
+    this.isUploading = true;
 
-      const formData = new FormData();
-      formData.append('caption', this.postForm.value.caption);
-      formData.append('status', this.postForm.value.status.toString());
+    const formData = new FormData();
+    formData.append('caption', String(this.postForm.value.caption ?? '').trim());
+    formData.append('status', this.postForm.value.status.toString());
 
-      for (let file of this.uploadedImages) {
-        formData.append('posts[]', file);
-      }
+    for (const file of this.uploadedImages) {
+      formData.append('posts[]', file);
+    }
+    if (this.selectedVideoFile) {
+      formData.append('video', this.selectedVideoFile);
+    }
 
-      if (this.selectedVideoFile) {
-        formData.append('video', this.selectedVideoFile);
-      }
-
-      if (this.data?.id) {
-        console.log(this.data.transNo);
-        this.imageUploadService.updatePostByTransNo(formData, this.data.transNo).subscribe({
-          next: (res) => {
-            this.isUploading = false; // hide progress bar
-            if (res.success == true) {
-              this.alert.toastrSuccess(res.message);
-              this.resetForm();
-            }
-          },
-          error: (error) => {
-            this.isUploading = false; // hide progress bar
-            console.error('Upload failed:', error);
-            this.alert.toastrWarning(error.error?.message || "Upload failed. Please try again.");
-          }
-        });
-      }
-      else {
-        this.imageUploadService.uploadImages(formData).subscribe({
-          next: (res) => {
-            this.isUploading = false; // hide progress bar
-            if (res.success == true) {
-              this.alert.toastrSuccess(res.message);
-              this.resetForm();
-            }
-          },
-          error: (error) => {
-            this.isUploading = false; // hide progress bar
-            console.error('Upload failed:', error);
-            this.alert.toastrWarning(error.error?.message || "Upload failed. Please try again.");
-          }
-        });
+    const editing = this.isEdit;
+    if (editing) {
+      // saved images the user took off the post
+      for (const id of this.removedAttachmentIds) {
+        formData.append('remove_attachments[]', id);
       }
     }
+
+    const request$ = editing
+      ? this.imageUploadService.updatePost(formData, this.data.transNo)
+      : this.imageUploadService.createPost(formData);
+
+    request$.subscribe({
+      next: (event) => {
+        if (event.type === HttpEventType.UploadProgress && event.total) {
+          this.uploadPercent = Math.round((100 * event.loaded) / event.total);
+        } else if (event.type === HttpEventType.Response) {
+          this.isUploading = false;
+          const res: any = event.body;
+          if (res?.success === true) {
+            this.alert.toastrSuccess(res.message);
+            this.resetForm();
+            // the edited post travels back so the feed can swap it in without a refresh
+            this.dialogRef.close(editing ? { post: res.post } : true);
+          } else {
+            this.errorMessage = res?.message || (editing
+              ? 'The post could not be updated. Please try again.'
+              : 'The post could not be saved. Please try again.');
+          }
+        }
+      },
+      error: (error) => this.onSaveError(error)
+    });
+  }
+
+  private onSaveError(error: any): void {
+    this.isUploading = false;
+    this.uploadPercent = 0;
+    // Laravel validation (422) returns a readable "message"; fall back to the first field error
+    const fieldErrors = error?.error?.errors ? (Object.values(error.error.errors)[0] as string[])?.[0] : '';
+    this.errorMessage = error?.error?.message || fieldErrors
+      || (error?.status === 413 ? 'The upload is too large for the server.' : 'Upload failed. Please check your connection and try again.');
+  }
+
+  // ------------------------------------------------------------------
+  //  image picker
+  // ------------------------------------------------------------------
+  onImagesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files || []);
+    this.imageErrors = [];
+
+    for (const file of files) {
+      if (this.totalImages >= this.maxImages) {
+        this.imageErrors.push(`You can attach up to ${this.maxImages} images.`);
+        break;
+      }
+      if (!this.allowedImageTypes.includes(file.type)) {
+        this.imageErrors.push(`"${file.name}" is not supported. Use JPG, PNG, GIF or WEBP.`);
+        continue;
+      }
+      if (file.size > this.maxImageMB * 1024 * 1024) {
+        this.imageErrors.push(`"${file.name}" is larger than ${this.maxImageMB} MB.`);
+        continue;
+      }
+      const url = URL.createObjectURL(file);
+      this.previews.push({ file, url, safe: this.sanitizer.bypassSecurityTrustUrl(url) });
+    }
+
+    this.uploadedImages = this.previews.map(p => p.file);
+    input.value = '';   // allow choosing the same file again after removing it
+  }
+
+  removeImage(index: number): void {
+    const [removed] = this.previews.splice(index, 1);
+    if (removed) { URL.revokeObjectURL(removed.url); }
+    this.uploadedImages = this.previews.map(p => p.file);
+    this.imageErrors = [];
+    if (this.lightboxIndex !== null) { this.closePreview(); }
+  }
+
+  // ---------- enlarged preview (lightbox) ----------
+  openPreview(index: number): void {
+    this.lightboxIndex = index;
+  }
+
+  closePreview(): void {
+    this.lightboxIndex = null;
+  }
+
+  stepPreview(delta: number): void {
+    const count = this.gallery.length;
+    if (this.lightboxIndex === null || !count) { return; }
+    this.lightboxIndex = (this.lightboxIndex + delta + count) % count;
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onKey(e: KeyboardEvent): void {
+    if (this.lightboxIndex === null) { return; }
+    if (e.key === 'Escape') { this.closePreview(); e.stopPropagation(); }
+    else if (e.key === 'ArrowRight') { this.stepPreview(1); }
+    else if (e.key === 'ArrowLeft') { this.stepPreview(-1); }
+  }
+
+  /** Cancel: drop every selection and preview, then close. */
+  cancel(): void {
+    this.resetForm();
+    this.closePreview();
+    this.dialogRef.close(false);
+  }
+
+  /** Edit mode: detach one of the post's saved images (applied only when the user saves). */
+  removeExistingImage(index: number): void {
+    const [removed] = this.existingImages.splice(index, 1);
+    if (removed) { this.removedAttachmentIds.push(removed.posts_uuind); }
+    this.imageErrors = [];
+    this.closePreview();
+  }
+
+  /** Edit mode: detach the post's saved video (applied only when the user saves). */
+  removeExistingVideo(): void {
+    if (this.existingVideo) { this.removedAttachmentIds.push(this.existingVideo.posts_uuind); }
+    this.existingVideo = null;
+    this.existingVideoSafe = null;
+  }
+
+  removeVideo(): void {
+    this.selectedVideoFile = null;
+    this.videoPreviewUrl = null;
+    this.videoWarning = '';
+  }
+
+  ngOnDestroy(): void {
+    this.photoSub?.unsubscribe();
+    this.previews.forEach(p => URL.revokeObjectURL(p.url));
   }
 
   /** 🔹 Create or Update Post */
@@ -918,6 +1066,9 @@ export class PostUIComponent implements OnInit {
   /** 🔹 Reset after success */
   resetForm() {
     this.postForm.reset();
+    this.previews.forEach(p => URL.revokeObjectURL(p.url));
+    this.previews = [];
+    this.imageErrors = [];
     this.uploadedImages = [];
     this.selectedVideoFile = null;
     this.videoPreviewUrl = null;

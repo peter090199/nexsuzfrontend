@@ -1,8 +1,25 @@
 @import "../node_modules/@angular/material/theming";
-@include 
+@include
 mat-core();
-$my-primary: mat-palette($mat-indigo,500);
-$my-accent:  mat-palette($mat-amber, 500, A200,A100,A400);
+
+// NEXSUZ palettes (see src/styles/_nexsuz-tokens.scss)
+$nx-navy-palette: (
+  50: #e6f0fa, 100: #bfd9f2, 200: #94c0ea, 300: #68a6e1, 400: #378fe9,
+  500: #0a66c2, 600: #0956a6, 700: #004182, 800: #00356b, 900: #002a57,
+  A100: #94c0ea, A200: #378fe9, A400: #0a66c2, A700: #004182,
+  contrast: (50: #000, 100: #000, 200: #000, 300: #000, 400: #fff, 500: #fff, 600: #fff, 700: #fff, 800: #fff, 900: #fff,
+             A100: #000, A200: #000, A400: #fff, A700: #fff)
+);
+$nx-sky-palette: (
+  50: #eaf3fc, 100: #d0e5fc, 200: #b0d4fb, 300: #90c5fa, 400: #7bbbf9,
+  500: #70b5f9, 600: #5aa3ec, 700: #3f8ad6, 800: #2d72bd, 900: #1b559a,
+  A100: #d0e5fc, A200: #90c5fa, A400: #70b5f9, A700: #3f8ad6,
+  contrast: (50: #000, 100: #000, 200: #000, 300: #000, 400: #000, 500: #000, 600: #000, 700: #fff, 800: #fff, 900: #fff,
+             A100: #000, A200: #000, A400: #000, A700: #fff)
+);
+
+$my-primary: mat-palette($nx-navy-palette, 500, 300, 700);
+$my-accent:  mat-palette($nx-sky-palette, 500, 200, 700);
 $my-warn:    mat-palette($mat-red,500);
 $my-theme: mat-light-theme($my-primary, $my-accent, $my-warn);
 @include angular-material-theme($my-theme);

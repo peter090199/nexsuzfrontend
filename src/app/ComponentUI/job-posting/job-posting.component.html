@@ -85,19 +85,9 @@
         <mat-cell *matCellDef="let job">{{ job.job_name }}</mat-cell>
     </ng-container>
 
-    <ng-container matColumnDef="job_position">
-        <mat-header-cell *matHeaderCellDef>Job position</mat-header-cell>
-        <mat-cell *matCellDef="let job">{{ job.job_position }}</mat-cell>
-    </ng-container>
-
     <ng-container matColumnDef="company_info">
         <mat-header-cell *matHeaderCellDef>Company</mat-header-cell>
         <mat-cell *matCellDef="let job"> {{job.comp_name}}</mat-cell>
-    </ng-container>
-
-    <ng-container matColumnDef="work_type">
-        <mat-header-cell *matHeaderCellDef>Work_type</mat-header-cell>
-        <mat-cell *matCellDef="let job"> {{job.work_type}}</mat-cell>
     </ng-container>
 
     <ng-container matColumnDef="timestamps">

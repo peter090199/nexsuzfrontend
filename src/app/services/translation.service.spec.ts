@@ -1,3 +1,4 @@
+import { NexsuzTestingModule } from 'src/testing/nexsuz-testing.module';
 import { TestBed } from '@angular/core/testing';
 
 import { TranslationService } from './translation.service';
@@ -6,7 +7,9 @@ describe('TranslationService', () => {
   let service: TranslationService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      imports: [NexsuzTestingModule]
+    });
     service = TestBed.inject(TranslationService);
   });
 

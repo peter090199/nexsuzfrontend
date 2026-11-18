@@ -75,7 +75,7 @@
           <button
             mat-flat-button
             [color]="person.follow_status === 'accepted' ? 'accent' : person.follow_status === 'pending' ? 'warn' : 'primary'"
-            *ngIf="currentUserCode !== person.code"
+            *ngIf="currentUserCode !== person.code && person.follow_status"
             (click)="AddConnect(person.code, person.fullname, person.follow_status, person.id)">
             
             <!-- Icons -->
@@ -104,7 +104,7 @@
           <button
             mat-flat-button
             [color]="person.follow_status === 'accepted' ? 'accent' : person.follow_status === 'pending' ? 'warn' : 'primary'"
-            *ngIf="currentUserCode !== person.code"
+            *ngIf="currentUserCode !== person.code && person.follow_status"
             (click)="AddConnect(person.code, person.fullname, person.follow_status, person.id)">
             
             <!-- Icons -->

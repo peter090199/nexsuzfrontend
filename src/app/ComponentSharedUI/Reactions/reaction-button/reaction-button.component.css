@@ -1,0 +1,38 @@
+:host { display: inline-block; font-family: var(--nx-font); }
+.rb { position: relative; display: inline-block; }
+
+.main { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 12px; border: 0; border-radius: 10px; background: transparent; font: inherit; font-size: 13px; font-weight: 700; color: var(--nexsuz-muted); cursor: pointer; transition: background .2s ease, color .2s ease, transform .15s ease; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.main:hover:not([disabled]) { background: var(--nx-sky-soft); }
+.main:active:not([disabled]) { transform: scale(.96); }
+.main[disabled] { opacity: .55; cursor: not-allowed; }
+.main mat-icon { font-size: 20px; width: 20px; height: 20px; margin: 0; }
+.main .emoji { font-size: 18px; line-height: 1; }
+.main.active .label { color: inherit; }
+
+.compact .main { min-height: 28px; padding: 0 6px; font-size: 12px; border-radius: 6px; gap: 4px; }
+.compact .main mat-icon { font-size: 16px; width: 16px; height: 16px; }
+.compact .main .emoji { font-size: 14px; }
+
+/* picker: floats above the button */
+.picker { position: absolute; left: 0; bottom: calc(100% + 4px); z-index: 30; display: flex; gap: 2px; padding: 6px 8px; background: #fff; border: 1px solid var(--nexsuz-border); border-radius: 30px; box-shadow: 0 8px 28px rgba(0, 65, 130, .22); max-width: calc(100vw - 24px); animation: rb-pop .18s ease both; }
+.picker::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 8px; }   /* keeps hover alive across the gap */
+.pick { position: relative; width: 40px; height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; border-radius: 22px; animation: rb-in .22s ease both; transition: transform .15s ease; }
+.pick .emoji { display: block; font-size: 26px; line-height: 44px; transition: transform .15s ease; }
+.pick:hover .emoji, .pick:focus-visible .emoji { transform: scale(1.4) translateY(-6px); }
+.pick:focus-visible { outline: 2px solid var(--nx-sky); }
+.pick.selected { background: var(--nx-sky-soft); }
+.pick .tip { position: absolute; left: 50%; bottom: calc(100% + 6px); transform: translateX(-50%) scale(.9); padding: 2px 8px; border-radius: 10px; background: rgba(0, 0, 0, .78); color: #fff; font-size: 11px; font-weight: 700; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s ease, transform .15s ease; }
+.pick:hover .tip, .pick:focus-visible .tip { opacity: 1; transform: translateX(-50%) scale(1); }
+
+.compact .picker { padding: 4px 6px; }
+.compact .pick { width: 34px; height: 38px; }
+.compact .pick .emoji { font-size: 22px; line-height: 38px; }
+
+@keyframes rb-pop { from { opacity: 0; transform: translateY(6px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes rb-in { from { opacity: 0; transform: translateY(8px) scale(.6); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 360px) {
+  .pick { width: 34px; }
+  .pick .emoji { font-size: 22px; }
+}
+@media (prefers-reduced-motion: reduce) { .picker, .pick { animation: none; } }

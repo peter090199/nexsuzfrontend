@@ -42,6 +42,11 @@ export class UserPlanService {
     );
   }
 
+  /** Currently authenticated account (used for the checkout account summary) */
+  getCurrentUser(): Observable<any> {
+    return this.http.get(`${_url}user`, { headers: this.createHeaders() });
+  }
+
   getPlan(): Observable<any> {
     return this.http.get(`${_url}getPlanpublic`);
   }

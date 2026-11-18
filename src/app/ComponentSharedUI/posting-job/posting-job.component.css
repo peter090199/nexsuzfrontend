@@ -17,12 +17,12 @@
 }
 
 .form-field2 {
-  width: 650px;
+  width: min(100%, 650px);
   max-width: 650px;
 }
 .no-questions {
   text-align: center;
-  color: #777;
+  color: var(--nexsuz-muted);
   font-style: italic;
   margin: 10px 0;
 }

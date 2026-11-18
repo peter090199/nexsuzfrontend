@@ -95,7 +95,7 @@
   margin: 0;
   font-size: 26px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--nexsuz-text);
 }
 
 .subtitle {
@@ -146,7 +146,7 @@
 .profile-text span,
 .profile-text a {
   font-size: 14px;
-  color: #0f172a;
+  color: var(--nexsuz-text);
   word-break: break-word;
 }
 
@@ -175,7 +175,7 @@
 
 .empty-activity {
   text-align: center;
-  color: #94a3b8;
+  color: var(--nexsuz-muted);
   padding: 20px;
 }
 

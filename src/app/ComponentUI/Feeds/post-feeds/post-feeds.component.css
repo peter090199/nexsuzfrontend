@@ -6,7 +6,7 @@ nav {
   align-items: center;
   justify-content: space-between;
   background: #fff;
-  border-bottom: 1px solid #dddfe2;
+  border-bottom: 1px solid var(--nexsuz-border);
   position: fixed;
   top: 0;
   z-index: 1000;
@@ -60,7 +60,7 @@ nav {
 }
 
 .comment-content {
-  background: #f0f2f5;
+  background: var(--nexsuz-background);
   border-radius: 18px;
   padding: 8px 12px;
   max-width: 85%;
@@ -72,7 +72,7 @@ nav {
 
 .comment-actions {
   font-size: 12px;
-  color: #65676b;
+  color: var(--nexsuz-muted);
   margin-top: 4px;
   display: flex;
   justify-content: flex-start;
@@ -119,7 +119,7 @@ nav {
 
 /* ---- Post Footer ---- */
 .post-footer {
-  border-top: 1px solid #ddd;
+  border-top: 1px solid var(--nexsuz-border);
   padding-top: 8px;
 }
 
@@ -144,7 +144,7 @@ nav {
   font-size: 12px;
   font-weight: 500;
   text-transform: none;
-  color: #606770;
+  color: var(--nexsuz-muted);
   display: flex;
   align-items: center;
   gap: 2px;
@@ -152,7 +152,7 @@ nav {
 
 .footer-btn mat-icon {
   font-size: 16px;
-  color: #606770;
+  color: var(--nexsuz-muted);
 }
 
 /* ---- Post Card ---- */
@@ -198,7 +198,7 @@ nav {
 
 .post-user-info span {
   font-size: 13px;
-  color: #65676b;
+  color: var(--nexsuz-muted);
 }
 
 .post-text {
@@ -226,7 +226,7 @@ nav {
   display: flex;
   justify-content: space-between;
   margin-top: 8px;
-  border-top: 1px solid #dddfe2;
+  border-top: 1px solid var(--nexsuz-border);
   padding-top: 8px;
 }
 
@@ -239,7 +239,7 @@ nav {
   padding: 8px 0;
   font-size: 14px;
   font-weight: 500;
-  color: #65676b;
+  color: var(--nexsuz-muted);
   border: none;
   background: none;
   cursor: pointer;
@@ -248,7 +248,7 @@ nav {
 }
 
 .post-actions button:hover {
-  background: #f0f2f5;
+  background: var(--nexsuz-background);
 }
 
 /* ---- Reaction Popup ---- */
@@ -278,7 +278,7 @@ nav {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: Arial, sans-serif;
+  font-family: var(--nx-font);
 }
 
 .emoji-stack {
@@ -305,7 +305,7 @@ nav {
 .reaction-count-text {
   margin-left: 8px;
   font-size: 14px;
-  color: #65676b;
+  color: var(--nexsuz-muted);
   cursor: pointer;
   font-weight: 500;
 }
@@ -322,14 +322,14 @@ nav {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: #1976d2;
+  background: var(--nexsuz-primary);
   color: #fff;
   cursor: pointer;
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .scroll-to-top:hover {
-  background: #1565c0;
+  background: var(--nexsuz-primary-dark);
   transform: translateY(-2px);
 }
 

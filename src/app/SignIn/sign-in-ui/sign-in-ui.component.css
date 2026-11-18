@@ -16,7 +16,7 @@
 
 }
 .mat-card mat-icon {
-  color: #185291; /* Replace #007bff with any color you prefer */
+  color: var(--nexsuz-primary-dark); /* Replace var(--nexsuz-primary) with any color you prefer */
 }
 .width2{
   margin-bottom: 20px;
@@ -25,7 +25,7 @@
 .agreement-section {
   margin-top: 10px;
   font-size: 0.9em;
-  color: #555;
+  color: var(--nexsuz-muted);
   margin: 10px;
 }
 
@@ -75,7 +75,7 @@
 
   .logo {
     font-size: 60px;
-    color: #3f51b5;
+    color: var(--nexsuz-primary);
     transition: transform 0.5s ease-in-out;
   }
 

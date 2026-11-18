@@ -5,7 +5,7 @@
   font-size: 22px;
   font-weight: 700;
   margin: 15px 0 20px 0;
-  color: #222;
+  color: var(--nexsuz-text);
 }
 
 
@@ -94,7 +94,7 @@
 .media-caption {
   padding: 10px;
   font-size: 15px;
-  color: #333;
+  color: var(--nexsuz-text);
   text-align: center;
   line-height: 1.4;
   font-weight: 500;

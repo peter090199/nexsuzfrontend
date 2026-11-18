@@ -43,7 +43,7 @@
 /* Sent Message (Right Align) */
 .message-self {
   align-self: flex-end;
-  background: #007bff;
+  background: var(--nexsuz-primary);
   color: white;
   border-bottom-right-radius: 5px;
 }
@@ -52,7 +52,7 @@
 .message-other {
   align-self: flex-start;
   background: white;
-  color: #333;
+  color: var(--nexsuz-text);
   border-bottom-left-radius: 5px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
@@ -62,7 +62,7 @@
   display: flex;
   padding: 10px;
   background: white;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid var(--nexsuz-border);
   align-items: center;
   gap: 10px;
 }

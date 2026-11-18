@@ -5,7 +5,7 @@ import { NotificationsService } from 'src/app/services/Global/notifications.serv
 import { MatDialog } from '@angular/material/dialog';
 import { TermsModalComponent } from 'src/app/TermsModal/terms-modal/terms-modal.component';
 import { PrivacyComponent } from 'src/app/TermsModal/privacy/privacy.component';
-import { Route, Router } from '@angular/router';
+import { ActivatedRoute, Route, Router } from '@angular/router';
 import { AbstractControl, ValidationErrors } from '@angular/forms';
 
 @Component({
@@ -134,7 +134,8 @@ export class SignUpUIComponent implements OnInit {
     private signupService: SignUpService,
     private notifyService: NotificationsService,
     private dialog: MatDialog,
-    private router: Router
+    private router: Router,
+    private activatedRoute: ActivatedRoute
   ) {
     this.countryCodes + this.contactno;
   }
@@ -311,7 +312,12 @@ export class SignUpUIComponent implements OnInit {
               this.isLoadingIndividual = false;
               this.notifyService.toastPopUp(res.message);
               this.userForm.reset();
-              this.router.navigateByUrl("/homepage");
+              const returnUrl = this.activatedRoute.snapshot.queryParamMap.get('returnUrl');
+              if (returnUrl && returnUrl.startsWith('/')) {
+                this.router.navigate(['/signin'], { queryParams: { returnUrl } });
+              } else {
+                this.router.navigateByUrl("/homepage");
+              }
               this.isloading = false;
             }
             else {

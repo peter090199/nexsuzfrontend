@@ -1,0 +1,7 @@
+:host { display: inline-block; font-family: var(--nx-font); }
+.rs { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 6px; border: 0; border-radius: 16px; background: transparent; font: inherit; font-size: 13px; color: var(--nexsuz-muted); cursor: pointer; transition: background .2s ease; }
+.rs:hover { background: var(--nx-sky-soft); text-decoration: underline; }
+.faces { display: inline-flex; padding-left: 6px; }
+.face { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; margin-left: -6px; border-radius: 50%; background: #fff; border: 2px solid #fff; font-size: 13px; line-height: 1; box-shadow: 0 0 0 1px var(--nexsuz-border); }
+.compact.rs { min-height: 24px; font-size: 12px; }
+.compact .face { width: 16px; height: 16px; font-size: 10px; }

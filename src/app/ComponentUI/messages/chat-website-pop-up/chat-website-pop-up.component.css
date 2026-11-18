@@ -32,7 +32,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 10px;
-    background: #3f51b5;
+    background: var(--nexsuz-primary);
     color: white;
     border-radius: 12px 12px 0 0;
     font-weight: bold;
@@ -58,7 +58,7 @@
   .chat-messages .sent {
     text-align: right;
     color: white;
-    background: #3f51b5;
+    background: var(--nexsuz-primary);
     padding: 8px 12px;
     border-radius: 12px;
     max-width: 70%;
@@ -68,7 +68,7 @@
   .chat-messages .received {
     text-align: left;
     color: black;
-    background: #e0e0e0;
+    background: var(--nexsuz-border);
     padding: 8px 12px;
     border-radius: 12px;
     max-width: 100%;
@@ -78,7 +78,7 @@
   .chat-input {
     display: flex;
     padding: 10px;
-    border-top: 1px solid #ddd;
+    border-top: 1px solid var(--nexsuz-border);
     background: white;
     border-radius: 0 0 12px 12px;
   }

@@ -29,11 +29,14 @@ import { ClientsService } from 'src/app/services/Networking/clients.service';
 import { EchoService } from 'src/app/services/echo.service';
 import { NotificationsService } from 'src/app/services/Global/notifications.service';
 
-import { ImageModalComponent } from '../../Modal/image-modal/image-modal.component';
+import { ImageLightboxService } from 'src/app/ComponentSharedUI/ImageLightbox/image-lightbox.service';
 import { CommentModalUIComponent } from '../../Modal/comment-modal-ui/comment-modal-ui.component';
 import { ReactionPostComponent } from 'src/app/ComponentSharedUI/ReactionEmoji/reaction-post/reaction-post.component';
 import { PostUIComponent } from 'src/app/ComponentSharedUI/Public/post-ui/post-ui.component';
 import { SharedRoutinesService } from 'src/app/services/Function/shared-routines.service';
+import { _url } from 'src/global-variables';
+import { ProfileImageService } from 'src/app/services/Profile/profile-image.service';
+import { applyMyReaction, emptySummary } from 'src/app/ComponentSharedUI/Reactions/reaction-meta';
 
 interface Reaction {
   emoji: string;
@@ -75,7 +78,6 @@ export class PublicPostComponent implements OnInit, AfterViewInit, OnDestroy {
     { emoji: '😡', label: 'Angry' }
   ];
 
-  private baseUrl = 'https://api.nexsuz.com/';
   hovered: any;
 
   constructor(
@@ -87,7 +89,9 @@ export class PublicPostComponent implements OnInit, AfterViewInit, OnDestroy {
     private dialog: MatDialog,
     private sanitizer: DomSanitizer,
     private postDataservices: PostUploadImagesService,
-    private alert: NotificationsService
+    private alert: NotificationsService,
+    private profileImages: ProfileImageService,
+    private lightbox: ImageLightboxService
   ) { }
 
   hoverVisible = false;
@@ -97,6 +101,11 @@ export class PublicPostComponent implements OnInit, AfterViewInit, OnDestroy {
 
 
   ngOnInit(): void {
+    // the user's own posts show a new / removed profile photo at once
+    this.profileImages.photo$.pipe(takeUntil(this.destroy$)).subscribe(url => {
+      if (url === undefined) { return; }
+      this.posts = this.posts.map(p => p.is_owner ? { ...p, photo_pic: url } : p);
+    });
     this.loadPosts();
     this.listenRealtime();
   }
@@ -113,21 +122,69 @@ export class PublicPostComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // ================= LOAD POSTS =================
-  loadPosts(): void {
-    this.postService.getDataPostAddFollow()
-      .subscribe((res: any) => {
+  isLoadingPosts = false;
+  loadingMore = false;
+  loadError = '';
+  hasMore = false;
+  private page = 1;
+  private readonly perPage = 10;
 
-        this.posts = (res?.data || []).map((p: any) => this.formatPost(p));
+  loadPosts(silent = false): void {
+    this.page = 1;
+    this.loadError = '';
+    if (!silent) { this.isLoadingPosts = true; }
 
-        this.posts.forEach(p => this.loadReactions(p.id));
-      });
+    this.postService.getFeed(1, this.perPage).subscribe({
+      next: (res: any) => {
+        this.isLoadingPosts = false;
+        if (!res?.success) {
+          this.loadError = res?.message || 'We could not load your feed.';
+          return;
+        }
+        this.posts = this.mapPosts(res.data);
+        this.hasMore = (res.data || []).length >= this.perPage;
+      },
+      error: (err) => {
+        this.isLoadingPosts = false;
+        this.loadError = err?.error?.message || 'We could not load your feed. Please check your connection.';
+      }
+    });
+  }
+
+  loadMore(): void {
+    if (this.loadingMore) { return; }
+    this.loadingMore = true;
+
+    this.postService.getFeed(this.page + 1, this.perPage).subscribe({
+      next: (res: any) => {
+        this.loadingMore = false;
+        if (!res?.success) { return; }
+        this.page++;
+        this.posts = [...this.posts, ...this.mapPosts(res.data)];
+        this.hasMore = (res.data || []).length >= this.perPage;
+      },
+      error: () => {
+        this.loadingMore = false;
+        this.alert.toastrError('Could not load more posts.');
+      }
+    });
+  }
+
+  private mapPosts(rows: any[]): any[] {
+    const mapped = (rows || []).map((p: any) => this.formatPost(p));
+    return mapped;   // reaction_summary, my_reaction and comments_count come with each post
   }
 
   formatPost(post: any) {
     return {
       ...post,
+      photo_pic: post.profile_pic || post.photo_pic,
       expanded: false,
       showComments: false,
+      my_reaction: post.my_reaction ?? null,
+      reaction_summary: post.reaction_summary || emptySummary(),
+      comments_count: post.comments_count ?? 0,
+      reactBusy: false,
       images: (post.images || []).map((i: any) => ({
         ...i,
         path_url: this.normalize(i.path_url)
@@ -139,8 +196,12 @@ export class PublicPostComponent implements OnInit, AfterViewInit, OnDestroy {
     };
   }
 
-  normalize(path: string) {
-    return this.baseUrl + (path || '').replace(/\\/g, '');
+  /** The API returns absolute media URLs; only a relative path is prefixed with the API origin. */
+  normalize(path: string): string {
+    const p = (path || '').replace(/\\/g, '');
+    if (/^https?:\/\//i.test(p)) { return p; }
+    const origin = _url.replace(/\/api\/?$/, '');
+    return origin + (p.startsWith('/') ? p : '/' + p);
   }
 
   // ================= REALTIME =================
@@ -175,13 +236,47 @@ export class PublicPostComponent implements OnInit, AfterViewInit, OnDestroy {
       });
   }
 
-  async selectReaction(postId: number, react: any) {
-    this.userReactions[postId] = react;
-    this.isPopupVisible[postId] = false;
+  // ================= REACTIONS (Facebook style) =================
+  onReact(post: any, label: string): void { this.setPostReaction(post, label); }
+  onUnreact(post: any): void { this.setPostReaction(post, null); }
 
-    await this.reactionByIdService.saveReaction(postId, react.label).toPromise();
+  /**
+   * One reaction per user per post. The counts move at once; the database's own summary then replaces
+   * them, and a failed request puts everything back.
+   */
+  private setPostReaction(post: any, next: string | null): void {
+    if (post.reactBusy) { return; }
 
-    this.loadReactions(postId);
+    const previousSummary = post.reaction_summary;
+    const previousMine = post.my_reaction;
+
+    post.reaction_summary = applyMyReaction({ ...(previousSummary || emptySummary()), mine: previousMine }, next);
+    post.my_reaction = next;
+    post.reactBusy = true;
+
+    const call$ = next
+      ? this.reactionByIdService.setReaction(post.id, next)
+      : this.reactionByIdService.removeReaction(post.id);
+
+    call$.subscribe({
+      next: (res: any) => {
+        post.reactBusy = false;
+        if (res?.success && res.reactions) {
+          post.reaction_summary = res.reactions;
+          post.my_reaction = res.reactions.mine ?? null;
+        }
+      },
+      error: (err) => {
+        post.reactBusy = false;
+        post.reaction_summary = previousSummary;
+        post.my_reaction = previousMine;
+        this.alert.toastrError(err?.error?.message || 'Your reaction could not be saved. Please try again.');
+      }
+    });
+  }
+
+  toggleComments(post: any): void {
+    post.showComments = !post.showComments;
   }
 
   getEmoji(label: string): string {
@@ -205,18 +300,20 @@ export class PublicPostComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // ================= MODALS =================
-  openImages(images: any[]) {
-    this.dialog.open(ImageModalComponent, {
-      data: images,
-      width: '1200px'
-    });
+  /** Picture viewer: centred, fixed to the viewport, never larger than the screen (see ImageLightboxComponent). */
+  openImages(images: any[], startIndex = 0) {
+    const items = (images || [])
+      .filter(i => i?.path_url)
+      .map(i => ({ src: i.path_url as string, type: (i.posts_type === 'video' ? 'video' : 'image') as 'image' | 'video' }));
+    if (items.length) { this.lightbox.open(items, startIndex); }
   }
 
   openComments(post: any) {
     this.dialog.open(CommentModalUIComponent, {
       width: '800px',
+      maxWidth: '96vw',
       data: post
-    });
+    }).afterClosed().subscribe(() => this.loadPosts(true));
   }
 
   openReactions(postId: number) {
@@ -250,14 +347,36 @@ export class PublicPostComponent implements OnInit, AfterViewInit, OnDestroy {
   onEditPost(post: any) {
     const dialogConfig = new MatDialogConfig();
     dialogConfig.disableClose = true;
-    dialogConfig.autoFocus = true;
+    dialogConfig.autoFocus = false;
     dialogConfig.width = '600px';
+    dialogConfig.maxWidth = '96vw';
     dialogConfig.data = post;
     const dialogRef = this.dialog.open(PostUIComponent, dialogConfig);
 
-    dialogRef.afterClosed().subscribe(() => {
-      this.loadPosts();
+    // Cancel closes with false: nothing changes and nothing is reloaded.
+    // A save closes with the updated post, which replaces the old one in place (no refresh needed).
+    dialogRef.afterClosed().subscribe((result: any) => {
+      if (result?.post) {
+        this.applyEditedPost(result.post);
+      }
     });
+  }
+
+  /** Swap the edited post's fields into the feed; likes, comments, owner flag and position are kept. */
+  private applyEditedPost(updated: any): void {
+    const index = this.posts.findIndex(p => p.id === updated.id);
+    if (index < 0) { return; }
+    const fresh = this.formatPost(updated);
+    this.posts[index] = {
+      ...this.posts[index],
+      caption: fresh.caption,
+      status: fresh.status,
+      updated_at: fresh.updated_at,
+      images: fresh.images,
+      videos: fresh.videos,
+      expanded: false
+    };
+    this.posts = [...this.posts];   // new array reference so the list re-renders immediately
   }
 
 

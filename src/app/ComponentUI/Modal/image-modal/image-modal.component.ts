@@ -87,6 +87,7 @@ export class ImageModalComponent implements OnInit, AfterViewInit {
 
 
   ngAfterViewInit(): void {
+    if (!this.carousel?.nativeElement) { return; }   // carousel is not rendered when there is no media
     const el = this.carousel.nativeElement;
     el.addEventListener('slid.bs.carousel', () => {
       const activeIndex = el.querySelector('.carousel-item.active')?.getAttribute('data-index');

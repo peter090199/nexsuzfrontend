@@ -1,5 +1,5 @@
 .chat-container {
-    width: 400px;
+    width: min(100%, 400px);
     margin: auto;
     padding: 10px;
   }
@@ -43,7 +43,7 @@
 
     .sidebar {
       width: 300px;
-      border-right: 1px solid #ddd;
+      border-right: 1px solid var(--nexsuz-border);
       overflow-y: auto;
     }
   

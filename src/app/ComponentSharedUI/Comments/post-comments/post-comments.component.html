@@ -1,0 +1,154 @@
+<section class="pc" aria-label="Comments">
+
+  <!-- ===== write a comment ===== -->
+  <form class="composer" (submit)="$event.preventDefault(); submitComment()">
+    <img class="avatar" [src]="me.photo || defaultAvatar" nxFallback alt="" />
+    <div class="box">
+      <textarea class="input" rows="1" [(ngModel)]="draft" [ngModelOptions]="{ standalone: true }" maxlength="2000"
+        placeholder="Write a comment…" aria-label="Write a comment" (keydown.enter)="onEnter($event)"></textarea>
+
+      <div class="img-preview" *ngIf="draftImage">
+        <img [src]="draftImage.safe" alt="Selected photo" />
+        <button type="button" class="x" (click)="clearDraftImage()" [disabled]="isSubmitting" aria-label="Remove photo">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="tools">
+        <input #draftFile type="file" hidden accept="image/jpeg,image/png,image/webp,image/gif"
+          (change)="pickDraftImage($event)" />
+        <button type="button" class="icon-btn" (click)="draftFile.click()" [disabled]="isSubmitting"
+          aria-label="Attach a photo" title="Attach a photo"><mat-icon>image</mat-icon></button>
+        <span class="chars" *ngIf="draft.length > 1800" [class.over]="draft.length >= maxChars">{{ draft.length }}/{{ maxChars }}</span>
+        <button type="submit" class="send" [disabled]="!canSend" aria-label="Post comment">
+          <mat-spinner *ngIf="isSubmitting" diameter="18"></mat-spinner>
+          <mat-icon *ngIf="!isSubmitting">send</mat-icon>
+        </button>
+      </div>
+    </div>
+  </form>
+  <div class="msg error" *ngIf="composerError" role="alert"><mat-icon>error_outline</mat-icon> {{ composerError }}</div>
+
+  <!-- ===== states ===== -->
+  <div class="skeletons" *ngIf="isLoading" aria-busy="true">
+    <div class="sk-row" *ngFor="let i of [1, 2, 3]">
+      <span class="sk avatar"></span>
+      <span class="sk-lines"><span class="sk line"></span><span class="sk line short"></span></span>
+    </div>
+  </div>
+
+  <div class="state error" *ngIf="loadError && !isLoading" role="alert">
+    <mat-icon>error_outline</mat-icon>
+    <span>{{ loadError }}</span>
+    <button type="button" class="link" (click)="loadFirstPage()">Try again</button>
+  </div>
+
+  <div class="state empty" *ngIf="!isLoading && !loadError && !comments.length">
+    <mat-icon>chat_bubble_outline</mat-icon>
+    <span>No comments yet. Be the first to comment.</span>
+  </div>
+
+  <!-- ===== comments ===== -->
+  <ul class="list" *ngIf="comments.length">
+    <li class="item" *ngFor="let c of comments; trackBy: trackComment" [class.busy]="c.busy">
+
+      <div class="cm-row">
+        <ng-container *ngTemplateOutlet="row; context: { $implicit: c, parent: null }"></ng-container>
+      </div>
+
+      <!-- replies -->
+      <ul class="replies" *ngIf="c.replies.length">
+        <li *ngIf="c.replies.length > 1 && !c.showAllReplies">
+          <button type="button" class="link more-replies" (click)="c.showAllReplies = true">
+            View {{ c.replies.length - 1 }} previous {{ c.replies.length - 1 === 1 ? 'reply' : 'replies' }}
+          </button>
+        </li>
+        <li class="item reply" *ngFor="let r of visibleReplies(c); trackBy: trackReply" [class.busy]="r.busy">
+          <div class="cm-row">
+            <ng-container *ngTemplateOutlet="row; context: { $implicit: r, parent: c }"></ng-container>
+          </div>
+        </li>
+      </ul>
+
+      <!-- reply box -->
+      <form class="composer reply-box" *ngIf="c.replying" (submit)="$event.preventDefault(); submitReply(c)">
+        <img class="avatar sm" [src]="me.photo || defaultAvatar" nxFallback alt="" />
+        <div class="box">
+          <textarea class="input" rows="1" [id]="'reply-' + c.comment_uuid" [(ngModel)]="c.replyText"
+            [ngModelOptions]="{ standalone: true }" maxlength="2000" placeholder="Write a reply…" aria-label="Write a reply"
+            (keydown.enter)="onReplyEnter($event, c)"></textarea>
+          <div class="img-preview" *ngIf="c.replyImage">
+            <img [src]="c.replyImage.safe" alt="Selected photo" />
+            <button type="button" class="x" (click)="clearReplyImage(c)" aria-label="Remove photo"><mat-icon>close</mat-icon></button>
+          </div>
+          <div class="tools">
+            <input #replyFile type="file" hidden accept="image/jpeg,image/png,image/webp,image/gif" (change)="pickReplyImage(c, $event)" />
+            <button type="button" class="icon-btn" (click)="replyFile.click()" [disabled]="c.replyBusy" aria-label="Attach a photo">
+              <mat-icon>image</mat-icon>
+            </button>
+            <button type="button" class="link" (click)="cancelReply(c)" [disabled]="c.replyBusy">Cancel</button>
+            <button type="submit" class="send" [disabled]="!canSendReply(c)" aria-label="Post reply">
+              <mat-spinner *ngIf="c.replyBusy" diameter="18"></mat-spinner>
+              <mat-icon *ngIf="!c.replyBusy">send</mat-icon>
+            </button>
+          </div>
+        </div>
+      </form>
+      <div class="msg error reply-msg" *ngIf="c.replyError" role="alert"><mat-icon>error_outline</mat-icon> {{ c.replyError }}</div>
+    </li>
+  </ul>
+
+  <div class="more" *ngIf="hasMore">
+    <button type="button" class="link" (click)="loadMore()" [disabled]="isLoadingMore">
+      <mat-spinner *ngIf="isLoadingMore" diameter="16"></mat-spinner>
+      {{ isLoadingMore ? 'Loading…' : 'View more comments' }}
+    </button>
+  </div>
+</section>
+
+<!-- one comment or reply -->
+<ng-template #row let-item let-parent="parent">
+  <img class="avatar" [class.sm]="!!parent" [src]="item.profile_pic || defaultAvatar" nxFallback [alt]="item.fullname" />
+
+  <div class="body">
+    <!-- view -->
+    <div class="bubble-wrap" *ngIf="!item.editing">
+      <div class="bubble">
+        <span class="name">{{ item.fullname }}</span>
+        <p class="text" *ngIf="item.comment">{{ item.comment }}</p>
+        <a class="attachment" *ngIf="item.attachment_url" [href]="item.attachment_url" target="_blank" rel="noopener">
+          <img [src]="item.attachment_url" alt="Photo in comment" loading="lazy" />
+        </a>
+      </div>
+      <app-reaction-summary class="chip" [summary]="item.reactions" [compact]="true" (openList)="openReactors(item)"></app-reaction-summary>
+    </div>
+
+    <!-- edit -->
+    <div class="edit" *ngIf="item.editing">
+      <textarea class="input" rows="2" [(ngModel)]="item.editText" maxlength="2000" aria-label="Edit your comment"></textarea>
+      <label class="remove-photo" *ngIf="item.attachment_url">
+        <input type="checkbox" [(ngModel)]="item.editRemoveImage" /> Remove the photo
+      </label>
+      <div class="msg error" *ngIf="item.editError" role="alert"><mat-icon>error_outline</mat-icon> {{ item.editError }}</div>
+      <div class="edit-actions">
+        <button type="button" class="link" (click)="cancelEdit(item)" [disabled]="item.busy">Cancel</button>
+        <button type="button" class="save" (click)="saveEdit(item)" [disabled]="!canSaveEdit(item)">
+          <mat-spinner *ngIf="item.busy" diameter="16"></mat-spinner> Save
+        </button>
+      </div>
+    </div>
+
+    <!-- actions -->
+    <div class="meta" *ngIf="!item.editing">
+      <app-reaction-button [compact]="true" [myReaction]="item.reactions.mine" [disabled]="item.reactBusy"
+        (react)="onReact(item, $event)" (unreact)="onUnreact(item)"></app-reaction-button>
+      <button type="button" class="link" (click)="startReply(parent || item, parent ? item : null)">Reply</button>
+      <button type="button" class="link" *ngIf="item.is_owner" (click)="startEdit(item)">Edit</button>
+      <button type="button" class="link danger" *ngIf="item.can_delete" (click)="confirmDelete(item, parent)" [disabled]="item.busy">Delete</button>
+      <time class="when" [attr.datetime]="item.created_at" [title]="item.created_at | date:'full'">
+        {{ item.created_at | date:'MMM d, y, h:mm a' }}
+      </time>
+      <span class="edited" *ngIf="item.edited">· Edited</span>
+    </div>
+  </div>
+</ng-template>

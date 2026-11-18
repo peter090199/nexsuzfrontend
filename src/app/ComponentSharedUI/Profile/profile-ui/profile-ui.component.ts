@@ -14,6 +14,9 @@ import { UploadProfileComponent } from '../../Individual/upload-profile/upload-p
 import { ImageModalComponent } from 'src/app/ComponentUI/Modal/image-modal/image-modal.component';
 import { SharedRoutinesService } from 'src/app/services/Function/shared-routines.service';
 import { FeatureService } from 'src/app/services/AccountPlan/feature.service';
+import { ProfileImageService } from 'src/app/services/Profile/profile-image.service';
+import { ImageCropperDialogComponent } from '../../ImageCropper/image-cropper-dialog.component';
+import { finalize } from 'rxjs/operators';
 
 @Component({
   selector: 'app-profile-ui',
@@ -66,7 +69,8 @@ export class ProfileUIComponent implements OnInit {
     private authService: AuthService,
     private route: ActivatedRoute,
     private router: Router,
-    public dialog: MatDialog, public feature: FeatureService, public sharedRoutines: SharedRoutinesService
+    public dialog: MatDialog, public feature: FeatureService, public sharedRoutines: SharedRoutinesService,
+    private profileImages: ProfileImageService
   ) { }
 
   // =========================
@@ -593,6 +597,122 @@ export class ProfileUIComponent implements OnInit {
     };
 
     this.dialog.open(ImageModalComponent, dialogConfig);
+  }
+
+  // =========================
+  // PROFILE PHOTO AND COVER PHOTO (own profile only)
+  // =========================
+  readonly photoTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  readonly maxSourceMB = 15;             // the picture is cropped and shrunk in the browser before it is uploaded
+  busyPhoto = false;
+  busyCover = false;
+  coverFailed = false;
+
+  get isOwner(): boolean {
+    return !!this.code && String(this.currentUserCode) === String(this.code);
+  }
+  get hasPhoto(): boolean { return !!this.profiles?.photo_pic; }
+  get hasCover(): boolean { return !!this.coverphoto?.coverphoto; }
+
+  onPickPhoto(event: Event): void {
+    this.cropThen(event, 'circle', 'Update profile photo', file => this.savePhoto(file));
+  }
+
+  onPickCover(event: Event): void {
+    this.cropThen(event, 'banner', 'Update cover photo', file => this.saveCover(file));
+  }
+
+  /** Validate the chosen file, let the user crop it, then hand the cropped File to `then`. */
+  private cropThen(event: Event, shape: 'circle' | 'banner', title: string, then: (file: File) => void): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';                                       // the same file can be chosen again later
+    if (!file) { return; }
+
+    if (!this.photoTypes.includes(file.type)) {
+      this.alert.toastrWarning('Please choose a JPG, PNG, GIF or WEBP image.');
+      return;
+    }
+    if (file.size > this.maxSourceMB * 1024 * 1024) {
+      this.alert.toastrWarning(`That picture is larger than ${this.maxSourceMB} MB. Please choose a smaller one.`);
+      return;
+    }
+
+    this.dialog.open(ImageCropperDialogComponent, {
+      width: '560px', maxWidth: '96vw', disableClose: true, autoFocus: false,
+      data: { file, shape, title }
+    }).afterClosed().subscribe((cropped?: File) => { if (cropped) { then(cropped); } });
+  }
+
+  private savePhoto(file: File): void {
+    if (this.busyPhoto) { return; }
+    this.busyPhoto = true;
+    this.profileImages.uploadPhoto(file).pipe(finalize(() => this.busyPhoto = false)).subscribe({
+      next: (res: any) => {
+        if (res?.success) {
+          this.profiles = { ...(this.profiles || {}), photo_pic: res.photo_pic };
+          this.alert.toastrSuccess(res.message || 'Profile photo updated.');
+        } else {
+          this.alert.toastrError(res?.message || 'The photo could not be saved.');
+        }
+      },
+      error: (err) => this.alert.toastrError(this.photoError(err))
+    });
+  }
+
+  removePhoto(): void {
+    this.alert.popupWarning('', 'Remove your profile photo?').then((result: any) => {
+      if (!result?.value || this.busyPhoto) { return; }
+      this.busyPhoto = true;
+      this.profileImages.removePhoto().pipe(finalize(() => this.busyPhoto = false)).subscribe({
+        next: (res: any) => {
+          if (res?.success) {
+            this.profiles = { ...(this.profiles || {}), photo_pic: null };
+            this.alert.toastrSuccess('Profile photo removed.');
+          }
+        },
+        error: (err) => this.alert.toastrError(this.photoError(err))
+      });
+    });
+  }
+
+  private saveCover(file: File): void {
+    if (this.busyCover) { return; }
+    this.busyCover = true;
+    this.profileImages.uploadCover(file).pipe(finalize(() => this.busyCover = false)).subscribe({
+      next: (res: any) => {
+        if (res?.success) {
+          this.coverphoto = { ...(this.coverphoto || {}), coverphoto: res.coverphoto };
+          this.coverFailed = false;
+          this.alert.toastrSuccess(res.message || 'Cover photo updated.');
+        } else {
+          this.alert.toastrError(res?.message || 'The cover photo could not be saved.');
+        }
+      },
+      error: (err) => this.alert.toastrError(this.photoError(err))
+    });
+  }
+
+  removeCover(): void {
+    this.alert.popupWarning('', 'Remove your cover photo?').then((result: any) => {
+      if (!result?.value || this.busyCover) { return; }
+      this.busyCover = true;
+      this.profileImages.removeCover().pipe(finalize(() => this.busyCover = false)).subscribe({
+        next: (res: any) => {
+          if (res?.success) {
+            this.coverphoto = { ...(this.coverphoto || {}), coverphoto: null };
+            this.alert.toastrSuccess('Cover photo removed.');
+          }
+        },
+        error: (err) => this.alert.toastrError(this.photoError(err))
+      });
+    });
+  }
+
+  private photoError(err: any): string {
+    if (err?.status === 0) { return 'You appear to be offline. Please check your connection and try again.'; }
+    const field = err?.error?.errors ? (Object.values(err.error.errors)[0] as string[])?.[0] : '';
+    return err?.error?.message || field || 'The picture could not be saved. Please try again.';
   }
 
   uploadPic(): void {

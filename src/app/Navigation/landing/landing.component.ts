@@ -31,6 +31,15 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('pageContent') pageContentRef?: ElementRef<HTMLElement>;
   private scrollContainer: HTMLElement | null = null;
   private scrollTicking = false;
+  private revealObserver?: IntersectionObserver;
+  private mutationObserver?: MutationObserver;
+  private mutationRaf = 0;
+  private readonly revealSelector = [
+    '.section-title', '.section-heading', '.hero-header', '.search-container',
+    '.feature-card', '.plan-box', '.job-card', '.people-section-title',
+    '.about-section-1 .feature', '.about-section-1 .hero-image',
+    '.contact-info-card', '.contact-form', '.recruiter-section .cta'
+  ].join(',');
 
   fadeIn = false;
   isSidebarOpen = false;
@@ -38,6 +47,7 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
   activeSection = 'home-section';
   chatOpened = false;
   showScrollTop = false;
+  navScrolled = false;
 
   myControl = new FormControl();
   options: User[] = [
@@ -103,11 +113,64 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
     // not window — grab a direct reference instead of relying on the template event.
     this.scrollContainer = this.pageContentRef?.nativeElement
       ?? document.querySelector('.page-content');
+
+    this.initScrollReveal();
   }
 
   ngOnDestroy(): void {
-    // no manual subscriptions to tear down; kept for future use (e.g. if a
-    // fromEvent/RxJS scroll stream is introduced later)
+    this.revealObserver?.disconnect();
+    this.mutationObserver?.disconnect();
+    if (this.mutationRaf) cancelAnimationFrame(this.mutationRaf);
+  }
+
+  // ============================================================
+  // Scroll-triggered reveal (styles live in landing.component.css)
+  // ============================================================
+
+  private initScrollReveal(): void {
+    const root = this.scrollContainer;
+    if (!root || typeof IntersectionObserver === 'undefined') return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+
+    this.revealObserver = new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const el = entry.target as HTMLElement;
+        this.revealObserver?.unobserve(el);
+        el.classList.add('lx-in');
+        // once the entrance has played, drop the helper classes so hover effects own the transform
+        setTimeout(() => {
+          el.classList.remove('lx-reveal', 'lx-in');
+          el.style.removeProperty('--lx-delay');
+        }, 1600);
+      }
+    }, { root, threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+
+    this.registerRevealTargets();
+
+    // Jobs / plans arrive from the API after first paint — pick them up as they render.
+    this.mutationObserver = new MutationObserver(() => {
+      if (this.mutationRaf) return;
+      this.mutationRaf = requestAnimationFrame(() => {
+        this.mutationRaf = 0;
+        this.registerRevealTargets();
+      });
+    });
+    this.mutationObserver.observe(root, { childList: true, subtree: true });
+  }
+
+  private registerRevealTargets(): void {
+    const root = this.scrollContainer;
+    if (!root || !this.revealObserver) return;
+
+    root.querySelectorAll<HTMLElement>(this.revealSelector).forEach(el => {
+      if (el.dataset['lx']) return;
+      el.dataset['lx'] = '1';
+      const index = el.parentElement ? Array.prototype.indexOf.call(el.parentElement.children, el) : 0;
+      el.style.setProperty('--lx-delay', `${Math.min(index, 8) * 90}ms`);
+      el.classList.add('lx-reveal');
+      this.revealObserver!.observe(el);
+    });
   }
 
   // ============================================================
@@ -124,6 +187,7 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
       const target = (event.target as HTMLElement) ?? this.scrollContainer;
       if (target) {
         this.showScrollTop = target.scrollTop > this.scrollTopThreshold;
+        this.navScrolled = target.scrollTop > 40;
         this.updateActiveSection(target.scrollTop);
       }
       this.scrollTicking = false;

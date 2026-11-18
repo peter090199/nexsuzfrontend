@@ -10,7 +10,7 @@
 .saved-jobs-card h3 {
   margin-bottom: 12px;
   font-weight: 600;
-  color: #333;
+  color: var(--nexsuz-text);
 }
 
 .saved-job-item {
@@ -39,26 +39,26 @@
 }
 .job-details{
   font-weight: 500;
-  color: #007bff;
+  color: var(--nexsuz-primary);
   text-decoration: none;
 }
 .saved-job-item .job-details .job-name {
   font-weight: 500;
-  color: #007bff;
+  color: var(--nexsuz-primary);
   text-decoration: underline;
 }
 
 
 .saved-job-item .job-details small {
   display: block;
-  color: #666;
+  color: var(--nexsuz-muted);
   font-size: 0.875rem;
 }
 
 .saved-footer {
   margin-top: 12px;
   font-size: 0.875rem;
-  color: #555;
+  color: var(--nexsuz-muted);
   text-align: right;
 }
 

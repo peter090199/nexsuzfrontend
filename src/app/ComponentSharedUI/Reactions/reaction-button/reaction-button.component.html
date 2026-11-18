@@ -1,0 +1,20 @@
+<div class="rb" #host [class.compact]="compact" (mouseenter)="onEnter()" (mouseleave)="onLeave()" (focusin)="onFocusIn()"
+  (focusout)="onFocusOut($event, host)" (keydown.escape)="open = false">
+
+  <div class="picker" *ngIf="open" role="menu" aria-label="Choose a reaction">
+    <button type="button" class="pick" *ngFor="let r of reactions; let i = index" role="menuitem"
+      [class.selected]="r.label === myReaction" [attr.aria-label]="r.label" [style.animation-delay.ms]="i * 28"
+      (click)="pick(r.label)">
+      <span class="emoji">{{ r.emoji }}</span>
+      <span class="tip">{{ r.label }}</span>
+    </button>
+  </div>
+
+  <button type="button" class="main" [class.active]="!!myReaction" [style.color]="current?.color" [disabled]="disabled"
+    [attr.aria-pressed]="!!myReaction" aria-haspopup="menu" (click)="onMainClick()" (touchstart)="onTouchStart()"
+    (touchend)="onTouchEnd()" (touchcancel)="onTouchEnd()" (contextmenu)="$event.preventDefault()">
+    <span class="emoji" *ngIf="current; else thumb">{{ current.emoji }}</span>
+    <ng-template #thumb><mat-icon>thumb_up_off_alt</mat-icon></ng-template>
+    <span class="label">{{ current ? current.label : 'Like' }}</span>
+  </button>
+</div>

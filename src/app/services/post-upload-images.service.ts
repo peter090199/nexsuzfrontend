@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpEvent, HttpHeaders, HttpParams } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { _url } from 'src/global-variables';
@@ -62,6 +62,24 @@ export class PostUploadImagesService {
   // UPLOAD / UPDATE POSTS
   // ---------------------------
 
+  /** Edit a post (text, privacy, new images, remove_attachments[]); progress is reported and HTTP errors reach the caller. */
+  updatePost(formData: FormData, transNo: any): Observable<HttpEvent<any>> {
+    return this.http.post<any>(`${_url}updatePostByTransNo/${transNo}`, formData, {
+      headers: this.createHeaders(),
+      observe: 'events',
+      reportProgress: true
+    });
+  }
+
+  /** Create a post and report upload progress; HTTP errors reach the caller. */
+  createPost(formData: FormData): Observable<HttpEvent<any>> {
+    return this.http.post<any>(`${_url}savePost`, formData, {
+      headers: this.createHeaders(),
+      observe: 'events',
+      reportProgress: true
+    });
+  }
+
   uploadImages(formData: FormData): Observable<any> {
     const headers = this.createHeaders();
     return this.http.post(`${_url}savePost`, formData, { headers })
@@ -102,6 +120,12 @@ export class PostUploadImagesService {
 
     return this.http.get(`${_url}/posts/followed`, { headers, params })
       .pipe(catchError(this.handleError('getDataPostAddFollowXX')));
+  }
+
+  /** Paginated home feed (own + connected users' posts, newest first). Errors reach the caller. */
+  getFeed(page = 1, perPage = 10): Observable<any> {
+    const params = new HttpParams().set('page', page).set('per_page', perPage);
+    return this.http.get(`${_url}posts/followed`, { headers: this.createHeaders(), params });
   }
 
   getDataPostAddFollow(): Observable<any> {

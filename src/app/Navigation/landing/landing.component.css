@@ -88,7 +88,7 @@ mat-toolbar {
   width: min(320px, 85vw);
   display: flex;
   flex-direction: column;
-  background-color: #00bcd4;
+  background-color: var(--nexsuz-accent);
   color: #ffffff;
 }
 
@@ -161,7 +161,7 @@ mat-toolbar {
   flex: 1;
   overflow-y: auto;
   scroll-behavior: smooth;
-  background-color: #00bcd4;
+  background-color: var(--nexsuz-accent);
 }
 
 /* Anchor offset so scrolled sections aren't hidden under the sticky toolbar */
@@ -214,7 +214,7 @@ main>* {
   align-items: center;
   justify-content: center;
   padding: 0;
-  background-color: #00bcd4 !important;
+  background-color: var(--nexsuz-accent) !important;
   color: #ffffff !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 
@@ -265,5 +265,342 @@ main>* {
   .scroll-top-btn {
     bottom: 16px;
     right: 16px;
+  }
+}
+
+/* ============================================================
+   MOTION LAYER — additive animations & transitions
+   (original colours/layout untouched)
+   ============================================================ */
+:host {
+  --lx-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* --- Living gradient behind the whole page --- */
+mat-sidenav-container,
+.fixed-header,
+mat-toolbar {
+  background-size: 200% 200%;
+  animation: lx-gradient 18s ease-in-out infinite;
+}
+
+@keyframes lx-gradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* --- Navbar: shrinks + glass shadow after scrolling --- */
+mat-toolbar {
+  transition: height 0.45s var(--lx-ease), box-shadow 0.45s var(--lx-ease);
+}
+
+header.scrolled mat-toolbar {
+  height: 56px;
+  box-shadow: 0 10px 30px rgba(10, 10, 60, 0.35);
+}
+
+/* Nav links: underline that grows from the left */
+.desktop-nav a::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 3px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #fff, rgba(255, 255, 255, 0.4));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s var(--lx-ease);
+}
+
+.desktop-nav a:hover::after,
+.desktop-nav a.active::after {
+  transform: scaleX(1);
+}
+
+.desktop-nav a.active {
+  opacity: 1;
+}
+
+.nav-actions button,
+.sidebar-actions button {
+  transition: transform 0.3s var(--lx-ease), box-shadow 0.3s ease;
+}
+
+.nav-actions button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+.sidebar-link {
+  transition: background-color 0.2s ease, transform 0.3s var(--lx-ease);
+}
+
+.sidebar-link:hover,
+.sidebar-link.active {
+  transform: translateX(6px);
+}
+
+.sidebar-link.active {
+  background-color: rgba(255, 255, 255, 0.18);
+}
+
+/* Scroll-to-top: gentle idle pulse */
+.scroll-top-btn.show {
+  animation: lx-pulse 2.8s ease-in-out infinite;
+}
+
+@keyframes lx-pulse {
+  0%, 100% { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), 0 0 0 0 rgba(255, 255, 255, 0.45); }
+  50% { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), 0 0 0 12px rgba(255, 255, 255, 0); }
+}
+
+/* --- Scroll reveal (classes toggled by LandingComponent) --- */
+.page-content ::ng-deep .lx-reveal {
+  opacity: 0;
+  transform: translateY(40px) scale(0.97);
+  transition: opacity 1s var(--lx-ease), transform 1s var(--lx-ease);
+  transition-delay: var(--lx-delay, 0ms);
+}
+
+.page-content ::ng-deep .lx-reveal.lx-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* --- Hero: floating glow orbs, spinning halo, rising copy --- */
+:host ::ng-deep .page-content app-homesection .hero-section-1 {
+  position: relative;
+  overflow: hidden;
+}
+
+:host ::ng-deep .page-content app-homesection .hero-section-1::before,
+:host ::ng-deep .page-content app-homesection .hero-section-1::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  pointer-events: none;
+  will-change: transform;
+}
+
+:host ::ng-deep .page-content app-homesection .hero-section-1::before {
+  width: 360px;
+  height: 360px;
+  background: rgba(255, 255, 255, 0.22);
+  top: -90px;
+  left: -90px;
+  animation: lx-drift 15s ease-in-out infinite;
+}
+
+:host ::ng-deep .page-content app-homesection .hero-section-1::after {
+  width: 300px;
+  height: 300px;
+  background: rgba(139, 92, 246, 0.45);
+  bottom: -80px;
+  right: 5%;
+  animation: lx-drift 19s ease-in-out infinite reverse;
+}
+
+@keyframes lx-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(50px, 40px, 0) scale(1.15); }
+}
+
+:host ::ng-deep .page-content app-homesection .container {
+  position: relative;
+  z-index: 1;
+}
+
+:host ::ng-deep .page-content app-homesection .hero-title {
+  animation: lx-rise 1.1s var(--lx-ease) 0.15s both;
+}
+
+:host ::ng-deep .page-content app-homesection .hero-subtitle {
+  animation: lx-rise 1.1s var(--lx-ease) 0.4s both;
+}
+
+@keyframes lx-rise {
+  from { opacity: 0; transform: translateY(32px); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+
+/* Spinning conic halo behind the hero preview image */
+:host ::ng-deep .page-content app-homesection .hero-image {
+  position: relative;
+}
+
+:host ::ng-deep .page-content app-homesection .hero-image::before {
+  content: '';
+  position: absolute;
+  width: min(100%, 540px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent, rgba(255, 255, 255, 0.55), transparent 40%, rgba(139, 92, 246, 0.6), transparent 80%);
+  filter: blur(26px);
+  opacity: 0.7;
+  animation: lx-spin 14s linear infinite;
+  pointer-events: none;
+}
+
+:host ::ng-deep .page-content app-homesection .hero-image .img-box {
+  position: relative;
+  box-shadow: 0 30px 70px rgba(10, 10, 60, 0.45);
+}
+
+:host ::ng-deep .page-content app-homesection .hero-image .img-box img {
+  transition: transform 1.2s var(--lx-ease);
+}
+
+:host ::ng-deep .page-content app-homesection .hero-image .img-box:hover img {
+  transform: scale(1.07);
+}
+
+@keyframes lx-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* --- Interactive cards: lift, glow, icon pop --- */
+:host ::ng-deep .page-content .feature-card,
+:host ::ng-deep .page-content .plan-box,
+:host ::ng-deep .page-content .job-card,
+:host ::ng-deep .page-content .about-section-1 .feature,
+:host ::ng-deep .page-content .contact-info-card {
+  transition: transform 0.5s var(--lx-ease), box-shadow 0.5s var(--lx-ease), border-color 0.4s ease;
+}
+
+:host ::ng-deep .page-content .feature-card:hover,
+:host ::ng-deep .page-content .plan-box:hover,
+:host ::ng-deep .page-content .job-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 22px 48px rgba(47, 44, 225, 0.28);
+}
+
+:host ::ng-deep .page-content .about-section-1 .feature:hover {
+  transform: translateX(6px);
+}
+
+:host ::ng-deep .page-content .feature-card i,
+:host ::ng-deep .page-content .feature-icon {
+  transition: transform 0.5s var(--lx-ease);
+}
+
+:host ::ng-deep .page-content .feature-card:hover i,
+:host ::ng-deep .page-content .feature:hover .feature-icon {
+  transform: scale(1.18) rotate(-8deg);
+}
+
+/* Job / people thumbnails zoom inside their frame */
+:host ::ng-deep .page-content .job-card .job-logo {
+  overflow: hidden;
+}
+
+:host ::ng-deep .page-content .job-card .job-logo img {
+  transition: transform 0.9s var(--lx-ease);
+}
+
+:host ::ng-deep .page-content .job-card:hover .job-logo img {
+  transform: scale(1.18);
+}
+
+/* Floating stat cards in About bob gently */
+:host ::ng-deep .page-content .floating-card {
+  animation: lx-bob 6s ease-in-out infinite;
+}
+
+:host ::ng-deep .page-content .floating-card.card2 { animation-delay: -2s; }
+:host ::ng-deep .page-content .floating-card.card3 { animation-delay: -4s; }
+
+@keyframes lx-bob {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -10px; }
+}
+
+/* Section decorative circles drift slowly */
+:host ::ng-deep .page-content .about-section-1::before,
+:host ::ng-deep .page-content .recruiter-section::before {
+  animation: lx-drift 17s ease-in-out infinite;
+}
+
+:host ::ng-deep .page-content .about-section-1::after,
+:host ::ng-deep .page-content .recruiter-section::after {
+  animation: lx-drift 21s ease-in-out infinite reverse;
+}
+
+/* Buttons: shimmer sweep + press feedback */
+:host ::ng-deep .page-content .apply-btn,
+:host ::ng-deep .page-content .browse-btn,
+:host ::ng-deep .page-content .btn-primary,
+:host ::ng-deep .page-content .btn-submit {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.35s var(--lx-ease), box-shadow 0.35s ease, filter 0.3s ease;
+}
+
+:host ::ng-deep .page-content .apply-btn::after,
+:host ::ng-deep .page-content .browse-btn::after,
+:host ::ng-deep .page-content .btn-primary::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -80%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.7s ease;
+}
+
+:host ::ng-deep .page-content .apply-btn:hover::after,
+:host ::ng-deep .page-content .browse-btn:hover::after,
+:host ::ng-deep .page-content .btn-primary:hover::after {
+  left: 130%;
+}
+
+:host ::ng-deep .page-content .apply-btn:hover,
+:host ::ng-deep .page-content .browse-btn:hover:not(:disabled),
+:host ::ng-deep .page-content .btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 26px rgba(47, 44, 225, 0.35);
+}
+
+:host ::ng-deep .page-content .apply-btn:active,
+:host ::ng-deep .page-content .browse-btn:active,
+:host ::ng-deep .page-content .btn-primary:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* Contact inputs lift + glow on focus */
+:host ::ng-deep .page-content .form-control {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s var(--lx-ease);
+}
+
+:host ::ng-deep .page-content .form-control:focus {
+  transform: translateY(-2px);
+}
+
+/* --- Reduced motion: everything static, instant --- */
+@media (prefers-reduced-motion: reduce) {
+  .page-content {
+    scroll-behavior: auto;
+  }
+
+  .page-content ::ng-deep .lx-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  mat-sidenav-container,
+  .fixed-header,
+  mat-toolbar,
+  .scroll-top-btn,
+  :host ::ng-deep .page-content *,
+  :host ::ng-deep .page-content *::before,
+  :host ::ng-deep .page-content *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

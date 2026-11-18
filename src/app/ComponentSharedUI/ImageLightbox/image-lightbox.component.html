@@ -1,0 +1,32 @@
+<!-- Click on the dark area closes; a click on the picture itself never does (and never reaches the post underneath). -->
+<div class="nxlb" role="dialog" aria-modal="true" aria-label="Image viewer" (click)="close()"
+  (touchstart)="onTouchStart($event)" (touchend)="onTouchEnd($event)">
+
+  <button #closeBtn type="button" class="nxlb-btn nxlb-close" (click)="close(); $event.stopPropagation()" aria-label="Close">
+    <mat-icon>close</mat-icon>
+  </button>
+
+  <button type="button" class="nxlb-btn nxlb-nav nxlb-prev" *ngIf="many" (click)="prev(); $event.stopPropagation()"
+    aria-label="Previous picture"><mat-icon>chevron_left</mat-icon></button>
+
+  <figure class="nxlb-stage" (click)="$event.stopPropagation()">
+    <mat-spinner class="nxlb-spinner" *ngIf="loading && !failed" diameter="40"></mat-spinner>
+
+    <img *ngIf="current && !isVideo && !failed" class="nxlb-media" [class.nxlb-hidden]="loading" [src]="current.src"
+      [alt]="current.alt || 'Picture ' + (index + 1) + ' of ' + items.length" draggable="false" (load)="onLoaded()"
+      (error)="onError()" />
+
+    <video *ngIf="current && isVideo && !failed" class="nxlb-media" [src]="current.src" controls autoplay playsinline
+      (loadeddata)="onLoaded()" (error)="onError()"></video>
+
+    <div class="nxlb-error" *ngIf="failed" role="alert">
+      <mat-icon>broken_image</mat-icon>
+      <span>This picture could not be loaded.</span>
+    </div>
+  </figure>
+
+  <button type="button" class="nxlb-btn nxlb-nav nxlb-next" *ngIf="many" (click)="next(); $event.stopPropagation()"
+    aria-label="Next picture"><mat-icon>chevron_right</mat-icon></button>
+
+  <span class="nxlb-count" *ngIf="many" aria-live="polite" (click)="$event.stopPropagation()">{{ index + 1 }} / {{ items.length }}</span>
+</div>

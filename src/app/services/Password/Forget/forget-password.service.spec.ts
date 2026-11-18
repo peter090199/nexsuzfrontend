@@ -1,3 +1,4 @@
+import { NexsuzTestingModule } from 'src/testing/nexsuz-testing.module';
 import { TestBed } from '@angular/core/testing';
 
 import { ForgetPasswordService } from './forget-password.service';
@@ -6,7 +7,9 @@ describe('ForgetPasswordService', () => {
   let service: ForgetPasswordService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      imports: [NexsuzTestingModule]
+    });
     service = TestBed.inject(ForgetPasswordService);
   });
 

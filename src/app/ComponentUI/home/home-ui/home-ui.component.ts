@@ -24,6 +24,8 @@ import { EchoService } from 'src/app/services/echo.service';
 import { PusherService } from 'src/app/services/pusher.service';
 import { CommentModalUIComponent } from '../../Modal/comment-modal-ui/comment-modal-ui.component';
 import { SharedRoutinesService } from 'src/app/services/Function/shared-routines.service';
+import { ProfileImageService } from 'src/app/services/Profile/profile-image.service';
+import { filter } from 'rxjs/operators';
 interface Reaction {
   emoji: string;
   label: string;
@@ -40,6 +42,7 @@ export class HomeUIComponent implements OnInit, AfterViewInit, OnDestroy {
   error: any;
   profiles: any = [];
   profile_pic: any;
+  private photoSub?: Subscription;
   code: any;
   followers: any;
   activeHours: any;
@@ -215,7 +218,8 @@ export class HomeUIComponent implements OnInit, AfterViewInit, OnDestroy {
     private reactionsServices: ReactionEmojiService,
     private cdr: ChangeDetectorRef,
     private echoService: EchoService,
-    private pusherService: PusherService, public sharedRoutines: SharedRoutinesService
+    private pusherService: PusherService, public sharedRoutines: SharedRoutinesService,
+    private profileImages: ProfileImageService
   ) {
     this.checkScreenSize();
   }
@@ -227,20 +231,18 @@ export class HomeUIComponent implements OnInit, AfterViewInit, OnDestroy {
   isSidebarCollapsed: boolean = true;
   // ----------------------- LIFECYCLE -----------------------
 
-  isPageLoading = true;
 
   ngOnInit(): void {
+    // a new / removed profile photo shows on the profile card and composer at once
+    this.photoSub = this.profileImages.photo$.pipe(filter(url => url !== undefined)).subscribe(url => {
+      this.profile_pic = { ...(this.profile_pic || {}), photo_pic: url };
+    });
     this.currentUserCode = this.authService.getAuthCode();
     this.skeletonUsers = Array.from({ length: 8 });
     this.skeletonPosts = Array.from({ length: 5 });
     this.loadRealtimePosts();
     this.loadAllApisConcurrently();
     this.loadUserPost();
-
-    // Windows loading screen
-    setTimeout(() => {
-      this.isPageLoading = false;
-    }, 2000);
 
   }
   newPostSubscription!: Subscription;
@@ -432,6 +434,7 @@ export class HomeUIComponent implements OnInit, AfterViewInit, OnDestroy {
 
 
   ngOnDestroy(): void {
+    this.photoSub?.unsubscribe();
     if (this.observer) this.observer.disconnect();
     clearInterval(this.autoSlideInterval);
     clearInterval(this.scrollInterval);
@@ -629,6 +632,8 @@ export class HomeUIComponent implements OnInit, AfterViewInit, OnDestroy {
     dialogConfig.disableClose = true;
     dialogConfig.autoFocus = true;
     dialogConfig.width = '600px';
+    dialogConfig.maxWidth = '96vw';     // never wider than a phone screen
+    dialogConfig.autoFocus = false;
     const dialogRef = this.dialog.open(PostUIComponent, dialogConfig);
 
     dialogRef.afterClosed().subscribe(() => {

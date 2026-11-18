@@ -68,12 +68,12 @@ h2{
     font-size:28px;
     font-weight:700;
     line-height:1.2;
-    color:#222;
+    color:var(--nexsuz-text);
 }
 
 p{
     margin:0;
-    color:#666;
+    color:var(--nexsuz-muted);
     line-height:1.7;
     font-size:15px;
 }
@@ -108,11 +108,11 @@ mat-divider{
     margin:0 0 4px;
     font-size:16px;
     font-weight:700;
-    color:#222;
+    color:var(--nexsuz-text);
 }
 
 .feature-item small{
-    color:#666;
+    color:var(--nexsuz-muted);
     font-size:13px;
     line-height:1.5;
 }
@@ -194,7 +194,7 @@ mat-divider{
 .loading-content p{
     margin:0;
     font-size:14px;
-    color:#666;
+    color:var(--nexsuz-muted);
 }
 
 .win-spinner{
@@ -348,7 +348,7 @@ mat-divider{
 
 .activation-success p{
 
-    color:#666;
+    color:var(--nexsuz-muted);
 
     margin:15px 0 25px;
 

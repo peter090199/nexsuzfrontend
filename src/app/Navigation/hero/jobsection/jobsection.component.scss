@@ -54,7 +54,7 @@
 
 .card-top-bar {
   height: 6px;
-  background: linear-gradient(90deg, #4338ca, #06b6d4, #10b981);
+  background: linear-gradient(90deg, var(--nexsuz-primary), var(--nexsuz-accent), #10b981);
 
   @media (max-width: 480px) {
     height: 5px;
@@ -117,12 +117,12 @@
   color: #fff;
   letter-spacing: 0.4px;
   white-space: nowrap;
-  background: linear-gradient(90deg, #4338ca, #06b6d4);
+  background: linear-gradient(90deg, var(--nexsuz-primary), var(--nexsuz-accent));
 
   &.onsite    { background: linear-gradient(90deg, #b91c1c, #ef4444); }
   &.hybrid    { background: linear-gradient(90deg, #d97706, #f59e0b); }
   &.freelance { background: linear-gradient(90deg, #7c3aed, #a855f7); }
-  &.default   { background: linear-gradient(90deg, #6b7280, #9ca3af); }
+  &.default   { background: linear-gradient(90deg, var(--nexsuz-muted), #9ca3af); }
 
   @media (max-width: 480px) {
     font-size: 10px;
@@ -133,7 +133,7 @@
 .job-name {
   font-size: 19px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--nexsuz-text);
   margin: 6px 0 12px;
   word-break: break-word; // long titles wrap instead of overflowing card
 
@@ -145,14 +145,14 @@
 
 .job-position, .location, .salary {
   font-size: 13.5px;
-  color: #6b7280;
+  color: var(--nexsuz-muted);
   margin: 6px 0;
   display: flex;
   align-items: center;
   gap: 8px;
 
   i {
-    color: #4338ca;
+    color: var(--nexsuz-primary);
     width: 14px;
     text-align: center;
     flex-shrink: 0;
@@ -180,7 +180,7 @@
   font-size: 14px;
   color: #fff;
   cursor: pointer;
-  background: linear-gradient(90deg, #4338ca, #06b6d4, #10b981);
+  background: linear-gradient(90deg, var(--nexsuz-primary), var(--nexsuz-accent), #10b981);
   transition: opacity 0.2s;
 
   &:hover { opacity: 0.9; }
@@ -193,7 +193,7 @@
 
 .browse-btn {
   padding: 10px 28px;
-  background: #1a1a1a;
+  background: var(--nexsuz-text);
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -210,7 +210,7 @@
   text-align: center;
 
   h3 { font-size: 16px; }
-  p  { font-size: 13px; color: #777; }
+  p  { font-size: 13px; color: var(--nexsuz-muted); }
 
   @media (max-width: 480px) {
     h3 { font-size: 15px; }
