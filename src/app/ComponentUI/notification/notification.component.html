@@ -8,7 +8,7 @@
   <mat-progress-bar *ngIf="isLoading" mode="indeterminate" color="primary"></mat-progress-bar>
 
   <mat-card-content>
-    <mat-tab-group *ngIf="!isLoading">
+    <mat-tab-group *ngIf="!isLoading" (selectedTabChange)="onTab($event.tab.textLabel)">
       <!-- Unread Notifications -->
       <mat-tab label="Unread ({{ unreadNotifications().length }})">
         <div *ngIf="!isLoading && notifications.length === 0" class="no-notifications">
@@ -68,6 +68,34 @@
       
 
 
+
+      <!-- Activity: friend requests, accepted requests, reactions, comments -->
+      <mat-tab label="Activity">
+        <mat-progress-bar *ngIf="activityLoading" mode="indeterminate"></mat-progress-bar>
+
+        <div class="no-notifications" *ngIf="activityError">
+          Couldn't load your activity. <button mat-button color="primary" (click)="loadActivity()">Try again</button>
+        </div>
+        <div class="no-notifications" *ngIf="!activityLoading && !activityError && !activity.length">
+          No activity yet. Friend requests, reactions and comments will appear here.
+        </div>
+
+        <ul class="activity-list" *ngIf="activity.length">
+          <li *ngFor="let a of activity" class="activity-item" [class.unread]="a.unread" (click)="openActivity(a)" tabindex="0"
+            (keydown.enter)="openActivity(a)" role="button">
+            <span class="act-av">
+              <img [src]="a.actor?.photo_pic || 'assets/images/default.png'" nxFallback alt="" />
+              <mat-icon class="act-badge">{{ activityIcon(a) }}</mat-icon>
+            </span>
+            <span class="act-text">
+              <span><strong>{{ a.actor?.fullname || 'Someone' }}</strong> {{ a.text }}</span>
+              <span class="act-excerpt" *ngIf="a.excerpt">"{{ a.excerpt }}"</span>
+              <time>{{ ago(a.created_at) }}</time>
+            </span>
+            <i class="act-unread" *ngIf="a.unread" aria-label="New"></i>
+          </li>
+        </ul>
+      </mat-tab>
     </mat-tab-group>
   </mat-card-content>
 

@@ -87,3 +87,71 @@
 .mode-label { font-size: 11px; font-weight: 700; color: var(--nexsuz-primary); text-transform: uppercase; letter-spacing: .5px; }
 .saved-badge { position: absolute; left: 6px; bottom: 6px; padding: 2px 8px; border-radius: 10px; background: rgba(0, 0, 0, .6); color: #fff; font-size: 10px; font-weight: 700; pointer-events: none; }
 .saved-badge.new { background: var(--nexsuz-primary); }
+
+
+/* =====================================================================
+   MODERN COMPOSER: fixed 600px dialog, header + footer stay put, the middle scrolls
+   ===================================================================== */
+:host {
+  display: flex; flex-direction: column;
+  height: 600px; max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px);
+  margin: -24px;                               /* cancels the dialog container's padding: the composer owns the whole box */
+  background: #fff; border-radius: 16px; overflow: hidden;
+}
+.composer { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 0; }
+
+/* header */
+.composer-head { flex: none; display: flex; align-items: center; gap: 12px; padding: 16px 12px 12px 20px; border-bottom: 1px solid var(--nx-border, #e3e9f3); background: #fff; }
+.composer-avatar { width: 52px; height: 52px; border: 2px solid #fff; box-shadow: 0 0 0 1px #d0e5fc; }
+.composer-who { gap: 6px; }
+.composer-who strong { font-size: 15px; line-height: 1.2; color: #1b2a4a; }
+.composer-title { display: none; font-size: 13px; font-weight: 700; color: #6b7a99; white-space: nowrap; }
+@media (min-width: 520px) { .composer-title { display: inline; } }
+.composer-close { color: #6b7a99; }
+.composer-close:hover:not([disabled]) { background: #f1f5fa; color: #1b2a4a; }
+
+.visibility { position: relative; gap: 0; padding: 0 6px 0 10px; border: 1.5px solid #c5d0e0; background: #fff; transition: border-color .2s, background .2s; }
+.visibility:hover, .visibility:focus-within { border-color: #0a66c2; background: #f4f9ff; }
+.visibility .v-ico { color: #0a66c2; margin-right: 4px; }
+.visibility select { appearance: none; -webkit-appearance: none; padding: 0 16px 0 0; min-height: 30px; font-size: 12px; color: #1b2a4a; }
+.visibility .v-caret { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); font-size: 20px; width: 20px; height: 20px; color: #6b7a99; pointer-events: none; }
+
+/* body: the only part that scrolls */
+.composer-body { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 12px 20px; gap: 12px; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #c5d0e0 transparent; -webkit-overflow-scrolling: touch; }
+.composer-body::-webkit-scrollbar { width: 8px; }
+.composer-body::-webkit-scrollbar-thumb { background: #c5d0e0; border-radius: 8px; }
+.composer-text { min-height: 150px; max-height: none; padding: 4px 0; border: 0; border-radius: 0; font-size: 16px; line-height: 1.55; resize: none; background: transparent; box-shadow: none; }
+.composer-text::placeholder { color: #8a97b0; }
+.composer-text:focus { border: 0; box-shadow: none; }
+.char-count { align-self: flex-end; margin-top: -6px; font-size: 11px; color: #8a97b0; font-variant-numeric: tabular-nums; }
+
+.empty-drop { min-height: 132px; border: 2px dashed #c5dcf3; border-radius: 14px; background: linear-gradient(180deg, #fafcff, #f1f7fe); }
+.empty-drop:hover:not([disabled]) { border-color: #0a66c2; }
+.preview, .video-preview { border-radius: 14px; }
+.preview { box-shadow: 0 1px 3px rgba(0, 65, 130, .12); transition: transform .15s ease, box-shadow .2s ease; }
+.preview:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 65, 130, .18); }
+
+/* footer: always visible */
+.composer-foot { flex: none; padding: 10px 16px 12px 20px; border-top: 1px solid var(--nx-border, #e3e9f3); background: #fff; box-shadow: 0 -4px 12px rgba(0, 65, 130, .04); }
+.tool { border-radius: 22px; color: #4a5a78; }
+.tool mat-icon { color: #0a66c2; }
+.tool:hover:not([disabled]) { background: #eaf3fc; color: #004182; }
+.post-btn { min-width: 104px; padding: 0 22px; box-shadow: 0 2px 8px rgba(0, 65, 130, .25); transition: transform .15s ease, box-shadow .2s ease; }
+.post-btn:hover:not([disabled]) { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0, 65, 130, .3); }
+.progress { padding-top: 2px; }
+
+@media (max-width: 600px) {
+  :host { border-radius: 14px; }
+  .composer-head { padding: 12px 8px 10px 14px; }
+  .composer-avatar { width: 44px; height: 44px; }
+  .composer-body { padding: 10px 14px; }
+  .composer-text { min-height: 120px; font-size: 15px; }
+  .composer-foot { padding: 8px 12px 10px 14px; }
+  .tool span { display: none; }                  /* icon-only tools on phones (the hint still names them) */
+  .tool { padding: 0 10px; min-width: 44px; justify-content: center; }
+  .hint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .preview, .post-btn { transition: none; } }
+
+/* icons never spill outside their own box (e.g. if the icon font is blocked or still loading) */
+.composer mat-icon { overflow: hidden; }

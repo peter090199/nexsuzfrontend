@@ -13,9 +13,9 @@
   --charcoal: #1b2430;
   --line-soft: rgba(14, 26, 43, 0.1);
 
-  --font-display: 'Poppins', 'Fraunces', sans-serif;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-display: Verdana, Geneva, Tahoma, sans-serif;
+  --font-body: Verdana, Geneva, Tahoma, sans-serif;
+  --font-mono: Verdana, Geneva, Tahoma, sans-serif;
 
   font-family: var(--font-body);
   color: var(--charcoal);

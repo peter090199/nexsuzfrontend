@@ -36,3 +36,13 @@
   .pick .emoji { font-size: 22px; }
 }
 @media (prefers-reduced-motion: reduce) { .picker, .pick { animation: none; } }
+
+/* ---- bounce on the chosen face + picker polish + sound switch ---- */
+.main .emoji.pop { animation: rb-bounce .45s cubic-bezier(.2, 1.7, .4, 1) both; }
+@keyframes rb-bounce { 0% { transform: scale(.4) rotate(-14deg); } 55% { transform: scale(1.5) rotate(8deg); } 100% { transform: scale(1) rotate(0); } }
+.pick:active .emoji { transform: scale(1.15); }
+.snd { align-self: center; width: 30px; height: 30px; margin-left: 4px; padding: 0; border: 0; border-radius: 50%; background: #f1f5fa; color: #6b7a99; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex: none; transition: background .2s ease, color .2s ease; }
+.snd:hover, .snd:focus-visible { background: var(--nx-sky-soft); color: #004182; outline: 0; }
+.snd mat-icon { font-size: 18px; width: 18px; height: 18px; line-height: 18px; margin: 0; }
+.compact .snd { width: 26px; height: 26px; }
+@media (prefers-reduced-motion: reduce) { .main .emoji.pop { animation: none; } }

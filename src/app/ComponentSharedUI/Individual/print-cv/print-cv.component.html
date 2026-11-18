@@ -1,142 +1,227 @@
-<!-- Print Header -->
-<mat-toolbar color="primary" class="print-header">
-  <span>Curriculum Vitae</span>
+<!-- Action bar (never part of print / PDF) -->
+<div class="cv-actions">
+  <div class="cv-actions-title">
+    <mat-icon>description</mat-icon>
+    <h2>View Curriculum Vitae</h2>
+    <button *ngIf="isDialog" mat-icon-button class="cv-close-sm" aria-label="Close" (click)="close()"><mat-icon>close</mat-icon></button>
+  </div>
+  <div class="cv-actions-btns" role="toolbar" aria-label="CV actions">
+    <button mat-stroked-button color="primary" (click)="editCV()" [disabled]="finishing" aria-label="Edit CV">
+      <mat-icon>edit</mat-icon><span class="lbl">Edit CV</span>
+    </button>
+    <button mat-stroked-button color="primary" (click)="preview()" [disabled]="isLoading || finishing" [class.is-on]="previewMode"
+      [attr.aria-pressed]="previewMode" [attr.aria-label]="previewMode ? 'Exit preview' : 'Preview CV'">
+      <mat-icon>{{ previewMode ? 'visibility_off' : 'visibility' }}</mat-icon><span class="lbl">{{ previewMode ? 'Exit preview' : 'Preview CV' }}</span>
+    </button>
+    <button mat-stroked-button color="primary" (click)="showSettings = !showSettings" [class.is-on]="showSettings"
+      [attr.aria-expanded]="showSettings" aria-controls="cv-settings" aria-label="CV settings">
+      <mat-icon>settings</mat-icon><span class="lbl">Settings</span>
+    </button>
+    <button mat-stroked-button color="primary" (click)="share()" [disabled]="!cv" aria-label="Share CV">
+      <mat-icon>share</mat-icon><span class="lbl">Share</span>
+    </button>
+    <button mat-stroked-button color="primary" (click)="printData()" [disabled]="!cv || !!busy" aria-label="Print CV">
+      <mat-icon>print</mat-icon><span class="lbl">Print</span>
+    </button>
+    <button mat-stroked-button color="primary" (click)="downloadPDF()" [disabled]="!cv || !!busy" aria-label="Download CV as PDF">
+      <mat-spinner *ngIf="busy === 'pdf'" diameter="18"></mat-spinner>
+      <mat-icon *ngIf="busy !== 'pdf'">picture_as_pdf</mat-icon><span class="lbl">{{ busy === 'pdf' ? 'Creating…' : 'PDF' }}</span>
+    </button>
+    <button mat-flat-button color="primary" class="cv-finish" (click)="finish()" [disabled]="!cv || finishing || isLoading" aria-label="Finish and save CV">
+      <mat-spinner *ngIf="finishing" diameter="18"></mat-spinner>
+      <mat-icon *ngIf="!finishing">check_circle</mat-icon><span class="lbl">{{ finishing ? 'Saving…' : 'Finish' }}</span>
+    </button>
+    <button *ngIf="isDialog" mat-stroked-button class="cv-close-lg" (click)="close()" [disabled]="finishing" aria-label="Close">
+      <mat-icon>close</mat-icon><span class="lbl">Close</span>
+    </button>
+  </div>
+</div>
 
-  <span class="spacer"></span>
-  <button mat-icon-button (click)="printData()">
-    <mat-icon>print</mat-icon>
-  </button>
+<div class="cv-scroll" [class.is-preview]="previewMode">
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate"></mat-progress-bar>
 
-  <!-- Close Button (Material Design) -->
-  <button mat-icon-button color="warn" aria-label="Close" mat-dialog-close>
-    <mat-icon>close</mat-icon>
-  </button>
-</mat-toolbar>
-<div id="print-content" class="print-content">
-
-  <header class="cv-header">
-    <div class="logo">
-      <img src="assets/images/nexsuz.png" alt="logo">
+  <section class="cv-settings" id="cv-settings" *ngIf="showSettings && !previewMode" aria-label="CV settings">
+    <div class="cv-settings-head">
+      <h3><mat-icon>tune</mat-icon> CV settings</h3>
+      <button mat-icon-button aria-label="Close settings" (click)="showSettings = false"><mat-icon>close</mat-icon></button>
     </div>
-  </header>
-
-  <div *ngIf="cvData?.length; else loadingOrError">
-    <div *ngFor="let cv of cvData">
-
-      <div class="header">
-        <div class="header-content">
-          <div class="data-item">
-            <div class="label">FIRST NAME:</div>
-            <div class="value">{{ cv.fname }}</div>
-          </div>
-          <div class="data-item">
-            <div class="label">FAMILY NAME:</div>
-            <div class="value">{{ cv.lname }}</div>
-          </div>
-          <div class="data-item">
-            <div class="label">PROFESSION:</div>
-            <div class="value">{{ cv.profession }}</div>
-          </div>
-          <div class="data-item">
-            <div class="label">DATE OF BIRTH:</div>
-            <div class="value">{{ cv.date_birth }}</div>
-          </div>
-          <div class="data-item">
-            <div class="label">CONTACT NUMBER:</div>
-            <div class="value">{{ cv.contact_no }}</div>
-          </div>
-          <div class="data-item">
-            <div class="label">EMAIL ADDRESS:</div>
-            <div class="value">{{ cv.email }}</div>
-          </div>
-          <div class="data-item">
-            <div class="label">CURRENT LOCATION:</div>
-            <div class="value">{{ cv.current_location }}</div>
-          </div>
-        </div>
-        <img [src]="cv.photo_pic" alt="CV Photo">
+    <p class="cv-settings-label">Header background color</p>
+    <div class="cv-swatches" role="group" aria-label="Color presets">
+      <button type="button" *ngFor="let c of presets" class="sw" [style.background-color]="c"
+        [class.on]="c === headerColor" (click)="setColor(c)" [attr.aria-label]="'Use color ' + c"
+        [attr.aria-pressed]="c === headerColor"></button>
+      <label class="sw custom" [class.on]="presets.indexOf(headerColor) < 0" matTooltip="Custom color">
+        <mat-icon>colorize</mat-icon>
+        <input type="color" [value]="headerColor" (input)="setColor($any($event.target).value)" aria-label="Custom header color" />
+      </label>
+      <span class="cv-hex">{{ headerColor }}</span>
+    </div>
+    <div class="cv-font-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Font</mat-label>
+        <mat-select [value]="fontFamily" (selectionChange)="setFontFamily($event.value)" aria-label="Font family">
+          <mat-option *ngFor="let f of fonts" [value]="f.name" [style.font-family]="f.stack">{{ f.name }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <div class="cv-size-ctl" role="group" aria-label="Font size">
+        <button mat-stroked-button type="button" (click)="stepFont(-1)" [disabled]="fontSize <= sizes[0]"
+          aria-label="Decrease font size" matTooltip="Smaller">A&minus;</button>
+        <mat-form-field appearance="outline">
+          <mat-label>Size</mat-label>
+          <mat-select [value]="fontSize" (selectionChange)="setFontSize($event.value)" aria-label="Font size">
+            <mat-option *ngFor="let s of sizes" [value]="s">{{ s }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <button mat-stroked-button type="button" (click)="stepFont(1)" [disabled]="fontSize >= sizes[sizes.length - 1]"
+          aria-label="Increase font size" matTooltip="Larger">A+</button>
       </div>
-
-      <!-- Education -->
-      <section class="cv-section" *ngIf="cv.lines.education?.length">
-        <h2>Education</h2>
-        <div *ngFor="let edu of cv.lines.education" class="cv-item">
-          <p>{{ edu.highest_education }}</p>
-          <p>{{ edu.school_name }}</p>
-          <p>{{ edu.start_month }} {{ edu.start_year }} - {{ edu.end_month }} {{ edu.end_year }}</p>
-        </div>
-      </section>
-
-      <!-- Languages -->
-      <section class="cv-section" *ngIf="cv.lines.language?.length">
-        <h2>Languages</h2>
-        <ul class="=cv-item">
-          <li *ngFor="let lang of cv.lines.language">{{ lang.language }}</li>
-        </ul>
-      </section>
-
-      <!-- Trainings -->
-      <section class="cv-section" *ngIf="cv.lines.training?.length">
-        <h2>Trainings</h2>
-        <div *ngFor="let t of cv.lines.training" class="cv-item">
-          <p>Training Title: {{ t.training_title }}</p>
-          <p>Training Provider: {{ t.training_provider }}</p>
-          <p>Date Completed: {{ t.date_completed }}</p>
-        </div>
-      </section>
-
-      <!-- Seminars -->
-      <section class="cv-section" *ngIf="cv.lines.seminar?.length">
-        <h2>Seminars</h2>
-        <div *ngFor="let s of cv.lines.seminar" class="cv-item">
-          <p>Seminar Title: {{ s.seminar_title }}</p>
-          <p>Seminar Provider: {{ s.seminar_provider }}</p>
-          <p>Date Completed: {{ s.date_completed }}</p>
-        </div>
-      </section>
-
-      <!-- Skills -->
-      <section class="cv-section" *ngIf="cv.lines.skills?.length">
-        <h2>Skills</h2>
-        <ul class="cv-item">
-          <li *ngFor="let skill of cv.lines.skills">{{ skill.skills }}</li>
-        </ul>
-      </section>
-
-      <!-- Employment -->
-      <section class="cv-section" *ngIf="cv.lines.employment?.length">
-        <h2>Employment</h2>
-        <div *ngFor="let job of cv.lines.employment" class="cv-item">
-          <p>Company Name: {{ job.company_name }}</p>
-          <p>Position: {{ job.position }}</p>
-          <p>Description: {{ job.job_description }}</p>
-          <p>End Date: {{ job.date_completed }}</p>
-        </div>
-      </section>
-
-      <!-- Certificates -->
-      <section class="cv-section" *ngIf="cv.lines.certificate?.length">
-        <h2>Certificates</h2>
-        <div *ngFor="let cert of cv.lines.certificate" class="cv-item">
-          <p>Certificate Title: {{ cert.certificate_title }}</p>
-          <p>Provider: {{ cert.certificate_provider }}</p>
-          <p>Completion Date: {{ cert.date_completed }}</p>
-        </div>
-      </section>
-
-      <!-- Summary -->
-      <section class="cv-section" *ngIf="cv.summary">
-        <h2>Summary</h2>
-        <div class="cv-item">
-          <p>{{ cv.summary }}</p>
-        </div>
-      </section>
-
     </div>
+    <div class="cv-font-preview" [style.font-family]="fontStack" [style.font-size.px]="fontSize">
+      The quick brown fox jumps over the lazy dog. 0123456789
+    </div>
+
+    <div class="cv-settings-row">
+      <mat-slide-toggle color="primary" [checked]="printInColor" (change)="setPrintInColor($event.checked)">
+        Print the header in color
+      </mat-slide-toggle>
+      <button mat-button type="button" (click)="resetSettings()"><mat-icon>restart_alt</mat-icon> Reset</button>
+    </div>
+    <p class="cv-settings-hint">Applies to the CV, PDF and print. Header text color adjusts automatically. Fonts you do not have installed fall back to a similar one. Saved on this device.</p>
+  </section>
+
+  <div class="cv-preview-note" *ngIf="previewMode && cv">
+    <mat-icon>visibility</mat-icon>
+    <span>Preview: this is how your CV will look when printed or downloaded.</span>
+    <button mat-button color="primary" type="button" (click)="preview()">Exit preview</button>
   </div>
 
-  <ng-template #loadingOrError>
-    <p *ngIf="!error">Loading CV data...</p>
-    <p *ngIf="error" class="error-message">{{ error }}</p>
-  </ng-template>
+  <div class="cv-banner warn" *ngIf="missing.length">
+    <mat-icon>error_outline</mat-icon>
+    <div><strong>Complete these before finishing:</strong> {{ missing.join(', ') }}.
+      <a href="javascript:void(0)" (click)="editCV()">Edit CV</a></div>
+  </div>
+  <div class="cv-banner" *ngIf="error && cv"><mat-icon>info_outline</mat-icon> {{ error }}</div>
+
+  <div class="cv-state" *ngIf="!cv && !isLoading">
+    <mat-icon>description</mat-icon>
+    <p>{{ error || 'No CV data found.' }}</p>
+    <button mat-flat-button color="primary" (click)="editCV()">Edit CV</button>
+  </div>
+
+  <article #printContent id="print-content" class="cv-sheet" *ngIf="cv" [class.preview-paper]="previewMode" [class.plain-head]="previewMode && !printInColor"
+    [style.--cv-font]="fontStack" [style.--cv-scale]="fontScale" [style.--cv-accent]="headerColor === '#ffffff' ? '#004182' : headerColor">
+
+    <!-- Header -->
+    <header class="cv-head" data-pdf-block [style.background-color]="headerColor" [style.color]="headerText"
+      [class.light]="headerText !== '#ffffff'">
+      <img class="cv-photo" [src]="photoUrl" nxFallback alt="Profile photo" />
+      <div class="cv-head-text">
+        <h1>{{ fullName(cv) }}</h1>
+        <p class="cv-title" *ngIf="cv.profession">{{ cv.profession }}</p>
+        <ul class="cv-contact-inline">
+          <li *ngIf="cv.email && !hidden(cv.email_visibility)"><mat-icon>email</mat-icon><span>{{ cv.email }}</span></li>
+          <li *ngIf="cv.contact_no && !hidden(cv.contact_visibility)"><mat-icon>phone</mat-icon><span>{{ cv.contact_no }}</span></li>
+          <li *ngIf="location(cv)"><mat-icon>location_on</mat-icon><span>{{ location(cv) }}</span></li>
+        </ul>
+      </div>
+    </header>
+
+    <div class="cv-body">
+      <!-- LEFT column -->
+      <aside class="cv-side">
+        <section class="cv-block" data-pdf-block>
+          <h2><mat-icon>person</mat-icon> Personal</h2>
+          <dl class="cv-dl">
+            <ng-container *ngIf="cv.date_birth"><dt>Date of birth</dt><dd>{{ cv.date_birth | date:'mediumDate' }}</dd></ng-container>
+            <ng-container *ngIf="cv.home_country || cv.home_state"><dt>Home</dt>
+              <dd>{{ homePlace(cv) }}</dd></ng-container>
+            <ng-container *ngIf="location(cv)"><dt>Current location</dt><dd>{{ location(cv) }}</dd></ng-container>
+            <ng-container *ngIf="cv.email && !hidden(cv.email_visibility)"><dt>Email</dt><dd class="wrap">{{ cv.email }}</dd></ng-container>
+            <ng-container *ngIf="cv.contact_no && !hidden(cv.contact_visibility)"><dt>Phone</dt><dd>{{ cv.contact_no }}</dd></ng-container>
+          </dl>
+        </section>
+
+        <section class="cv-block" data-pdf-block *ngIf="cv.lines.skills.length">
+          <h2><mat-icon>bolt</mat-icon> Skills</h2>
+          <ul class="cv-chips">
+            <li *ngFor="let s of cv.lines.skills; trackBy: trackByIndex">{{ s.skills }}</li>
+          </ul>
+        </section>
+
+        <section class="cv-block" data-pdf-block *ngIf="cv.lines.language.length">
+          <h2><mat-icon>translate</mat-icon> Languages</h2>
+          <ul class="cv-chips">
+            <li *ngFor="let l of cv.lines.language; trackBy: trackByIndex">{{ l.language }}</li>
+          </ul>
+        </section>
+      </aside>
+
+      <!-- RIGHT column -->
+      <main class="cv-main">
+        <section class="cv-block" data-pdf-block *ngIf="cv.summary">
+          <h2><mat-icon>article</mat-icon> Professional Summary</h2>
+          <p class="cv-text">{{ cv.summary }}</p>
+        </section>
+
+        <section class="cv-block" *ngIf="cv.lines.employment.length">
+          <h2><mat-icon>work</mat-icon> Work Experience</h2>
+          <div class="cv-item" data-pdf-block *ngFor="let job of cv.lines.employment; trackBy: trackByIndex">
+            <div class="cv-item-head">
+              <h3>{{ job.position || 'Position' }}</h3>
+              <span class="cv-date" *ngIf="job.date_completed">Until {{ job.date_completed | date:'MMM y' }}</span>
+            </div>
+            <p class="cv-sub" *ngIf="job.company_name">{{ job.company_name }}</p>
+            <p class="cv-text" *ngIf="job.job_description">{{ job.job_description }}</p>
+          </div>
+        </section>
+
+        <section class="cv-block" *ngIf="cv.lines.education.length">
+          <h2><mat-icon>school</mat-icon> Education</h2>
+          <div class="cv-item" data-pdf-block *ngFor="let edu of cv.lines.education; trackBy: trackByIndex">
+            <div class="cv-item-head">
+              <h3>{{ edu.highest_education }}</h3>
+              <span class="cv-date" *ngIf="edu.start_year || edu.end_year">
+                {{ edu.start_month }} {{ edu.start_year }}<ng-container *ngIf="edu.end_year"> – {{ edu.end_month }} {{ edu.end_year }}</ng-container>
+              </span>
+            </div>
+            <p class="cv-sub" *ngIf="edu.school_name">{{ edu.school_name }}</p>
+            <p class="cv-text muted" *ngIf="edu.status">{{ edu.status }}</p>
+          </div>
+        </section>
+
+        <section class="cv-block" *ngIf="cv.lines.certificate.length">
+          <h2><mat-icon>workspace_premium</mat-icon> Certifications</h2>
+          <div class="cv-item" data-pdf-block *ngFor="let c of cv.lines.certificate; trackBy: trackByIndex">
+            <div class="cv-item-head">
+              <h3>{{ c.certificate_title }}</h3>
+              <span class="cv-date" *ngIf="c.date_completed">{{ c.date_completed | date:'MMM y' }}</span>
+            </div>
+            <p class="cv-sub" *ngIf="c.certificate_provider">{{ c.certificate_provider }}</p>
+          </div>
+        </section>
+
+        <section class="cv-block" *ngIf="cv.lines.training.length">
+          <h2><mat-icon>model_training</mat-icon> Training</h2>
+          <div class="cv-item" data-pdf-block *ngFor="let t of cv.lines.training; trackBy: trackByIndex">
+            <div class="cv-item-head">
+              <h3>{{ t.training_title }}</h3>
+              <span class="cv-date" *ngIf="t.date_completed">{{ t.date_completed | date:'MMM y' }}</span>
+            </div>
+            <p class="cv-sub" *ngIf="t.training_provider">{{ t.training_provider }}</p>
+          </div>
+        </section>
+
+        <section class="cv-block" *ngIf="cv.lines.seminar.length">
+          <h2><mat-icon>groups</mat-icon> Seminars</h2>
+          <div class="cv-item" data-pdf-block *ngFor="let s of cv.lines.seminar; trackBy: trackByIndex">
+            <div class="cv-item-head">
+              <h3>{{ s.seminar_title }}</h3>
+              <span class="cv-date" *ngIf="s.date_completed">{{ s.date_completed | date:'MMM y' }}</span>
+            </div>
+            <p class="cv-sub" *ngIf="s.seminar_provider">{{ s.seminar_provider }}</p>
+          </div>
+        </section>
+      </main>
+    </div>
+  </article>
 </div>

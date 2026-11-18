@@ -1,9 +1,10 @@
 import { REACTIONS, applyMyReaction, emptySummary, reactionOf } from './reaction-meta';
 
 describe('reaction-meta', () => {
-  it('offers the seven Facebook-style reactions, Care included', () => {
-    expect(REACTIONS.map(r => r.label)).toEqual(['Like', 'Love', 'Care', 'Haha', 'Wow', 'Sad', 'Angry']);
-    expect(reactionOf('Care')?.emoji).toBe('🤗');
+  it('offers the six Facebook-style reactions', () => {
+    expect(REACTIONS.map(r => r.label)).toEqual(['Like', 'Love', 'Haha', 'Wow', 'Sad', 'Angry']);
+    expect(REACTIONS.map(r => r.emoji)).toEqual(['👍', '❤️', '😂', '😮', '😢', '😡']);
+    expect(reactionOf('Care')?.emoji).toBe('🤗');                 // an old "Care" reaction still shows its face
     expect(reactionOf('Nope')).toBeUndefined();
     expect(reactionOf(null)).toBeUndefined();
   });

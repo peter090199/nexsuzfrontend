@@ -1,4 +1,4 @@
-/** The reactions NEXSUZ offers (must match App\Helpers\ReactionSummary::ALLOWED in Laravel). */
+/** The six reactions NEXSUZ offers (Laravel's App\Helpers\ReactionSummary::ALLOWED also still accepts the old "Care"). */
 export interface ReactionDef {
   label: string;
   emoji: string;
@@ -8,15 +8,19 @@ export interface ReactionDef {
 export const REACTIONS: ReactionDef[] = [
   { label: 'Like', emoji: '👍', color: '#0a66c2' },
   { label: 'Love', emoji: '❤️', color: '#e0245e' },
-  { label: 'Care', emoji: '🤗', color: '#d9951a' },
   { label: 'Haha', emoji: '😂', color: '#d9951a' },
   { label: 'Wow', emoji: '😮', color: '#d9951a' },
   { label: 'Sad', emoji: '😢', color: '#d9951a' },
   { label: 'Angry', emoji: '😡', color: '#d4560b' },
 ];
 
+/** Reactions saved before the picker was reduced to six: they must keep their face and colour. */
+const LEGACY_REACTIONS: ReactionDef[] = [
+  { label: 'Care', emoji: '🤗', color: '#d9951a' },
+];
+
 export function reactionOf(label?: string | null): ReactionDef | undefined {
-  return REACTIONS.find(r => r.label === label);
+  return REACTIONS.find(r => r.label === label) || LEGACY_REACTIONS.find(r => r.label === label);
 }
 
 export interface ReactionSummaryData {

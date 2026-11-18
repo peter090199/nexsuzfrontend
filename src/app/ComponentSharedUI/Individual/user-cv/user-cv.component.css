@@ -966,3 +966,89 @@ mat-horizontal-stepper {
 
 
 } */
+
+/* =====================================================================
+   NEXSUZ polish & responsive overrides (kept last so they win the cascade)
+   ===================================================================== */
+.profile-toolbar { background: #004182; color: #fff; padding: 8px 16px; min-height: 52px; gap: 8px; justify-content: space-between; }
+.profile-title { text-align: left; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.toolbar-btn { background: rgba(255,255,255,.12); color: #fff; border-color: rgba(255,255,255,.5); min-height: 40px; width: auto; flex: none; }
+.toolbar-btn mat-icon { color: #fff; margin-right: 6px; font-size: 20px; }
+
+.stepper-container { display: block; width: 100%; max-width: 860px; min-height: 0; max-height: none; margin: 16px auto; padding: 0 12px; overflow: visible; background: transparent; }
+mat-horizontal-stepper { display: block; width: 100%; max-width: none; height: auto; max-height: none; overflow: visible; border-radius: 14px; box-shadow: 0 4px 18px rgba(0,65,130,.08); }
+.profile-container { padding: 4px 16px 16px; }
+.form-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-bottom: 4px; }
+.form-field { flex: 1 1 220px; min-width: 0; }
+mat-form-field { max-width: 100%; }
+mat-slide-toggle { margin: 0 0 0 auto; }
+.form-container { max-width: none; }
+.button-end { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.button-end button, .form-row .button-field { min-height: 40px; }
+.profile-picture-preview { width: 96px; height: 96px; max-width: none; max-height: none; border-radius: 50%; object-fit: cover; border: 3px solid #d0e5fc; }
+input[type=file] { max-width: 100%; }
+.file-name { overflow-wrap: anywhere; }
+
+/* long titles / descriptions never overflow */
+mat-card-title, mat-card-content p, mat-card-content strong { overflow-wrap: anywhere; }
+mat-card-content { padding: 8px 4px; }
+mat-card-content p { text-align: left; margin-bottom: 4px; }
+mat-card-header { padding: 8px 0; }
+
+.mat-footer { padding: 10px 12px; }
+.button-gap { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+.button-gap button { width: auto; }
+
+@media (max-width: 900px) {
+  .stepper-container { padding: 0 8px; }
+}
+
+@media (max-width: 600px) {
+  .stepper-container { margin: 8px auto; padding: 0 6px; }
+  .toolbar-btn-label { display: none; }
+  .toolbar-btn { min-width: 44px; padding: 0 10px; }
+  .toolbar-btn mat-icon { margin: 0; }
+  .profile-container { padding: 0 8px 12px; }
+  .form-row { flex-direction: column; align-items: stretch; gap: 4px; }
+  .form-field { flex: none; width: 100%; }
+  mat-slide-toggle { margin: 0 0 12px; align-self: flex-start; }
+  .form-row .button-field { width: 100%; }
+  .button-end { flex-direction: column-reverse; align-items: stretch; }
+  .button-end button { width: 100%; min-height: 46px; }
+  .image-preview-container { text-align: center; }
+  /* Stepper header: only the active label shows so all steps fit in one row */
+  mat-horizontal-stepper ::ng-deep .mat-horizontal-stepper-header { padding: 0 10px; height: 56px; }
+  mat-horizontal-stepper ::ng-deep .mat-step-label:not(.mat-step-label-active) { display: none; }
+  mat-horizontal-stepper ::ng-deep .mat-stepper-horizontal-line { min-width: 8px; margin: 0 -4px; }
+  mat-horizontal-stepper ::ng-deep .mat-horizontal-stepper-header-container { overflow-x: auto; }
+  mat-tab-group ::ng-deep .mat-tab-label { min-width: 0; padding: 0 12px; }
+  mat-card-content .button-end { flex-direction: row; justify-content: flex-end; }
+  mat-card-content .button-end button { width: auto; min-height: 40px; }
+}
+@media (prefers-reduced-motion: reduce) { .slide-left { animation: none; } }
+
+
+/* profile photo block */
+.photo-row { align-items: center; gap: 16px 20px; margin-bottom: 12px; }
+.photo-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; flex: 1 1 220px; min-width: 0; }
+.photo-actions .photo-hint { flex-basis: 100%; color: #6b7a99; font-size: 11px; }
+.photo-actions .file-name, .photo-actions mat-error { flex-basis: 100%; font-size: 12px; }
+.photo-actions button mat-icon { margin-right: 6px; }
+.photo-actions button mat-spinner { display: inline-block; margin-right: 8px; }
+.profile-picture-preview.is-uploading { opacity: .5; transition: opacity .2s ease; }
+@media (max-width: 600px) {
+  .photo-row { flex-direction: column; align-items: center; text-align: center; }
+  .photo-actions { justify-content: center; width: 100%; }
+  .photo-actions button { width: auto; min-height: 44px; }
+}
+
+
+/* form polish (Angular Material 13 outline fields) */
+.profile-container mat-form-field { width: 100%; }
+.profile-container mat-form-field mat-icon[matPrefix] { color: #6b7a99; margin-right: 8px; }
+.profile-container .full-width { width: 100%; display: block; }
+.btn-spinner { display: inline-block; margin-right: 8px; vertical-align: middle; }
+.form-row .button-field { align-self: center; margin-bottom: 18px; }
+.form-row mat-slide-toggle { align-self: center; margin-bottom: 18px; }
+input[readonly] { cursor: default; }
+@media (max-width: 600px) { .form-row .button-field, .form-row mat-slide-toggle { margin-bottom: 8px; } }

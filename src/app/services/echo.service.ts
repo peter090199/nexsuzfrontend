@@ -159,7 +159,6 @@ export class EchoService {
   notificationCount$ = this.notificationCountSubject.asObservable();
   private pusher: Pusher;
   private channel: any;
-  private notificationAudio = new Audio('assets/sounds/notification.mp3');
 
   // Posts
   private newPostSubject = new Subject<any>();
@@ -171,9 +170,7 @@ export class EchoService {
     this.userId = parseInt(sessionStorage.getItem('userId') || '0', 10);
     //console.log('🔑 User ID:', this.userId);
 
-    // Configure notification audio
-    this.notificationAudio.volume = 0.8;
-    this.notificationAudio.load();
+    // (The notification sound lives in NotificationDeliveryService: OFF by default, only when the user turns it on.)
 
     // Initialize Laravel Echo with Pusher
     this.echo = new Echo({
@@ -202,7 +199,7 @@ export class EchoService {
       .listen('.NotificationCountUpdated', (data: any) => {
         console.log('📬 Private Notification Count Update:', data);
         this.notificationCountSubject.next(data.unreadCount);
-        this.playNotificationSoundIfNeeded(data.unreadCount);
+        this.previousUnreadCount = data.unreadCount;
       });
 
     // Initial load from backend
@@ -222,13 +219,6 @@ export class EchoService {
     return this.http.get<any>(`${_url}update_count`, { headers });
   }
 
-  private playNotificationSoundIfNeeded(currentUnreadCount: number) {
-    if (currentUnreadCount > this.previousUnreadCount) {
-      this.notificationAudio.currentTime = 0;
-      this.notificationAudio.play().catch(err => console.warn('🔇 Audio blocked:', err));
-    }
-    this.previousUnreadCount = currentUnreadCount;
-  }
 
   // -------------------- Posts --------------------
   listenToPosts() {

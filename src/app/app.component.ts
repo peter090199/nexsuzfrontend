@@ -9,6 +9,7 @@ import { ChatWebsitePopUPComponent } from './ComponentUI/messages/chat-website-p
 import { AuthService } from './services/auth.service';
 import { EchoService } from './services/echo.service';
 import { SigInService } from './services/signIn/sig-in.service';
+import { NavThemeService } from './services/nav-theme.service';
 import { SubscriptionService } from './services/AccountPlan/subscription.service';
 import { FeatureService } from './services/AccountPlan/feature.service';
 import { UpgradeRequiredComponent } from './ComponentSharedUI/account-type-plan/upgrade-required/upgrade-required.component';
@@ -52,6 +53,7 @@ export class AppComponent implements OnInit {
     private cookieService: CookieService,
     private authService: AuthService,
     private echoService: EchoService,
+    private navTheme: NavThemeService,       // applies the user's navigation bar colour everywhere
     private logoutServices: SigInService,
     private subscriptionService: SubscriptionService,
     private featureService: FeatureService,

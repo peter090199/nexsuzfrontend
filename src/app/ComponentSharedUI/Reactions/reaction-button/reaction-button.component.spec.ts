@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, flush, tick } from '@angular/core/testing';
 import { NexsuzTestingModule } from 'src/testing/nexsuz-testing.module';
 import { ReactionButtonComponent } from './reaction-button.component';
 
@@ -53,14 +53,14 @@ describe('ReactionButtonComponent', () => {
     expect(reacted).toEqual([]);
   });
 
-  it('hovering opens the picker with all seven reactions after a short delay', fakeAsync(() => {
+  it('hovering opens the picker with all six reactions after a short delay', fakeAsync(() => {
     component.onEnter();
     tick(100);
     fixture.detectChanges();
     expect(picks().length).toBe(0);                                   // not yet: avoids flicker
     tick(200);
     fixture.detectChanges();
-    expect(picks().map(p => p.getAttribute('aria-label'))).toEqual(['Like', 'Love', 'Care', 'Haha', 'Wow', 'Sad', 'Angry']);
+    expect(picks().map(p => p.getAttribute('aria-label'))).toEqual(['Like', 'Love', 'Haha', 'Wow', 'Sad', 'Angry']);
   }));
 
   it('leaving closes the picker, but moving back in time keeps it open', fakeAsync(() => {
@@ -77,9 +77,10 @@ describe('ReactionButtonComponent', () => {
 
   it('choosing a face sets that reaction and closes the picker', fakeAsync(() => {
     component.onEnter(); tick(300); fixture.detectChanges();
-    picks()[2].click();                                               // Care
-    expect(reacted).toEqual(['Care']);
+    picks()[2].click();                                               // Haha
+    expect(reacted).toEqual(['Haha']);
     expect(component.open).toBeFalse();
+    flush();                                                          // the bounce timer
   }));
 
   it('marks the current reaction in the picker', fakeAsync(() => {
@@ -128,4 +129,57 @@ describe('ReactionButtonComponent', () => {
     fixture.destroy();
     tick(1000);                                                       // fakeAsync fails if a timer were left pending
   }));
+
+  describe('effects and sound switch', () => {
+    beforeEach(() => { localStorage.removeItem('nx-reaction-sound'); component.fx.setSound(false); });
+    afterEach(() => localStorage.removeItem('nx-reaction-sound'));
+
+    it('plays the bounce on the chosen face right after a reaction is picked', fakeAsync(() => {
+      component.pick('Love');
+      expect(component.popping).toBeTrue();
+      tick(600);
+      expect(component.popping).toBeFalse();
+    }));
+
+    it('shows a floating emoji when reacting', fakeAsync(() => {
+      const spy = spyOn(component.fx, 'burst');
+      component.pick('Wow');
+      expect(spy).toHaveBeenCalled();
+      expect(spy.calls.mostRecent().args[1]).toBe('😮');
+      expect(spy.calls.mostRecent().args[2]).toBe('Wow');
+      tick(600);
+    }));
+
+    it('asks for the reaction sound on every pick (it only plays if the setting is on)', fakeAsync(() => {
+      const spy = spyOn(component.fx, 'play');
+      component.pick('Sad');
+      main().click();                                                 // like
+      expect(spy.calls.allArgs().map(a => a[0])).toEqual(['Sad', 'Like']);
+      tick(600);
+    }));
+
+    it('taking a reaction back makes no sound and no floating emoji', () => {
+      const play = spyOn(component.fx, 'play');
+      const burst = spyOn(component.fx, 'burst');
+      component.myReaction = 'Like';
+      fixture.detectChanges();
+      main().click();
+      expect(unreacted).toBe(1);
+      expect(play).not.toHaveBeenCalled();
+      expect(burst).not.toHaveBeenCalled();
+    });
+
+    it('the speaker button in the picker switches sound on and off, and does not react', fakeAsync(() => {
+      component.onEnter(); tick(300); fixture.detectChanges();
+      const snd = () => el().querySelector('button.snd') as HTMLButtonElement;
+      expect(snd().getAttribute('aria-checked')).toBe('false');       // default OFF
+      snd().click(); fixture.detectChanges();
+      expect(component.fx.soundOn).toBeTrue();
+      expect(snd().getAttribute('aria-checked')).toBe('true');
+      snd().click(); fixture.detectChanges();
+      expect(component.fx.soundOn).toBeFalse();
+      expect(reacted).toEqual([]);
+      flush();                                                        // sound/bounce timers
+    }));
+  });
 });

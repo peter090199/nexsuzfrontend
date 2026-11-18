@@ -1079,11 +1079,17 @@ export class PostFeedsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // ------------------------ POST ACTIONS ------------------------
   printCV() {
+    // Move focus off the trigger first: the CDK hides the page behind the dialog with aria-hidden,
+    // and a focused element inside a hidden subtree is an accessibility error.
+    (document.activeElement as HTMLElement | null)?.blur();
     const dialogConfig = new MatDialogConfig();
     dialogConfig.disableClose = true;
     dialogConfig.autoFocus = true;
-    dialogConfig.width = '100%';
-    dialogConfig.height = '600px';
+    dialogConfig.restoreFocus = true;
+    dialogConfig.width = '960px';
+    dialogConfig.maxWidth = '100vw';
+    dialogConfig.maxHeight = '94vh';
+    dialogConfig.panelClass = 'cv-dialog';
     const dialogRef = this.dialog.open(PrintCVComponent, dialogConfig);
     dialogRef.afterClosed().subscribe(result => {
       if (result) { /* no-op for now */ }

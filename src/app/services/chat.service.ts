@@ -112,6 +112,18 @@ export class ChatService {
     return this.http.get(url, { headers });
   }
 
+  /** Everyone I have talked to: person, last message, unread count, online state (GET conversations) */
+  getConversations(): Observable<any> {
+    const headers = new HttpHeaders({ 'Authorization': `Bearer ${sessionStorage.getItem('token')}` });
+    return this.http.get<any>(`${_url}conversations`, { headers });
+  }
+
+  /** Mark every unread message from one person as read (POST messages/read { sender_id }) */
+  markConversationRead(senderId: number): Observable<any> {
+    const headers = new HttpHeaders({ 'Authorization': `Bearer ${sessionStorage.getItem('token')}` });
+    return this.http.post<any>(`${_url}messages/read`, { sender_id: senderId }, { headers });
+  }
+
   // Send Message
   sendMessage(receiverId: number, message: string): Observable<any> {
     const url = `${_url}send-message`;

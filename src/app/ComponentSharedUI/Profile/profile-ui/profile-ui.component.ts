@@ -98,7 +98,21 @@ export class ProfileUIComponent implements OnInit {
   // =========================
   // INIT LOAD
   // =========================
+  /** "People you may know" (right rail), same service as Home */
+  people: any[] = [];
+
+  private loadPeople(): void {
+    this.clientServices.getPeopleRecentActivity().subscribe({
+      next: (res: any) => {
+        const list = Array.isArray(res?.data) ? res.data : [];
+        this.people = list.filter((u: any) => String(u?.code) !== String(this.code) && String(u?.code) !== String(this.currentUserCode)).slice(0, 8);
+      },
+      error: () => { this.people = []; }
+    });
+  }
+
   initData(): void {
+    this.loadPeople();
     this.loadUserPost();
     this.loadUserData();
     this.loadProfileCV();

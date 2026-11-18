@@ -550,6 +550,7 @@
 import { Component, HostListener, Inject, OnDestroy, OnInit } from '@angular/core';
 import { MatDialog, MatDialogRef, MatDialogConfig, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { ProfileService } from 'src/app/services/Profile/profile.service';
+import { POST_PRIVACY, privacyOf } from '../post-privacy';
 import { PostUploadImageComponent } from '../post-upload-image/post-upload-image.component';
 import { PostUploadImagesService } from 'src/app/services/post-upload-images.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -632,10 +633,11 @@ export class PostUIComponent implements OnInit, OnDestroy {
   mode: ProgressSpinnerMode = 'determinate';
   value = 50;
 
-  statusOptions = [
-    { label: 'Public', value: 1 },
-    { label: 'Private', value: 0 }
-  ];
+  /** Public / Friends / Private (posts.status 1 / 2 / 0); the server enforces it */
+  statusOptions = POST_PRIVACY.map(p => ({ label: p.label, value: p.value }));
+
+  get privacyIcon(): string { return privacyOf(this.postForm?.get('status')?.value).icon; }
+  get privacyHint(): string { return privacyOf(this.postForm?.get('status')?.value).hint; }
 
   constructor(
     public dialogRef: MatDialogRef<PostUIComponent>,

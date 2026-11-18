@@ -93,3 +93,248 @@
   .cover-edit-label { display: none; }
   .cover-edit { padding: 0; width: 44px; justify-content: center; }
 }
+
+
+/* =====================================================================
+   Modern professional-network profile
+   ===================================================================== */
+.profile-page { background: var(--nx-bg); }
+.profile-header { border-radius: 16px; box-shadow: 0 2px 10px rgba(0, 65, 130, .08); }
+.cover-photo { height: 160px; background: linear-gradient(120deg, #002a57 0%, #004182 45%, #0a66c2 75%, #70b5f9 100%); }
+.profile-img { border-width: 5px; box-shadow: 0 6px 18px rgba(0, 42, 91, .25); }
+.identity h1 { font-size: 24px; letter-spacing: -.2px; }
+.headline { font-size: 15px; color: #1b2a4a; }
+.loc { display: flex; align-items: center; justify-content: center; gap: 4px; margin: 6px 0 0; font-size: 13px; color: var(--nx-muted); text-align: left; }
+.loc mat-icon { font-size: 16px; width: 16px; height: 16px; line-height: 16px; }
+.button-gap button { min-height: 40px; border-radius: 20px; padding: 0 18px; transition: transform .15s ease, box-shadow .2s ease; }
+.button-gap button:hover { transform: translateY(-1px); }
+
+.profile-main > .nx-card, .profile-aside > .nx-card { border-radius: 14px; box-shadow: 0 1px 3px rgba(0, 65, 130, .06); border: 1px solid var(--nx-border); transition: box-shadow .2s ease; }
+.profile-main > .nx-card:hover, .profile-aside > .nx-card:hover { box-shadow: 0 6px 18px rgba(0, 65, 130, .09); }
+.nx-card-title { font-size: 16px; margin-bottom: 14px; }
+.nx-card-title mat-icon { color: #0a66c2; background: #eaf3fc; border-radius: 10px; padding: 6px; box-sizing: content-box; font-size: 18px; width: 18px; height: 18px; line-height: 18px; }
+.about { margin: 0; font-size: 14px; line-height: 1.7; color: var(--nx-text); text-align: left; white-space: pre-line; overflow-wrap: anywhere; }
+
+/* timeline entries */
+.entry { display: flex; gap: 14px; padding: 16px 0; border-top: 1px solid var(--nx-border); }
+.entry:first-of-type { border-top: 0; padding-top: 2px; }
+.entry-ico { flex: none; width: 48px; height: 48px; border-radius: 10px; background: #eaf3fc; color: #004182; display: flex; align-items: center; justify-content: center; }
+.entry-ico mat-icon { font-size: 24px; width: 24px; height: 24px; line-height: 24px; margin: 0; }
+.entry-body { min-width: 0; flex: 1; }
+.entry h3 { font-size: 15px; font-weight: 700; }
+.entry .sub { color: #1b2a4a; }
+.entry .meta { font-size: 12px; }
+
+.chips .nx-badge { background: #eaf3fc; color: #004182; border: 1px solid #c5dcf3; font-weight: 600; transition: background .2s ease, transform .15s ease; }
+.chips .nx-badge:hover { background: #d0e5fc; transform: translateY(-1px); }
+.info-list li { border-radius: 8px; padding: 9px 6px; transition: background .2s ease; }
+.info-list li:hover { background: #f4f8fd; }
+
+@media (min-width: 1024px) {
+  .cover-photo { height: 210px; }
+  .profile-info { padding: 0 28px 24px; }
+  .avatar-container { width: 152px; height: 152px; margin-top: -76px; }
+  .loc { justify-content: flex-start; }
+  .profile-aside { top: 84px; }
+}
+@media (max-width: 600px) {
+  .entry-ico { width: 40px; height: 40px; }
+  .entry { gap: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .button-gap button, .chips .nx-badge, .profile-main > .nx-card { transition: none; } }
+
+
+/* =====================================================================
+   Layout like Home: left rail | centre | right rail
+   ===================================================================== */
+.profile-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
+.profile-grid > * { min-width: 0; }
+.profile-left, .profile-main, .profile-right { display: flex; flex-direction: column; gap: 16px; }
+.profile-main { max-width: 680px; width: 100%; margin: 0 auto; }
+@media (min-width: 768px) {
+  .profile-grid { grid-template-columns: minmax(0, 240px) minmax(0, 1fr); }
+  .profile-main { max-width: none; margin: 0; }
+  .profile-left { position: sticky; top: var(--nx-sticky-top, 12px); }
+}
+@media (min-width: 1200px) {
+  .profile-grid { grid-template-columns: minmax(0, 260px) minmax(0, 1fr) minmax(0, 300px); gap: 20px; }
+}
+/* right rail only has room on desktop (same as Home) */
+.profile-right { display: none; }
+@media (min-width: 1200px) { .profile-right { display: flex; } }
+
+/* identity card = Home's profile card: short cover, centred avatar, stacked actions */
+.profile-left .profile-header { margin: 0; border-radius: 14px; }
+.profile-left .cover-photo { height: 84px; }
+.profile-left .profile-info { flex-direction: column; flex-wrap: nowrap; align-items: center; text-align: center; gap: 0; padding: 0 16px 18px; }
+.profile-left .avatar-container { width: 88px; height: 88px; margin-top: -44px; }
+.profile-left .profile-img { border-width: 4px; }
+.profile-left .identity { flex: none; width: 100%; min-width: 0; margin-top: 10px; padding: 0; }
+.profile-left .identity h1 { font-size: 17px; }
+.profile-left .headline { font-size: 12px; text-align: center; color: var(--nx-muted); }
+.profile-left .loc { justify-content: center; font-size: 12px; }
+.profile-left .button-gap { flex-direction: column; align-items: stretch; width: 100%; margin-top: 14px; gap: 8px; }
+.profile-left .button-gap button { width: 100%; min-height: 44px; border-radius: 10px; padding: 0 12px; }
+.profile-left .profile-skeleton { padding-top: 0; }
+.profile-left .nx-card { border-radius: 14px; }
+.profile-left .nx-card-title { font-size: 14px; margin-bottom: 8px; }
+.profile-left .nx-card-title mat-icon { display: none; }
+.profile-left .info-list li { padding: 7px 4px; font-size: 12px; }
+
+/* suggestions (matches Home) */
+.profile-right .right-column { padding: 16px; max-height: 600px; overflow-y: auto; overscroll-behavior: contain; }
+.profile-right .nx-card-title { margin-bottom: 4px; }
+.client-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--nx-border); }
+.client-item:first-of-type { border-top: 0; }
+.mat-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex: none; background: var(--nx-sky-soft); }
+.client-info { flex: 1; min-width: 0; }
+.custom-title { color: var(--nx-text); font-weight: 700; font-size: 13px; text-decoration: none; overflow-wrap: anywhere; }
+.custom-title:hover { color: var(--nx-navy-light); text-decoration: underline; }
+.client-sub { margin: 2px 0 0; font-size: 12px; color: var(--nx-muted); text-align: left; overflow-wrap: anywhere; }
+
+@media (max-width: 767px) {
+  .profile-page { padding-top: 10px; }
+  .profile-left .cover-photo { height: 96px; }
+}
+
+
+/* =====================================================================
+   Activity = ONE card: posts sit flat inside it, separated by dividers
+   ===================================================================== */
+.profile-main > .activity-card { padding: 16px 0 0 !important; overflow: hidden; }
+.activity-card > .nx-card-title { padding: 0 16px; }
+.activity-card > .skeleton-block { padding: 0 16px 16px; }
+.profile-main .activity-card ::ng-deep app-private-post .middle-column { gap: 0; }
+.profile-main .activity-card ::ng-deep app-private-post .middle-column .post-card.feed-container {
+  margin: 0; border: 0; border-top: 1px solid var(--nx-border); border-radius: 0; box-shadow: none; background: transparent;
+}
+.profile-main .activity-card ::ng-deep app-private-post .middle-column .post-card.feed-container:hover { box-shadow: none; }
+.profile-main .activity-card ::ng-deep app-private-post .load-post-container { padding: 0 16px 12px; }
+.profile-main .activity-card ::ng-deep app-private-post .loading-more { padding: 0 16px 12px; }
+
+
+/* =====================================================================
+   Facebook-style proportions: wide left sidebar (intro + people), posts column on the right
+   ===================================================================== */
+@media (min-width: 768px) {
+  .profile-grid {
+    grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+    grid-template-areas: "left main" "people main";
+    grid-template-rows: auto 1fr;
+    gap: 16px;
+  }
+  .profile-left   { grid-area: left; position: static; }
+  .profile-main   { grid-area: main; }
+  .profile-right  { grid-area: people; display: flex; position: static; }
+  .profile-right .right-column { max-height: 420px; }
+}
+@media (min-width: 1024px) {
+  .profile-grid { grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 16px 20px; }
+  .profile-left .cover-photo { height: 120px; }
+  .profile-left .avatar-container { width: 112px; height: 112px; margin-top: -56px; }
+  .profile-left .identity h1 { font-size: 20px; }
+  .profile-left .headline { font-size: 13px; }
+  .profile-left .loc, .profile-left .info-list li { font-size: 13px; }
+  .profile-left .nx-card-title { font-size: 16px; }
+}
+/* the earlier 3-column rule no longer applies */
+@media (min-width: 1200px) {
+  .profile-grid { grid-template-columns: minmax(0, 360px) minmax(0, 1fr); }
+}
+
+
+/* =====================================================================
+   LinkedIn layout: profile card on top of the main column | right rail
+   ===================================================================== */
+.nx-container.profile-grid { max-width: 1128px; }
+.profile-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: none; grid-template-rows: none; gap: 16px; }
+.profile-main { grid-area: auto; max-width: none; margin: 0; }
+.profile-right { grid-area: auto; display: flex; position: static; }
+.profile-right .right-column { max-height: 480px; }
+@media (min-width: 768px) {
+  .profile-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: none; grid-template-rows: none; }
+  .profile-main, .profile-right { grid-area: auto; }
+}
+@media (min-width: 1024px) {
+  .profile-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 300px); grid-template-areas: none; grid-template-rows: none; gap: 24px; }
+  .profile-right { position: sticky; top: var(--nx-sticky-top, 12px); align-self: start; }
+}
+@media (min-width: 1200px) {
+  .profile-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 300px); }
+}
+
+/* profile card: wide cover, avatar overlapping bottom-left, left-aligned text and actions */
+.profile-main > .profile-header { padding: 0; border-radius: 12px; overflow: hidden; }
+.profile-main > .profile-header .cover-photo { height: 120px; }
+.profile-main > .profile-header .profile-info { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; text-align: left; gap: 0; padding: 0 16px 18px; }
+.profile-main > .profile-header .avatar-container { width: 104px; height: 104px; margin-top: -52px; }
+.profile-main > .profile-header .identity { flex: none; width: 100%; margin-top: 10px; padding: 0; }
+.profile-main > .profile-header .identity h1 { font-size: 22px; line-height: 1.25; }
+.profile-main > .profile-header .headline { text-align: left; font-size: 15px; color: var(--nx-text); margin-top: 4px; }
+.profile-main > .profile-header .loc { justify-content: flex-start; font-size: 13px; margin-top: 6px; }
+.profile-main > .profile-header .button-gap { flex-direction: row; flex-wrap: wrap; justify-content: flex-start; align-items: center; width: auto; margin-top: 14px; gap: 8px; }
+.profile-main > .profile-header .button-gap button { width: auto; min-height: 36px; border-radius: 18px; padding: 0 16px; font-size: 14px; }
+@media (min-width: 768px) {
+  .profile-main > .profile-header .cover-photo { height: 200px; }
+  .profile-main > .profile-header .profile-info { padding: 0 24px 22px; }
+  .profile-main > .profile-header .avatar-container { width: 152px; height: 152px; margin-top: -76px; }
+  .profile-main > .profile-header .identity h1 { font-size: 26px; }
+  .profile-main > .profile-header .headline { font-size: 16px; }
+  .profile-main > .profile-header .button-gap button { min-height: 40px; border-radius: 20px; }
+}
+@media (max-width: 480px) {
+  .profile-main > .profile-header .button-gap button { flex: 1 1 auto; justify-content: center; }
+}
+
+/* right rail cards */
+.profile-right .nx-card { border-radius: 12px; }
+.profile-right .nx-card-title { font-size: 16px; margin-bottom: 8px; }
+.profile-right .nx-card-title mat-icon { display: none; }
+.profile-right .info-list li { padding: 8px 4px; font-size: 13px; }
+
+
+/* =====================================================================
+   3 columns: CV sections (left) | profile card + activity | contact + people (right)
+   Both sidebars are a fixed 90vh and scroll on their own.
+   ===================================================================== */
+.nx-container.profile-grid { max-width: 1280px; }
+.profile-left, .profile-right { display: flex; flex-direction: column; gap: 16px; }
+
+/* phone: one column, profile first, then sections, then the right-rail cards */
+.profile-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "main" "left" "right"; grid-template-rows: none; gap: 16px; }
+.profile-main  { grid-area: main; }
+.profile-left  { grid-area: left; position: static; height: auto; overflow: visible; }
+.profile-right { grid-area: right; position: static; height: auto; overflow: visible; }
+
+/* tablet: sections on the left (90vh), centre + right-rail cards stacked beside it */
+@media (min-width: 768px) and (max-width: 1199px) {
+  .profile-grid { grid-template-columns: minmax(0, 300px) minmax(0, 1fr); grid-template-areas: "left main" "left right"; grid-template-rows: auto 1fr; gap: 16px 20px; }
+  .profile-left { position: sticky; top: var(--nx-sticky-top, 12px); align-self: start; height: 90vh; overflow-y: auto; }
+}
+
+/* desktop: three columns, both sidebars fixed at 90vh */
+@media (min-width: 1200px) {
+  .profile-grid { grid-template-columns: minmax(0, 340px) minmax(0, 1fr) minmax(0, 300px); grid-template-areas: "left main right"; grid-template-rows: auto; gap: 20px; align-items: start; }
+  .profile-left, .profile-right { position: sticky; top: var(--nx-sticky-top, 12px); align-self: start; height: 90vh; overflow-y: auto; }
+  .profile-right .right-column { max-height: none; overflow: visible; }
+}
+
+/* sidebar scrolling: tidy, contained, never drags the page */
+.profile-left, .profile-right { overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #c5d0e0 transparent; padding-right: 2px; }
+.profile-left::-webkit-scrollbar, .profile-right::-webkit-scrollbar { width: 6px; }
+.profile-left::-webkit-scrollbar-thumb, .profile-right::-webkit-scrollbar-thumb { background: #c5d0e0; border-radius: 6px; }
+.profile-left > .nx-card, .profile-right > .nx-card { flex: none; border-radius: 12px; }
+.profile-left .nx-card-title { font-size: 15px; margin-bottom: 10px; }
+.profile-left .entry-ico { width: 40px; height: 40px; }
+.profile-left .entry { gap: 12px; padding: 12px 0; }
+.profile-left .entry h3 { font-size: 14px; }
+.profile-left .entry .sub, .profile-left .entry .desc { font-size: 12.5px; }
+
+
+/* =====================================================================
+   Page margins (LinkedIn-style)
+   ===================================================================== */
+.profile-page { padding-left: 0; padding-right: 0; }
+/* LinkedIn-style page margins: content centred, equal auto margins left and right, a small gutter on phones */
+.nx-container.profile-grid { box-sizing: border-box; width: 100%; max-width: 1280px; margin-left: auto; margin-right: auto; padding-left: 12px; padding-right: 12px; }
+@media (min-width: 768px) { .nx-container.profile-grid { padding-left: 24px; padding-right: 24px; } }

@@ -301,4 +301,73 @@ describe('PostUIComponent', () => {
       host.remove();
     });
   });
+
+  describe('layout: fixed 600px dialog, only the middle scrolls', () => {
+    const settle = () => new Promise(r => setTimeout(r, 150));
+    const q = (sel: string) => fixture.nativeElement.querySelector(sel) as HTMLElement;
+
+    async function mount(images = 0) {
+      const host: HTMLElement = fixture.nativeElement;
+      document.body.appendChild(host);                       // a real, laid-out element (the dialog container normally holds it)
+      if (images) {
+        const files: File[] = [];
+        for (let n = 0; n < images; n++) { files.push(await realImage('p' + n + '.png')); }
+        component.onImagesSelected(selectEvent(files));
+      }
+      component.postForm.get('caption')?.setValue('Line\n'.repeat(40));   // plenty of text too
+      fixture.detectChanges();
+      await settle();
+      return host;
+    }
+
+    afterEach(() => { fixture.nativeElement.remove(); });
+
+    it('is 600px tall (or the screen height minus a small margin on short screens)', async () => {
+      const host = await mount();
+      const expected = Math.min(600, window.innerHeight - 32);
+      expect(Math.round(host.getBoundingClientRect().height)).toBe(Math.round(expected));
+    });
+
+    it('keeps the same height whether the post is empty or full of photos and text', async () => {
+      const empty = Math.round((await mount()).getBoundingClientRect().height);
+      fixture.nativeElement.remove();
+      fixture = TestBed.createComponent(PostUIComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      const full = Math.round((await mount(6)).getBoundingClientRect().height);
+      expect(full).toBe(empty);
+    });
+
+    it('scrolls the middle, never the whole dialog', async () => {
+      const host = await mount(6);
+      const body = q('.composer-body');
+      expect(getComputedStyle(body).overflowY).toBe('auto');
+      expect(body.scrollHeight).toBeGreaterThan(body.clientHeight);          // there is something to scroll
+      expect(host.scrollHeight).toBeLessThanOrEqual(host.clientHeight + 1);  // the dialog itself does not grow
+    });
+
+    it('keeps the header and the Post button on screen however much content there is', async () => {
+      const host = await mount(6);
+      const box = host.getBoundingClientRect();
+      const inside = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return r.top >= box.top - 1 && r.bottom <= box.bottom + 1; };
+      expect(inside(q('.composer-head'))).toBeTrue();
+      expect(inside(q('.composer-foot'))).toBeTrue();
+      expect(inside(q('.post-btn'))).toBeTrue();
+    });
+
+    it('the body really scrolls when scrolled', async () => {
+      await mount(6);
+      const body = q('.composer-body');
+      body.scrollTop = 200;
+      expect(body.scrollTop).toBeGreaterThan(0);
+      expect(q('.composer-foot').getBoundingClientRect().bottom).toBeLessThanOrEqual(fixture.nativeElement.getBoundingClientRect().bottom + 1);
+    });
+
+    it('offers Public, Friends and Private and shows a character counter', async () => {
+      await mount();
+      const labels = Array.from(fixture.nativeElement.querySelectorAll('.visibility select option')).map((o: any) => o.textContent.trim());
+      expect(labels).toEqual(['Public', 'Friends', 'Private']);
+      expect(q('.char-count').textContent).toContain('/ 5000');
+    });
+  });
 });

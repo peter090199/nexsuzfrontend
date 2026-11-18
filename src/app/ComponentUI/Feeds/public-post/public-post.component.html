@@ -33,6 +33,10 @@
           <small class="time">
             {{ post.created_at | date:'short' }}
           </small>
+          <span class="privacy" [ngClass]="'p' + privacyOf(post.status).value" [matTooltip]="privacyOf(post.status).hint"
+            [attr.aria-label]="'Visible to: ' + privacyOf(post.status).label">
+            <mat-icon>{{ privacyOf(post.status).icon }}</mat-icon>{{ privacyOf(post.status).label }}
+          </span>
         </div>
       </div>
 

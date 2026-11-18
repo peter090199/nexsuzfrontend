@@ -1,89 +1,370 @@
-<section class="section">
-  <mat-card-footer *ngIf="isLoading">
-    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-  </mat-card-footer>
+<section class="st-page">
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="st-loading"></mat-progress-bar>
+  <div class="st-layout">
+    <!-- LEFT: navigation -->
+    <nav class="st-nav" aria-label="Settings sections">
+      <h2 class="st-nav-title">Settings</h2>
+      <ul>
+        <li *ngFor="let s of sections">
+          <button type="button" class="st-nav-item" [class.active]="s.id === activeSection"
+            [attr.aria-current]="s.id === activeSection ? 'page' : null" (click)="select(s.id)">
+            <mat-icon>{{ s.icon }}</mat-icon>
+            <span class="st-nav-label">{{ s.label }}</span>
+            <span class="st-soon" *ngIf="!s.available">Soon</span>
+          </button>
+        </li>
+      </ul>
+    </nav>
 
-  <div class="profile-header">
-    <div class="cover-photo-container">
-      <img class="cover-photo-img" [src]="preview || users?.coverphoto || 'assets/images/default-cover.png'"
-        alt="Cover Photo" />
-      <div class="upload-container">
-        <input type="file" accept="image/*" (change)="uploadCoverPhoto($event)" #fileInput hidden />
-        <button mat-raised-button color="primary" class="edit-cover-btn" (click)="fileInput.click()">
-          <mat-icon>photo_camera</mat-icon> Upload Cover Photo
-        </button>
-      </div>
-      <mat-progress-bar *ngIf="uploadProgress >= 0" mode="determinate" [value]="uploadProgress"></mat-progress-bar>
-    </div>
-
-    <div class="profile-avatar-info">
-      <div class="profile-avatar">
-        <div class="avatar-container">
-          <img *ngIf="profile_pic?.photo_pic; else defaultAvatar" [src]="profile_pic.photo_pic" alt="Profile Picture"
-            class="profile-pic" />
-          <ng-template #defaultAvatar>
-            <img src="assets/images/default.png" alt="Default Avatar" class="profile-pic" />
-          </ng-template>
+    <!-- RIGHT: content -->
+    <main class="st-content" [ngSwitch]="activeSection">
+      <div class="st-panel-head">
+        <mat-icon>{{ current.icon }}</mat-icon>
+        <div>
+          <h2>{{ current.label }}</h2>
+          <p>{{ current.description }}</p>
         </div>
-        <button mat-button color="danger" class="edit-avatar-btn" (click)="uploadPic()">
-          <mat-icon>photo_camera</mat-icon>
-        </button>
       </div>
-      <div class="profile-info">
-        <h2>{{ users?.fullname || 'User Name' }}</h2>
-        <p class="subtitle">{{ users?.profession || 'No profession' }}</p>
-        <small>{{ users?.role_code || 'No role' }}</small>
+
+      <div class="st-error" *ngIf="loadError">
+        <mat-icon>error_outline</mat-icon>
+        <span>We couldn't load your settings.</span>
+        <button mat-stroked-button color="primary" (click)="loadAll()">Retry</button>
       </div>
-    </div>
+
+      <!-- Needs-profile notice for sections that save to the profile -->
+      <div class="st-notice" *ngIf="!isLoading && !loadError && !profileExists && (activeSection === 'account' || activeSection === 'privacy')">
+        <mat-icon>info_outline</mat-icon>
+        <div>
+          <strong>Complete your profile first.</strong>
+          <span>These settings are saved to your profile, which you haven't created yet.</span>
+        </div>
+        <button mat-flat-button color="primary" (click)="goToCV()">Complete profile</button>
+      </div>
+
+      <!-- ACCOUNT -->
+      <ng-container *ngSwitchCase="'account'">
+        <mat-card class="st-card">
+          <h3 class="st-card-title">Account details</h3>
+          <div class="st-facts">
+            <div class="st-fact" *ngFor="let f of accountFields">
+              <mat-icon>{{ f.icon }}</mat-icon>
+              <div>
+                <small>{{ f.label }}</small>
+                <a *ngIf="f.link && users[f.key]" [href]="'https://' + users[f.key]" target="_blank" rel="noopener">{{ users[f.key] }}</a>
+                <span *ngIf="!(f.link && users[f.key])">{{ users[f.key] || 'Not set' }}</span>
+              </div>
+            </div>
+          </div>
+          <p class="st-hint">Name and email are managed by your account and can't be changed here.</p>
+        </mat-card>
+
+        <form [formGroup]="accountForm" (ngSubmit)="saveAccount()" novalidate>
+          <mat-card class="st-card">
+            <h3 class="st-card-title">Contact &amp; location</h3>
+            <div class="st-grid">
+              <mat-form-field appearance="outline">
+                <mat-label>Contact number</mat-label>
+                <mat-icon matPrefix>phone</mat-icon>
+                <input matInput formControlName="contact_no" inputmode="tel" autocomplete="tel" />
+                <mat-error *ngIf="accountForm.get('contact_no')?.hasError('pattern')">Use digits, spaces, + ( ) or - only.</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Birthday</mat-label>
+                <mat-icon matPrefix>cake</mat-icon>
+                <input matInput type="date" formControlName="date_birth" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Current location</mat-label>
+                <mat-icon matPrefix>location_on</mat-icon>
+                <input matInput formControlName="current_location" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Current state / province</mat-label>
+                <input matInput formControlName="current_state" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Home country</mat-label>
+                <mat-icon matPrefix>public</mat-icon>
+                <input matInput formControlName="home_country" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Home state / province</mat-label>
+                <input matInput formControlName="home_state" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="st-span2">
+                <mat-label>Summary</mat-label>
+                <textarea matInput rows="3" maxlength="255" formControlName="summary"></textarea>
+                <mat-hint align="end">{{ accountForm.get('summary')?.value?.length || 0 }} / 255</mat-hint>
+              </mat-form-field>
+            </div>
+            <div class="st-actions">
+              <button mat-stroked-button type="button" (click)="cancelAccount()" [disabled]="!accountDirty || savingAccount">Cancel</button>
+              <button mat-flat-button color="primary" type="submit"
+                [disabled]="!profileExists || !accountDirty || savingAccount">
+                <mat-spinner *ngIf="savingAccount" diameter="18"></mat-spinner>
+                <span>{{ savingAccount ? 'Saving…' : 'Save changes' }}</span>
+              </button>
+            </div>
+          </mat-card>
+        </form>
+      </ng-container>
+
+      <!-- PRIVACY -->
+      <ng-container *ngSwitchCase="'privacy'">
+        <form [formGroup]="privacyForm" (ngSubmit)="savePrivacy()">
+          <mat-card class="st-card">
+            <h3 class="st-card-title">What appears on my CV</h3>
+            <div class="st-toggle">
+              <mat-icon>email</mat-icon>
+              <div class="st-toggle-text">
+                <strong>Hide my email on my CV</strong>
+                <span>When on, {{ users?.email || 'your email' }} is left off your CV.</span>
+              </div>
+              <mat-slide-toggle color="primary" formControlName="email_visibility" aria-label="Hide email on CV"></mat-slide-toggle>
+            </div>
+            <mat-divider></mat-divider>
+            <div class="st-toggle">
+              <mat-icon>phone</mat-icon>
+              <div class="st-toggle-text">
+                <strong>Hide my contact number on my CV</strong>
+                <span>When on, your phone number is left off your CV.</span>
+              </div>
+              <mat-slide-toggle color="primary" formControlName="contact_visibility" aria-label="Hide contact number on CV"></mat-slide-toggle>
+            </div>
+            <div class="st-actions">
+              <button mat-stroked-button type="button" (click)="cancelPrivacy()" [disabled]="!privacyDirty || savingPrivacy">Cancel</button>
+              <button mat-flat-button color="primary" type="submit"
+                [disabled]="!profileExists || !privacyDirty || savingPrivacy">
+                <mat-spinner *ngIf="savingPrivacy" diameter="18"></mat-spinner>
+                <span>{{ savingPrivacy ? 'Saving…' : 'Save changes' }}</span>
+              </button>
+            </div>
+          </mat-card>
+        </form>
+        <mat-card class="st-card">
+          <h3 class="st-card-title">Profile photos</h3>
+          <p class="st-hint">Update your profile picture from your CV page, or change your cover photo.</p>
+          <div class="st-actions start">
+            <button mat-stroked-button color="primary" (click)="uploadPic()"><mat-icon>account_circle</mat-icon> Edit profile photo</button>
+            <button mat-stroked-button color="primary" (click)="coverInput.click()"><mat-icon>photo_camera</mat-icon> Change cover photo</button>
+          </div>
+        </mat-card>
+      </ng-container>
+
+      <!-- SECURITY -->
+      <ng-container *ngSwitchCase="'security'">
+        <mat-card class="st-card">
+          <h3 class="st-card-title">Sign-in</h3>
+          <div class="st-facts one">
+            <div class="st-fact"><mat-icon>alternate_email</mat-icon>
+              <div><small>Sign-in email</small><span>{{ users?.email || 'Not set' }}</span></div></div>
+            <div class="st-fact"><mat-icon>how_to_reg</mat-icon>
+              <div><small>Account status</small>
+                <span class="st-chip ok"><mat-icon>check_circle</mat-icon> Active</span></div></div>
+          </div>
+        </mat-card>
+        <mat-card class="st-card">
+          <h3 class="st-card-title">This device</h3>
+          <p class="st-hint">Sign out of NEXSUZ on this browser.</p>
+          <div class="st-actions start">
+            <button mat-stroked-button color="warn" (click)="confirmSignOut()"><mat-icon>logout</mat-icon> Sign out</button>
+          </div>
+        </mat-card>
+      </ng-container>
+
+      <!-- PASSWORD -->
+      <ng-container *ngSwitchCase="'password'">
+        <mat-card class="st-card">
+          <h3 class="st-card-title">Reset password</h3>
+          <p class="st-hint">For your security we email a reset link to <strong>{{ users?.email || 'your email' }}</strong>.
+            Open the link within 5 minutes to choose a new password.</p>
+          <div class="st-actions start">
+            <button mat-flat-button color="primary" (click)="confirmPasswordReset()" [disabled]="sendingReset || isLoading">
+              <mat-spinner *ngIf="sendingReset" diameter="18"></mat-spinner>
+              <mat-icon *ngIf="!sendingReset">lock_reset</mat-icon>
+              <span>{{ sendingReset ? 'Sending…' : 'Send reset link' }}</span>
+            </button>
+          </div>
+        </mat-card>
+      </ng-container>
+
+      <!-- NOTIFICATIONS -->
+      <ng-container *ngSwitchCase="'notifications'">
+        <ng-container *ngIf="{ s: prefsSvc.status$ | async, perm: delivery.permission$ | async } as v">
+
+          <!-- quick actions + save status -->
+          <mat-card class="st-card np-bar">
+            <div class="np-actions">
+              <button mat-stroked-button color="primary" type="button" (click)="enableAll()"><mat-icon>notifications_active</mat-icon> Enable all</button>
+              <button mat-stroked-button color="primary" type="button" (click)="disableAll()"><mat-icon>notifications_off</mat-icon> Disable all</button>
+              <button mat-stroked-button type="button" (click)="restoreDefaults()"><mat-icon>restart_alt</mat-icon> Restore defaults</button>
+            </div>
+            <div class="np-status" role="status" aria-live="polite" [ngClass]="v.s?.state">
+              <ng-container [ngSwitch]="v.s?.state">
+                <span *ngSwitchCase="'saving'"><mat-spinner diameter="16"></mat-spinner> Saving…</span>
+                <span *ngSwitchCase="'saved'"><mat-icon>check_circle</mat-icon> All changes saved</span>
+                <span *ngSwitchCase="'error'"><mat-icon>error_outline</mat-icon> {{ v.s?.message }} Your settings were put back.</span>
+                <span *ngSwitchDefault class="muted"><mat-icon>cloud_done</mat-icon> Saved to your account. Changes apply immediately.</span>
+              </ng-container>
+            </div>
+            <p class="st-hint">Enable all turns on every option, including sound. Desktop notifications also need your browser's permission.</p>
+          </mat-card>
+
+          <!-- messages -->
+          <mat-card class="st-card">
+            <h3 class="st-card-title">Messages</h3>
+
+            <div class="st-toggle">
+              <mat-icon>chat</mat-icon>
+              <div class="st-toggle-text"><strong>New message notifications</strong><span>The main switch: popup, desktop notification and sound when someone messages you.</span></div>
+              <mat-slide-toggle color="primary" [checked]="np.messages_enabled" (change)="setPref('messages_enabled', $event.checked)" aria-label="New message notifications"></mat-slide-toggle>
+            </div>
+            <mat-divider></mat-divider>
+
+            <div class="st-toggle" [class.dim]="!np.messages_enabled">
+              <mat-icon>visibility</mat-icon>
+              <div class="st-toggle-text"><strong>Message preview</strong><span>Show the message text in notifications. Off: "Sent you a message".</span></div>
+              <mat-slide-toggle color="primary" [checked]="np.message_preview" (change)="setPref('message_preview', $event.checked)" aria-label="Message preview"></mat-slide-toggle>
+            </div>
+            <mat-divider></mat-divider>
+
+            <div class="st-toggle">
+              <mat-icon>mark_chat_unread</mat-icon>
+              <div class="st-toggle-text"><strong>Unread message badges</strong><span>Show the unread count on the bell, the menu and the browser tab title.</span></div>
+              <mat-slide-toggle color="primary" [checked]="np.unread_badge" (change)="setPref('unread_badge', $event.checked)" aria-label="Unread message badges"></mat-slide-toggle>
+            </div>
+            <mat-divider></mat-divider>
+
+            <div class="st-toggle" [class.dim]="!np.messages_enabled">
+              <mat-icon>desktop_windows</mat-icon>
+              <div class="st-toggle-text">
+                <strong>Desktop browser notifications</strong>
+                <span *ngIf="v.perm === 'unsupported'">Your browser does not support desktop notifications.</span>
+                <span *ngIf="v.perm === 'default'">Your browser will ask for permission when you switch this on.</span>
+                <span *ngIf="v.perm === 'granted'">Allowed in your browser. Shown when this tab is in the background.</span>
+                <span class="np-warn" *ngIf="v.perm === 'denied'">Blocked in your browser. Allow notifications for this site in the browser's site settings, then reload.</span>
+              </div>
+              <mat-slide-toggle color="primary" [checked]="np.desktop_notifications && v.perm === 'granted'"
+                [disabled]="v.perm === 'unsupported' || v.perm === 'denied'" (change)="setDesktop($event.checked)"
+                aria-label="Desktop browser notifications"></mat-slide-toggle>
+            </div>
+            <mat-divider></mat-divider>
+
+            <div class="st-toggle" [class.dim]="!np.messages_enabled">
+              <mat-icon>web_asset</mat-icon>
+              <div class="st-toggle-text"><strong>Popup (toast)</strong><span>A small popup in the corner of the screen. Click it to open the conversation.</span></div>
+              <mat-slide-toggle color="primary" [checked]="np.toast" (change)="setPref('toast', $event.checked)" aria-label="Notification popup"></mat-slide-toggle>
+            </div>
+            <mat-divider></mat-divider>
+
+            <div class="st-toggle" [class.dim]="!np.messages_enabled">
+              <mat-icon>{{ np.sound ? 'volume_up' : 'volume_off' }}</mat-icon>
+              <div class="st-toggle-text"><strong>Notification sound</strong><span>Off by default. Plays when a new message arrives.</span></div>
+              <mat-slide-toggle color="primary" [checked]="np.sound" (change)="setPref('sound', $event.checked)" aria-label="Notification sound"></mat-slide-toggle>
+            </div>
+
+            <div class="np-volume" [class.dim]="!np.sound || !np.messages_enabled">
+              <mat-icon>volume_down</mat-icon>
+              <mat-slider min="0" max="100" step="5" [value]="np.sound_volume" [disabled]="!np.sound" (change)="setPref('sound_volume', $event.value)" aria-label="Notification sound volume"></mat-slider>
+              <mat-icon>volume_up</mat-icon>
+              <span class="np-vol-num">{{ np.sound_volume }}%</span>
+              <button mat-stroked-button color="primary" type="button" class="np-test" (click)="testSound()"><mat-icon>play_arrow</mat-icon> Test sound</button>
+            </div>
+          </mat-card>
+
+          <!-- social activity -->
+          <mat-card class="st-card">
+            <h3 class="st-card-title">Social activity</h3>
+            <p class="st-hint np-intro">These appear under the bell, on the Activity tab.</p>
+
+            <div class="st-toggle">
+              <mat-icon>person_add</mat-icon>
+              <div class="st-toggle-text"><strong>Friend requests</strong><span>When someone sends you a friend request.</span></div>
+              <mat-slide-toggle color="primary" [checked]="np.friend_requests" (change)="setPref('friend_requests', $event.checked)" aria-label="Friend requests"></mat-slide-toggle>
+            </div>
+            <mat-divider></mat-divider>
+            <div class="st-toggle">
+              <mat-icon>how_to_reg</mat-icon>
+              <div class="st-toggle-text"><strong>Friend request accepted</strong><span>When someone accepts your request.</span></div>
+              <mat-slide-toggle color="primary" [checked]="np.friend_accepts" (change)="setPref('friend_accepts', $event.checked)" aria-label="Friend request accepted"></mat-slide-toggle>
+            </div>
+            <mat-divider></mat-divider>
+            <div class="st-toggle">
+              <mat-icon>thumb_up</mat-icon>
+              <div class="st-toggle-text"><strong>Post reactions</strong><span>When someone reacts to your post.</span></div>
+              <mat-slide-toggle color="primary" [checked]="np.post_reactions" (change)="setPref('post_reactions', $event.checked)" aria-label="Post reactions"></mat-slide-toggle>
+            </div>
+            <mat-divider></mat-divider>
+            <div class="st-toggle">
+              <mat-icon>chat_bubble</mat-icon>
+              <div class="st-toggle-text"><strong>Post comments and replies</strong><span>When someone comments on your post or replies to your comment.</span></div>
+              <mat-slide-toggle color="primary" [checked]="np.post_comments" (change)="setPref('post_comments', $event.checked)" aria-label="Post comments and replies"></mat-slide-toggle>
+            </div>
+          </mat-card>
+
+          <!-- preview -->
+          <mat-card class="st-card">
+            <h3 class="st-card-title">Preview</h3>
+            <p class="st-hint np-intro">How a new message notification will look with your current settings.</p>
+
+            <div class="np-off" *ngIf="!np.messages_enabled" role="status"><mat-icon>notifications_off</mat-icon> Message notifications are off, so none of these will appear.</div>
+
+            <button type="button" class="np-toast" [class.off]="!np.messages_enabled || !np.toast" (click)="openPreview()"
+              [attr.aria-label]="'Open conversation with ' + previewName">
+              <img [src]="previewPhoto" nxFallback alt="" />
+              <span class="np-toast-text">
+                <span class="np-toast-top"><strong>{{ previewName }}</strong><time>{{ previewTime | date:'shortTime' }}</time></span>
+                <span class="np-toast-body">{{ previewBody }}</span>
+              </span>
+            </button>
+            <p class="st-hint" *ngIf="!previewConv">This is an example. Once you have messages, your latest real message is shown here.</p>
+            <p class="st-hint" *ngIf="previewConv">This is your latest message. Click it to open the conversation.</p>
+            <p class="st-hint" *ngIf="np.messages_enabled && !np.toast">The popup is off, so you will not see this card on screen.</p>
+          </mat-card>
+        </ng-container>
+      </ng-container>
+
+      <!-- APPEARANCE: reaction sounds -->
+      <ng-container *ngSwitchCase="'appearance'">
+        <mat-card class="st-card">
+          <h3 class="st-card-title">Reaction sounds</h3>
+          <div class="st-toggle">
+            <mat-icon>{{ fx.soundOn ? 'volume_up' : 'volume_off' }}</mat-icon>
+            <div class="st-toggle-text">
+              <strong>Play a sound when I react to a post</strong>
+              <span>Off by default. Sounds only play right after you click or tap a reaction.</span>
+            </div>
+            <mat-slide-toggle color="primary" [checked]="fx.soundOn" (change)="setReactionSound($event.checked)"
+              aria-label="Play a sound when I react"></mat-slide-toggle>
+          </div>
+          <mat-divider></mat-divider>
+          <p class="st-hint">Try them (works when sounds are on):</p>
+          <div class="st-actions start st-samples">
+            <button mat-stroked-button type="button" [disabled]="!fx.soundOn" (click)="playSample('Like')">👍 Like</button>
+            <button mat-stroked-button type="button" [disabled]="!fx.soundOn" (click)="playSample('Love')">❤️ Love</button>
+            <button mat-stroked-button type="button" [disabled]="!fx.soundOn" (click)="playSample('Haha')">😂 Haha</button>
+            <button mat-stroked-button type="button" [disabled]="!fx.soundOn" (click)="playSample('Wow')">😮 Wow</button>
+            <button mat-stroked-button type="button" [disabled]="!fx.soundOn" (click)="playSample('Sad')">😢 Sad</button>
+            <button mat-stroked-button type="button" [disabled]="!fx.soundOn" (click)="playSample('Angry')">😡 Angry</button>
+          </div>
+          <p class="st-hint">You can also switch sounds on or off with the speaker button in the reaction picker.</p>
+        </mat-card>
+      </ng-container>
+
+      <!-- PLAN -->
+      <ng-container *ngSwitchCase="'plan'">
+        <app-account-type-plan></app-account-type-plan>
+      </ng-container>
+
+      <!-- NOT YET AVAILABLE (no backend support; deliberately no fake controls) -->
+      <ng-container *ngSwitchDefault>
+        <mat-card class="st-card st-empty">
+          <mat-icon>{{ current.icon }}</mat-icon>
+          <h3>{{ current.label }} isn't available yet</h3>
+          <p>This setting isn't supported by NEXSUZ yet, so there is nothing to change here. We'll enable it as soon as it is.</p>
+        </mat-card>
+      </ng-container>
+    </main>
   </div>
-
-  <mat-divider></mat-divider>
-  <mat-tab-group mat-stretch-tabs>
-    <mat-tab label="Profile Details">
-      <mat-card-content>
-        <div class="profile-row" *ngFor="let field of profileFields">
-          <mat-icon class="profile-icon">{{ field.icon }}</mat-icon>
-          <ng-container [ngSwitch]="field.type">
-            <a *ngSwitchCase="'link'" [href]="'https://' + users[field.key]" target="_blank">{{ users[field.key] || 'No
-              website' }}</a>
-            <span *ngSwitchDefault>{{ users[field.key] || field.default }}</span>
-          </ng-container>
-        </div>
-      </mat-card-content>
-    </mat-tab>
-
-    <mat-tab label="Account Settings">
-      <mat-card-content>
-        <div class="profile-row">
-          <mat-icon class="profile-icon">security</mat-icon>
-          <span>Password last changed: {{ users?.password_updated_at || 'Not set' }}</span>
-        </div>
-        <div class="profile-row">
-          <mat-icon class="profile-icon">visibility</mat-icon>
-          <span>Account Visibility: {{ users?.visibility || 'Private' }}</span>
-        </div>
-        <mat-card-actions class="button-end">
-          <button mat-raised-button color="primary" (click)="editProfile()">Edit Profile</button>
-          <button mat-stroked-button color="accent" (click)="Changepassword()">Change Password</button>
-        </mat-card-actions>
-      </mat-card-content>
-    </mat-tab>
-
-    <mat-tab label="Activity">
-      <mat-card-content>
-        <div class="profile-row">
-          <p *ngIf="!users?.activity?.length">No recent activity.</p>
-          <ul *ngIf="users?.activity?.length">
-            <li *ngFor="let activity of users.activity">
-              <mat-icon class="profile-icon">history</mat-icon>
-              {{ activity }}
-            </li>
-          </ul>
-        </div>
-      </mat-card-content>
-    </mat-tab>
-  </mat-tab-group>
-
-<app-account-type-plan *ngIf="sharedRoutines.getRole() === 'DEF-USERS'"></app-account-type-plan>
-
 </section>

@@ -569,3 +569,10 @@ mat-card {
 .act-btn.active { color: var(--nexsuz-primary); }
 .act-btn mat-icon { font-size: 20px; width: 20px; height: 20px; margin: 0; }
 app-post-comments { display: block; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--nexsuz-border); }
+
+/* privacy icon beside the time */
+.user-info .meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.privacy { display: inline-flex; align-items: center; gap: 3px; padding: 1px 8px 1px 5px; border-radius: 10px; background: #eaf3fc; color: #004182; font-size: 11px; font-weight: 700; }
+.privacy mat-icon { font-size: 14px; width: 14px; height: 14px; line-height: 14px; margin: 0; }
+.privacy.p2 { background: #e7f6ee; color: #1b6b3d; }
+.privacy.p0 { background: #fff3e0; color: #a35a00; }

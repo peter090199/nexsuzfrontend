@@ -9,7 +9,7 @@
   background: var(--ink);
   color: var(--paper);
   padding: 4rem 2rem 0;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
 }
 
 .footer-content {
@@ -34,7 +34,7 @@
 }
 
 .footer-tagline {
-  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
   font-size: 1.6rem;
   font-weight: 600;
   letter-spacing: -0.02em;

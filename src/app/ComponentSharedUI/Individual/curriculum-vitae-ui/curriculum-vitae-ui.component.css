@@ -223,7 +223,7 @@ mat-horizontal-stepper {
   justify-content: space-between;
   gap: 15px;
   align-items: center;
-  font-family: Arial, sans-serif;
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
   padding: 10px;
 }
 

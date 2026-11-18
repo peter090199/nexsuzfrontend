@@ -12,6 +12,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { ChatService } from 'src/app/services/chat.service';
 import { NotificationComponent } from 'src/app/ComponentUI/notification/notification.component';
 import { NotificationService } from 'src/app/services/notification.service';
+import { NotificationPrefsService } from 'src/app/services/notification-prefs.service';
+import { NotificationDeliveryService } from 'src/app/services/notification-delivery.service';
 import { EchoService } from 'src/app/services/echo.service';
 import { Title } from '@angular/platform-browser';
 import { NotificationsService } from 'src/app/services/Global/notifications.service';
@@ -49,7 +51,10 @@ export class TopNavigationComponent implements OnInit, OnDestroy {
   nav_module: any = [];
   submenuMenu!: MatMenuPanel<any>;
 
-  messageCount = 3;
+  messageCount = 0;      // (was a hard-coded 3: no real count behind it)
+  activityUnread = 0;    // friend requests, reactions, comments... waiting for you
+  private prefsSub?: Subscription;
+  private activitySub?: Subscription;
   notificationCounts = 0;
   notificationCount: any = [];
   notifications: any[] = [];
@@ -108,7 +113,9 @@ export class TopNavigationComponent implements OnInit, OnDestroy {
     private cvService: CurriculumVitaeService,
     public feature: FeatureService,
     public sharedService: SharedRoutinesService,
-    private profileImages: ProfileImageService
+    private profileImages: ProfileImageService,
+    private prefs: NotificationPrefsService,
+    private delivery: NotificationDeliveryService
   ) {
     this.sharedRoutines.onNewPostsDetected = (count: number) => {
       this.homeNewDataCount = count;
@@ -117,6 +124,13 @@ export class TopNavigationComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.getProfile();
+
+    // notification preferences follow the account: load them, keep them in sync across devices, and deliver by them
+    this.prefs.load();
+    this.prefs.startSync();
+    this.delivery.start();
+    this.prefsSub = this.prefs.prefs$.subscribe(() => this.updateTitle(this.bellCount));
+    this.activitySub = this.delivery.activityUnread$.subscribe(n => { this.activityUnread = n; this.updateTitle(this.bellCount); });
 
     // a new / removed profile photo shows in the bar at once
     this.photoSub = this.profileImages.photo$.pipe(filter(url => url !== undefined)).subscribe(url => {
@@ -142,6 +156,8 @@ export class TopNavigationComponent implements OnInit, OnDestroy {
       clearInterval(this.inactivityCheck);
     }
     this.countsSubscription?.unsubscribe();
+    this.prefsSub?.unsubscribe();
+    this.activitySub?.unsubscribe();
     this.chatUpdateSub?.unsubscribe();
     this.photoSub?.unsubscribe();
   }
@@ -219,10 +235,16 @@ export class TopNavigationComponent implements OnInit, OnDestroy {
       this.echoService.listenToNotificationCount();
       this.countsSubscription = this.echoService.notificationCount$.subscribe(count => {
         this.unreadCount = count;
-        this.updateTitle(this.unreadCount);
+        this.updateTitle(this.bellCount);
       });
     }
   }
+
+  /** unread messages, only when the user wants unread badges */
+  get messageBadge(): number { return this.prefs.prefs.unread_badge ? this.unreadCount : 0; }
+
+  /** what the bell shows: unread messages (if badges are on) + waiting friend requests / reactions / comments */
+  get bellCount(): number { return this.messageBadge + this.activityUnread; }
 
   updateTitle(count: number): void {
     this.titleService.setTitle(count > 0 ? `🔔 (${count}) Nexsuz` : 'Nexsuz');
@@ -345,7 +367,7 @@ export class TopNavigationComponent implements OnInit, OnDestroy {
       position: { top: '40px', right: '90px' },
       panelClass: 'custom-notification-popup'
     });
-    dialogRef.afterClosed().subscribe(() => this.loadRealtimeCounts());
+    dialogRef.afterClosed().subscribe(() => { this.loadRealtimeCounts(); this.delivery.refreshActivity(); });
   }
 
   openSearch(): void {

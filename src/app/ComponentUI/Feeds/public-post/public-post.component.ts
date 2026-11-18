@@ -37,6 +37,7 @@ import { SharedRoutinesService } from 'src/app/services/Function/shared-routines
 import { _url } from 'src/global-variables';
 import { ProfileImageService } from 'src/app/services/Profile/profile-image.service';
 import { applyMyReaction, emptySummary } from 'src/app/ComponentSharedUI/Reactions/reaction-meta';
+import { privacyOf } from 'src/app/ComponentSharedUI/Public/post-privacy';
 
 interface Reaction {
   emoji: string;
@@ -237,6 +238,9 @@ export class PublicPostComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // ================= REACTIONS (Facebook style) =================
+  /** icon + label + hint for a post's visibility (Public / Friends / Private) */
+  readonly privacyOf = privacyOf;
+
   onReact(post: any, label: string): void { this.setPostReaction(post, label); }
   onUnreact(post: any): void { this.setPostReaction(post, null); }
 

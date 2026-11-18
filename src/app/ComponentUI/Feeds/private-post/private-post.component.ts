@@ -9,11 +9,15 @@ import { PrintCVComponent } from 'src/app/ComponentSharedUI/Individual/print-cv/
 import { UploadProfileComponent } from 'src/app/ComponentSharedUI/Individual/upload-profile/upload-profile.component';
 import { PostUIComponent } from 'src/app/ComponentSharedUI/Public/post-ui/post-ui.component';
 import { ImageModalComponent } from '../../Modal/image-modal/image-modal.component';
+import { ImageLightboxService } from 'src/app/ComponentSharedUI/ImageLightbox/image-lightbox.service';
 import { ReactionPostComponent } from 'src/app/ComponentSharedUI/ReactionEmoji/reaction-post/reaction-post.component';
 
 import { ProfileService } from 'src/app/services/Profile/profile.service';
 import { CurriculumVitaeService } from 'src/app/services/CV/curriculum-vitae.service';
 import { PostUploadImagesService } from 'src/app/services/post-upload-images.service';
+import { _url } from 'src/global-variables';
+import { applyMyReaction, emptySummary } from 'src/app/ComponentSharedUI/Reactions/reaction-meta';
+import { privacyOf } from 'src/app/ComponentSharedUI/Public/post-privacy';
 import { AuthService } from 'src/app/services/auth.service';
 import { NotificationsService } from 'src/app/services/Global/notifications.service';
 import { CommentService } from 'src/app/services/comment/comment.service';
@@ -39,6 +43,8 @@ export class PrivatePostComponent implements OnInit, AfterViewInit, OnDestroy {
   }
   // Inputs & ViewChildren
   @Input() postId!: number;
+  /** Photo of the profile owner (the author of these posts), passed in by the profile page */
+  @Input() ownerPhoto?: string | null;
   @ViewChild('feedContainer') feedContainer!: ElementRef;
   @ViewChildren('videoEl') videoElements!: QueryList<ElementRef<HTMLVideoElement>>;
 
@@ -72,8 +78,9 @@ export class PrivatePostComponent implements OnInit, AfterViewInit, OnDestroy {
   private observer?: IntersectionObserver;
 
   // constants
-  private baseUrl = 'https://exploredition.com/';
-  private defaultProfile = `${this.baseUrl}storage/app/public/uploads/DEFAULTPROFILE/DEFAULTPROFILE.png`;
+  /** Origin of this app's API/storage server, e.g. http://localhost:8000/ */
+  private baseUrl = (() => { try { return new URL(_url).origin + '/'; } catch { return '/'; } })();
+  private defaultProfile = 'assets/images/default.png';
   menu!: MatMenuPanel<any>;
   code:any; 
 
@@ -105,6 +112,7 @@ export class PrivatePostComponent implements OnInit, AfterViewInit, OnDestroy {
     private echoService: EchoService,
     private sanitizer: DomSanitizer,
     private cdr: ChangeDetectorRef,
+    private lightbox: ImageLightboxService,
     private postDataservices: PostUploadImagesService,
   ) {
     const url = window.location.href;
@@ -178,7 +186,17 @@ export class PrivatePostComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /* --------------------------- format helpers --------------------------- */
   private sanitizePath(path?: string): string { return (path || '').replace(/\\/g, ''); }
-  private normUrl(path?: string): string { return this.baseUrl + this.sanitizePath(path); }
+  /**
+   * Browser-ready URL for a stored media path. The API already returns absolute URLs for this
+   * server (http://localhost:8000/storage/...), so those are kept as they are; only relative
+   * paths get the server origin in front.
+   */
+  private normUrl(path?: string): string {
+    const p = this.sanitizePath(path).trim();
+    if (!p) return '';
+    if (/^(https?:|data:|blob:)/i.test(p) || p.startsWith('assets/')) return p;
+    return this.baseUrl + p.replace(/^\/*storage\/app\/public\//, 'storage/').replace(/^\/+/, '');
+  }
 
   private formatPost(post: any): any {
     return {
@@ -190,6 +208,11 @@ export class PrivatePostComponent implements OnInit, AfterViewInit, OnDestroy {
       comments: (post.comments || []).map((c: any) => this.formatComment(c)),
       activeHours: this.getActiveHours(post.lastActive),
       visibleComments: 3,
+      showComments: false,
+      reactBusy: false,
+      reaction_summary: post.reaction_summary ?? emptySummary(),
+      my_reaction: post.my_reaction ?? null,
+      comments_count: post.comments_count ?? 0,
       expanded: false
     };
   }
@@ -200,6 +223,26 @@ export class PrivatePostComponent implements OnInit, AfterViewInit, OnDestroy {
       profile_pic: c.profile_pic ? this.normUrl(c.profile_pic) : this.defaultProfile,
       replies: (c.replies || []).map((r: any) => this.formatComment(r))
     };
+  }
+
+  /** Author picture for a post: its own, else the profile owner's, else the default avatar */
+  avatarOf(post: any): string {
+    const own = post?.profile_pic;
+    if (own && own !== this.defaultProfile) return own;
+    return this.ownerPhoto || this.defaultProfile;
+  }
+
+  /** "5 min ago", "3 h ago", "2 d ago", then the date */
+  timeAgo(value: any): string {
+    if (!value) return '';
+    const t = new Date(value).getTime();
+    if (isNaN(t)) return '';
+    const s = Math.max(0, Math.floor((Date.now() - t) / 1000));
+    if (s < 60) return 'Just now';
+    const m = Math.floor(s / 60); if (m < 60) return m + ' min ago';
+    const h = Math.floor(m / 60); if (h < 24) return h + ' h ago';
+    const d = Math.floor(h / 24); if (d < 7) return d + ' d ago';
+    return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
   getActiveHours(lastActive: string): string {
@@ -374,6 +417,14 @@ export class PrivatePostComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /* --------------------------- UI helpers / modals --------------------------- */
+  /** Picture viewer (same as Home): centred, fits the screen, opens on the picture you clicked. */
+  openImages(images: any[], startIndex = 0): void {
+    const items = (images || [])
+      .filter(i => i?.path_url)
+      .map(i => ({ src: i.path_url as string, type: (i.posts_type === 'video' ? 'video' : 'image') as 'image' | 'video' }));
+    if (items.length) { this.lightbox.open(items, startIndex); }
+  }
+
   openModal(images: any[]): void {
     const dialogRef = this.dialog.open(ImageModalComponent, { data: images, width: '90%', maxWidth: '1200px' });
     dialogRef.afterClosed().pipe(takeUntil(this.destroy$)).subscribe(res => { if (res) this.refreshFeed(); });
@@ -406,6 +457,48 @@ export class PrivatePostComponent implements OnInit, AfterViewInit, OnDestroy {
     this.isPopupVisible[postId] = false;
     this.hoveredReactions[postId] = null;
   }
+  /** icon + label + hint for a post's visibility (Public / Friends / Private) */
+  readonly privacyOf = privacyOf;
+
+  onReact(post: any, label: string): void { this.setPostReaction(post, label); }
+  onUnreact(post: any): void { this.setPostReaction(post, null); }
+
+  /**
+   * One reaction per user per post (the database has a unique key on post + user). The counts move
+   * at once; the server's own summary then replaces them, and a failed request puts everything back.
+   */
+  private setPostReaction(post: any, next: string | null): void {
+    if (post.reactBusy) { return; }
+    const previousSummary = post.reaction_summary;
+    const previousMine = post.my_reaction;
+
+    post.reaction_summary = applyMyReaction({ ...(previousSummary || emptySummary()), mine: previousMine }, next);
+    post.my_reaction = next;
+    post.reactBusy = true;
+
+    const call$ = next
+      ? this.postReactionByIdService.setReaction(post.id, next)
+      : this.postReactionByIdService.removeReaction(post.id);
+
+    call$.pipe(takeUntil(this.destroy$)).subscribe({
+      next: (res: any) => {
+        post.reactBusy = false;
+        if (res?.success && res.reactions) {
+          post.reaction_summary = res.reactions;
+          post.my_reaction = res.reactions.mine ?? null;
+        }
+        this.cdr.markForCheck();
+      },
+      error: (err: any) => {
+        post.reactBusy = false;
+        post.reaction_summary = previousSummary;
+        post.my_reaction = previousMine;
+        this.alert.toastrError(err?.error?.message || 'Your reaction could not be saved. Please try again.');
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
   openReactionsModal(postId: number): void {
     this.dialog.open(ReactionPostComponent, { data: postId, width: '100%', maxWidth: '600px', panelClass: 'centered-modal' });
   }

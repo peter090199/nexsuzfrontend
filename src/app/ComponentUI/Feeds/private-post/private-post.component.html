@@ -25,27 +25,31 @@
   <div *ngFor="let post of posts; trackBy: trackByPostId" class="post-card feed-container">
 
     <!-- Post Header -->
-    <div class="header-left" *ngIf="profiles">
-      <div mat-card-avatar class="avatar">
-        <img [src]="post.photo_pic" alt="Avatar">
+    <div class="pc-head" *ngIf="profiles">
+      <div class="pc-avatar">
+        <img [src]="avatarOf(post)" nxFallback alt="Author photo">
       </div>
-      <div class="header-info">
-        <div class="client-info">
-          <h3 class="client-name">
-          <!-- {{post.fullname}} -->
-          </h3>
+      <div class="pc-meta">
+        <h3 class="pc-name">{{ post.fullname }}</h3>
+        <div class="pc-sub">
+          <span>{{ timeAgo(post.created_at) }}</span>
+          <span class="pc-dot" aria-hidden="true">·</span>
+          <span class="pc-privacy" [ngClass]="'p' + privacyOf(post.status).value" [matTooltip]="privacyOf(post.status).hint"
+            [attr.aria-label]="'Visible to: ' + privacyOf(post.status).label">
+            <mat-icon>{{ privacyOf(post.status).icon }}</mat-icon>
+            {{ privacyOf(post.status).label }}
+          </span>
         </div>
-        <small class="post-time">{{ post.created_at | date: 'medium' }}</small>
       </div>
 
-      <button mat-icon-button [matMenuTriggerFor]="menu" class="menu-btn" aria-label="Post Options">
+      <button mat-icon-button [matMenuTriggerFor]="menu" class="pc-menu-btn" aria-label="Post options">
         <mat-icon>more_horiz</mat-icon>
       </button>
 
       <mat-menu #menu="matMenu">
-        <button mat-menu-item (click)="onEditPost(post)">Edit</button>
+        <button mat-menu-item (click)="onEditPost(post)"><mat-icon>edit</mat-icon> Edit post</button>
         <button mat-menu-item (click)="onDelete(post)" [disabled]="isLoading">
-          <ng-container *ngIf="!isLoading; else deletingTpl">Delete</ng-container>
+          <ng-container *ngIf="!isLoading; else deletingTpl"><mat-icon>delete_outline</mat-icon> Delete post</ng-container>
           <ng-template #deletingTpl>
             <mat-progress-spinner diameter="20" mode="indeterminate" color="warn"></mat-progress-spinner>
           </ng-template>
@@ -54,7 +58,7 @@
     </div>
 
     <!-- Caption -->
-    <div class="post-caption">
+    <div class="post-caption pc-caption">
       <p>{{ post.expanded ? post.caption : (post.caption | slice:0:800) + (post.caption.length > 800 ? '...' : '') }}
       </p>
       <a *ngIf="post.caption.length > 800" (click)="post.expanded = !post.expanded" class="see-more">
@@ -62,12 +66,15 @@
       </a>
     </div>
 
-    <!-- Images -->
-    <div *ngIf="post.images?.length" class="post-media">
-      <div class="fb-gallery" [ngClass]="{single: post.images.length === 1, multi: post.images.length > 1}">
-        <div class="gallery-item" *ngFor="let image of post.images" (click)="openModal(post.images)">
-          <img [src]="image.path_url" alt="Post image">
-        </div>
+    <!-- Images: 1 = full width, 2 = halves, 3 = one large + two, 4+ = 2x2 with a "+N" tile -->
+    <div *ngIf="post.images?.length" class="pc-media">
+      <div class="pc-grid" [ngClass]="'n' + (post.images.length > 4 ? 4 : post.images.length)">
+        <button type="button" class="pc-cell" *ngFor="let image of post.images | slice:0:4; let i = index"
+          (click)="openImages(post.images, i); $event.stopPropagation()" [attr.aria-label]="'Open photo ' + (i + 1) + ' of ' + post.images.length">
+          <img [src]="image.path_url" loading="lazy"
+            (error)="$any($event.target).closest('.pc-cell').style.display = 'none'" alt="Post image">
+          <span class="pc-more" *ngIf="i === 3 && post.images.length > 4">+{{ post.images.length - 4 }}</span>
+        </button>
       </div>
     </div>
 
@@ -76,172 +83,27 @@
       <video *ngFor="let video of post.videos" controls [src]="video.path_url"></video>
     </div>
 
-    <!-- Reactions -->
-    <div class="reactions-summary"
-      *ngIf="postReactions[post.id]?.reactions?.length || postReactions[post.id]?.totalCount">
-      <div class="emoji-stack" style="position: relative; height: 24px;">
-        <ng-container *ngFor="let reaction of postReactions[post.id]?.reactions; let i = index">
-          <span class="emoji-item" [ngStyle]="{
-                'position': 'absolute',
-                'z-index': postReactions[post.id].reactions.length - i,
-                'left.px': i * 15
-              }">{{ reaction.emoji }}</span>
-        </ng-container>
-      </div>
-
-      <a *ngIf="postReactions[post.id]?.totalCount" class="reaction-count-text"
-        (mouseenter)="showHoverNames(post.id, $event)" (mouseleave)="hideHoverNames()"
-        (click)="openReactionsModal(post.id)"
-        [ngStyle]="{'margin-left.px': 17 * postReactions[post.id].totalCount, 'cursor': 'pointer'}">
-        {{ postReactions[post.id].totalCount }}
-      </a>
-
-      <div *ngIf="hoverVisible && hoveredPostId === post.id" class="reaction-tooltip"
-        [ngStyle]="{'top.px': hoverPosition.y, 'left.px': hoverPosition.x}">
-        <div *ngFor="let reaction of hoveredReactions2">
-          <div *ngFor="let person of reaction.person" class="reaction-user">
-            <span>{{ person.fullname }}</span>
-          </div>
-          <div *ngIf="reaction.person.length > 11" class="reaction-more">
-            +{{ reaction.person.length - 11 }} more
-          </div>
-        </div>
-      </div>
+    <!-- Reaction + comment counts -->
+    <div class="pc-counts" *ngIf="post.reaction_summary?.total || post.comments_count">
+      <app-reaction-summary [summary]="post.reaction_summary" (openList)="openReactionsModal(post.id)"></app-reaction-summary>
+      <span class="pc-spacer"></span>
+      <button type="button" class="count-btn" *ngIf="post.comments_count" (click)="toggleComments(post)">
+        {{ post.comments_count }} {{ post.comments_count === 1 ? 'comment' : 'comments' }}
+      </button>
     </div>
 
-    <!-- Footer Buttons -->
-    <div class="post-footer" *ngIf="post.images?.length">
-      <!-- Like Button + Reactions Popup -->
-      <div class="footer-btn like-button-wrapper" (mouseenter)="isPopupVisible[post.id] = true"
-        (mouseleave)="isPopupVisible[post.id] = false">
-        <button mat-button>
-          <mat-icon>{{ userReactions[post.id]?.emoji || 'thumb_up' }}</mat-icon>
-          {{ userReactions[post.id]?.label || 'Like' }}
-        </button>
-
-        <div class="reactions-popup" *ngIf="isPopupVisible[post.id]">
-          <div class="reaction" *ngFor="let react of reaction" (mouseenter)="hoveredReactions[post.id]"
-            (mouseleave)="hoveredReactions[post.id] = null" (click)="selectReactions(post.id, react)">
-            <span>{{ react.emoji }}</span>
-          </div>
-        </div>
-      </div>
-
-
-      <button mat-button (click)="openModal(post.images)">
+    <!-- Actions: shared reaction button (hover / long-press picker, six reactions) + comments -->
+    <div class="post-footer pc-actions">
+      <app-reaction-button [myReaction]="post.my_reaction" [disabled]="post.reactBusy"
+        (react)="onReact(post, $event)" (unreact)="onUnreact(post)"></app-reaction-button>
+      <button mat-button (click)="toggleComments(post)" [class.active]="post.showComments" [attr.aria-expanded]="!!post.showComments">
         <mat-icon>chat_bubble_outline</mat-icon> Comment
       </button>
-
-      <button mat-button><mat-icon>repeat</mat-icon> Share</button>
-      <button mat-button><mat-icon>send</mat-icon> Send</button>
     </div>
 
-
-    <div class="post-footer" *ngIf="post.videos?.length">
-      <div class="footer-btn like-button-wrapper" (mouseenter)="showReaction(post.id)"
-        (mouseleave)="hideReaction(post.id)">
-
-        <button mat-button>
-          <mat-icon>{{ getReactionEmoji(post.id) }}</mat-icon>
-          {{ getReactionLabel(post.id) }}
-        </button>
-
-        <div class="reactions-popup" *ngIf="isPopupVisible[post.id]">
-          <div class="reaction" *ngFor="let react of reaction" (mouseenter)="hoveredReactions[post.id] = react"
-            (mouseleave)="hoveredReactions[post.id] = null" (click)="selectReactions(post.id, react)">
-            <span>{{ react.emoji }}</span>
-          </div>
-        </div>
-
-      </div>
-
-      <button mat-button (click)="openModal(post.videos)">
-        <mat-icon>chat_bubble_outline</mat-icon> Comment
-      </button>
-
-      <button mat-button>
-        <mat-icon>repeat</mat-icon> Share
-      </button>
-
-      <button mat-button>
-        <mat-icon>send</mat-icon> Send
-      </button>
-    </div>
-
-    <div class="post-footer" *ngIf="!post.images?.length && !post.videos?.length">
-      <div class="footer-btn like-button-wrapper" (mouseenter)="showReaction(post.id)"
-        (mouseleave)="hideReaction(post.id)">
-        <button mat-button>
-          <mat-icon>{{ getReactionEmoji(post.id) }}</mat-icon>
-          {{ getReactionLabel(post.id) }}
-        </button>
-
-        <div class="reactions-popup" *ngIf="isPopupVisible[post.id]">
-          <div class="reaction" *ngFor="let react of reaction" (mouseenter)="hoveredReactions[post.id] = react"
-            (mouseleave)="hoveredReactions[post.id] = null" (click)="selectReactions(post.id, react)">
-            <span>{{ react.emoji }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Comment Button -->
-      <!-- <button mat-icon-button (click)="togglePanel(post.id)">
-            <mat-icon>chat_bubble_outline</mat-icon> Comment
-          </button> -->
-
-      <button mat-button (click)="openCommentModal(post)">
-        <mat-icon>chat_bubble_outline</mat-icon> Comment
-      </button>
-
-
-      <!-- Share Button -->
-      <button mat-button>
-        <mat-icon>repeat</mat-icon> Share
-      </button>
-
-      <!-- Send Button -->
-      <button mat-button>
-        <mat-icon>send</mat-icon> Send
-      </button>
-    </div>
-
-    <!-- Comments Section -->
-    <mat-accordion *ngIf="post.showComments">
-      <mat-expansion-panel [expanded]="post.showComments" hideToggle>
-        <div class="comment-section">
-
-          <!-- Add Comment -->
-          <div class="comment-input">
-            <div mat-card-avatar class="avatar">
-              <img [src]="post.profile_pic" alt="Avatar">
-            </div>
-            <input type="text" placeholder="Write a comment..." [(ngModel)]="post.newComment">
-            <button mat-button color="primary" (click)="addComment(post)">
-              <mat-icon>send</mat-icon>
-            </button>
-          </div>
-
-          <!-- Comment List -->
-          <div class="comment-list" *ngIf="post.comments?.length">
-            <div class="comment-item" *ngFor="let c of post.comments">
-              <img class="avatar" [src]="c.profile_pic" alt="User Avatar">
-              <div class="comment-content">
-                <strong>{{ c.user }}</strong>
-                <p>{{ c.comment }}</p>
-
-                <!-- Replies -->
-                <div *ngIf="c.replies?.length" class="replies">
-                  <div *ngFor="let r of c.replies">
-                    <strong>{{ r.user }}</strong>: {{ r.comment }}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </mat-expansion-panel>
-    </mat-accordion>
+    <!-- COMMENTS: shared section (replies, reactions, edit, delete), same as Home -->
+    <app-post-comments *ngIf="post.showComments" [postUuid]="post.posts_uuid"
+      (countChange)="post.comments_count = $event"></app-post-comments>
 
   </div>
 

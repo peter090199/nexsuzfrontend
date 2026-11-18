@@ -1,7 +1,7 @@
 import { StepperSelectionEvent } from '@angular/cdk/stepper';
 import { Component, OnInit, ViewChild, AfterViewInit, Inject, ElementRef } from '@angular/core';
 import { CurriculumVitaeService } from 'src/app/services/CV/curriculum-vitae.service';
-import { FormBuilder, FormGroup, FormArray, Validators, FormControl } from '@angular/forms';
+import { FormBuilder, FormGroup, FormArray, Validators, FormControl, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { MatAccordion } from '@angular/material/expansion';
 import { ProfileService } from 'src/app/services/Profile/profile.service';
 import { MatHorizontalStepper } from '@angular/material/stepper/stepper';
@@ -31,6 +31,7 @@ import { PrintCVComponent } from '../print-cv/print-cv.component';
 import { AuthService } from 'src/app/services/auth.service';
 import { MatTabChangeEvent } from '@angular/material/tabs';
 import { ImagesService } from 'src/app/services/images/images.service';
+import { ProfileImageService } from 'src/app/services/Profile/profile-image.service';
 
 
 
@@ -145,7 +146,8 @@ export class UserCVComponent implements AfterViewInit {
     private notificationService: NotificationsService, private router: Router, private datePipe: DatePipe,
     private dialog: MatDialog, private passDataServices: ProfessionalService, private alert: NotificationsService,
     private profileService: ProfessionalService, private educacationServices: CurriculumVitaeService,
-    private authServiceCode: AuthService,private imageService:ImagesService
+    private authServiceCode: AuthService,private imageService:ImagesService,
+    private profileImages: ProfileImageService
   ) {
     this.countryControl1.valueChanges.subscribe(value => {
       this.filteredCountries1 = this.filterCountries(value);
@@ -617,8 +619,8 @@ export class UserCVComponent implements AfterViewInit {
   homeFilteredOptions!: Observable<{ name: string }[]>;
   currentFilteredOptions!: Observable<{ name: string }[]>;
 
-  countryControl1 = new FormControl();
-  countryControl2 = new FormControl();
+  countryControl1 = new FormControl('', Validators.required);
+  countryControl2 = new FormControl('', Validators.required);
 
   filteredCountries1: { name: string }[] = this.countries;
   filteredCountries2: { name: string }[] = this.countries;
@@ -770,7 +772,7 @@ export class UserCVComponent implements AfterViewInit {
           this.firstFormGroup.patchValue({
             contact_visibility: profile.contact_visibility,
             email_visibility: profile.email_visibility,
-            date_birth: new Date(profile.date_birth),
+            date_birth: this.parseDbDate(profile.date_birth),
           });
 
           // HOME LOCATION
@@ -853,17 +855,46 @@ export class UserCVComponent implements AfterViewInit {
     );
   }
 
+  /** 'YYYY-MM-DD' (or ISO) from the API -> local Date; empty/invalid -> '' (never 1970, never a day off) */
+  private parseDbDate(v: any): Date | '' {
+    if (!v) return '';
+    const m = /^(d{4})-(d{2})-(d{2})/.exec(String(v));
+    const d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(v);
+    return isNaN(d.getTime()) ? '' : d;
+  }
+
+  /** Latest allowed birth date (must be 18 or older): used by the date picker */
+  readonly maxBirthDate: Date = (() => { const d = new Date(); d.setFullYear(d.getFullYear() - 18); return d; })();
+  saving = false;
+
+  private minAgeValidator(years: number): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const v = control.value;
+      if (!v) return null;                       // "required" reports the empty case
+      const dob = new Date(v);
+      if (isNaN(dob.getTime())) return { invalidDate: true };
+      const limit = new Date(); limit.setFullYear(limit.getFullYear() - years);
+      return dob <= limit ? null : { minAge: { years } };
+    };
+  }
+
+  /** Save & Continue: validate ONLY this step, save, and move on only if the save worked. */
+  saveStep(step: 1 | 2 | 3): void {
+    if (this.saving) return;
+    this.saveProfile(step, () => this.stepper?.next());
+  }
+
   private initializeFormGroups(): void {
     this.firstFormGroup = this.formBuilder.group({
       fname: ['', Validators.required],
       lname: ['', Validators.required],
       profession: ['', Validators.required],
-      contact_no: ['', Validators.required],
+      contact_no: ['', [Validators.required, Validators.pattern(/^[0-9+()\-\s]{7,20}$/)]],
       email: ['', Validators.required],
       contact_visibility: [false],
       email_visibility: [false],
       dob_visibility: [false],
-      date_birth: ['', Validators.required],
+      date_birth: ['', [Validators.required, this.minAgeValidator(18)]],
 
     });
     this.secondFormGroup = this.formBuilder.group({
@@ -872,8 +903,11 @@ export class UserCVComponent implements AfterViewInit {
       home_state: ['', Validators.required],
       current_state: ['', Validators.required],
     });
+    // the two country pickers are part of this step's form, so the stepper and Save respect them
+    this.secondFormGroup.addControl('home_country', this.countryControl1);
+    this.secondFormGroup.addControl('current_location', this.countryControl2);
     this.summaryFormGroup = this.formBuilder.group({
-      summary: ['', Validators.required],
+      summary: ['', [Validators.required, Validators.maxLength(255)]],
 
     });
 
@@ -1109,37 +1143,82 @@ export class UserCVComponent implements AfterViewInit {
   // }
 
 
+  uploadingPhoto = false;
+  /** Last picture the server has, restored if an upload fails */
+  private savedPhotoUrl: string | null = null;
+  private readonly photoTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
+  /**
+   * Choose a photo: validate, preview at once, then save it right away with the dedicated
+   * uploadProfilePhoto API (creates the profile row if needed; the top bar updates live).
+   */
   onUploadPhoto2(event: Event): void {
     const input = event.target as HTMLInputElement;
-    if (input?.files && input.files[0]) {
-      const file = input.files[0];
+    const file = input?.files?.[0];
+    if (!file) return;
 
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        this.fileError = 'Please upload a valid image file.';
-        return;
-      }
-
-      // Validate file size (max 2MB)
-      const maxSizeInBytes = 2 * 1024 * 1024;
-      if (file.size > maxSizeInBytes) {
-        this.fileError = 'File size exceeds 2MB. Please upload a smaller file.';
-        return;
-      }
-
-      // Valid file
-      this.selectedFile = file;
-      this.filename = file.name;
-      this.fileError = '';
-      this.isImageSelected = true;
-
-      const reader = new FileReader();
-      reader.onload = () => {
-        this.previewUrl = reader.result as string;
-        this.validateAge();
-      };
-      reader.readAsDataURL(file);
+    if (!this.photoTypes.includes(file.type)) {
+      this.fileError = 'The photo must be a JPG, PNG, GIF or WEBP image.';
+      input.value = '';
+      return;
     }
+    if (file.size > 5 * 1024 * 1024) {
+      this.fileError = 'The photo must be 5 MB or smaller.';
+      input.value = '';
+      return;
+    }
+
+    this.fileError = '';
+    this.filename = file.name;
+    if (this.savedPhotoUrl === null) this.savedPhotoUrl = this.previewUrl || '';
+
+    const reader = new FileReader();
+    reader.onload = () => { this.previewUrl = reader.result as string; };
+    reader.readAsDataURL(file);
+
+    this.uploadingPhoto = true;
+    this.profileImages.uploadPhoto(file).subscribe({
+      next: (res: any) => {
+        this.uploadingPhoto = false;
+        if (res?.success) {
+          this.previewUrl = res.photo_pic || this.previewUrl;
+          this.savedPhotoUrl = null;
+          this.selectedFile = null;           // already saved, saveProfile must not re-send it
+          this.isImageSelected = true;
+          this.notificationService.toastrSuccess(res.message || 'Profile photo updated.');
+        } else {
+          this.failPhoto(res?.message);
+        }
+        input.value = '';
+      },
+      error: (err: any) => { this.uploadingPhoto = false; this.failPhoto(err?.error?.message); input.value = ''; }
+    });
+  }
+
+  private failPhoto(msg: any): void {
+    this.previewUrl = this.savedPhotoUrl;
+    this.savedPhotoUrl = null;
+    this.filename = '';
+    this.fileError = (Array.isArray(msg) ? msg.join(' ') : msg) || 'The photo could not be uploaded. Please try again.';
+    this.notificationService.toastrError(this.fileError);
+  }
+
+  /** Remove the saved photo (default avatar shows again) */
+  removePhoto(): void {
+    if (this.uploadingPhoto) return;
+    this.uploadingPhoto = true;
+    this.profileImages.removePhoto().subscribe({
+      next: (res: any) => {
+        this.uploadingPhoto = false;
+        if (res?.success) {
+          this.previewUrl = null; this.filename = ''; this.selectedFile = null; this.isImageSelected = false; this.fileError = '';
+          this.notificationService.toastrSuccess(res.message || 'Profile photo removed.');
+        } else {
+          this.notificationService.toastrError(res?.message || 'Could not remove the photo.');
+        }
+      },
+      error: (err: any) => { this.uploadingPhoto = false; this.notificationService.toastrError(err?.error?.message || 'Could not remove the photo.'); }
+    });
   }
 
   resetPhoto(): void {
@@ -1309,15 +1388,15 @@ export class UserCVComponent implements AfterViewInit {
 
   lines: any = [];
 
-  saveProfile(): void {
-    if (this.firstFormGroup.invalid) {
-      this.firstFormGroup.markAllAsTouched();
-      console.warn('Form is invalid:', this.firstFormGroup.value);
-      return;
-    }
-    if (this.secondFormGroup.invalid) {
-      this.secondFormGroup.markAllAsTouched();
-      console.warn('Form is invalid:', this.secondFormGroup.value);
+  saveProfile(step: 1 | 2 | 3 = 3, afterSave?: () => void): void {
+    // each step only has to be valid up to itself (step 1 no longer needs the step-2 fields)
+    const needed: FormGroup[] = step === 1 ? [this.firstFormGroup]
+      : step === 2 ? [this.firstFormGroup, this.secondFormGroup]
+      : [this.firstFormGroup, this.secondFormGroup, this.summaryFormGroup];
+    const bad = needed.find(g => g.invalid);
+    if (bad) {
+      bad.markAllAsTouched();
+      this.notificationService.toastrWarning('Please fix the highlighted fields.');
       return;
     }
 
@@ -1355,18 +1434,23 @@ export class UserCVComponent implements AfterViewInit {
       console.log(pair[0], pair[1]);
     }
 
+    this.saving = true;
     this.cvService.saveProfile(formData).subscribe({
       next: (res) => {
-        console.log(res.success);
+        this.saving = false;
         if (res.success) {
           this.loadProfile1();
-        }
-        else {
-          this.notificationService.toastrError(res.message);
+          afterSave?.();
+        } else {
+          const m = res.message;
+          this.notificationService.toastrError((Array.isArray(m) ? m.join(' ') : m) || 'Could not save.');
         }
       },
       error: (err) => {
+        this.saving = false;
         console.error('❌ Save failed:', err);
+        const m = err?.error?.message;
+        this.notificationService.toastrError((Array.isArray(m) ? m.join(' ') : m) || 'Could not save. Please try again.');
       }
     });
   }
@@ -1376,10 +1460,15 @@ export class UserCVComponent implements AfterViewInit {
   }
 
   previewAndFinish() {
+    // Move focus off the trigger first: the CDK hides the page behind the dialog with aria-hidden,
+    // and a focused element inside a hidden subtree is an accessibility error.
+    (document.activeElement as HTMLElement | null)?.blur();
     const dialogConfig = new MatDialogConfig();
     dialogConfig.autoFocus = true;
-    dialogConfig.width = '900px';
-    dialogConfig.height = '600px';
+    dialogConfig.width = '960px';
+    dialogConfig.maxWidth = '100vw';
+    dialogConfig.maxHeight = '94vh';
+    dialogConfig.panelClass = 'cv-dialog';
     const dialogRef = this.dialog.open(PrintCVComponent, dialogConfig);
     dialogRef.afterClosed().subscribe(result => {
       if (result) {

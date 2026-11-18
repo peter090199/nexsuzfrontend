@@ -255,6 +255,8 @@ import { TNavigationService } from 'src/app/services/TNavigation/tnavigation.ser
 import { NotificationComponent } from 'src/app/ComponentUI/notification/notification.component';
 import { MatDialog } from '@angular/material/dialog';
 import { EchoService } from 'src/app/services/echo.service';
+import { NotificationPrefsService } from 'src/app/services/notification-prefs.service';
+import { NotificationDeliveryService } from 'src/app/services/notification-delivery.service';
 import { Title } from '@angular/platform-browser';
 import { ProfileService } from 'src/app/services/Profile/profile.service';
 import { SharedRoutinesService } from 'src/app/services/Function/shared-routines.service';
@@ -285,6 +287,11 @@ export class SideBarPanelComponent implements OnInit, OnDestroy {
 
   // ================= NOTIFICATION =================
   unreadCount = 0;
+  activityUnread = 0;
+  private activitySub?: Subscription;
+
+  /** unread messages (when the user wants unread badges) + waiting friend requests / reactions / comments */
+  get bellCount(): number { return (this.prefs.prefs.unread_badge ? this.unreadCount : 0) + this.activityUnread; }
 
   // ================= PROFILE =================
   profile: any;
@@ -306,6 +313,8 @@ export class SideBarPanelComponent implements OnInit, OnDestroy {
     public sharedService: SharedRoutinesService,
     private location: Location,
     private cvService: CurriculumVitaeService,
+    private prefs: NotificationPrefsService,
+    private delivery: NotificationDeliveryService,
   ) { }
   @ViewChild('searchSidenav') searchSidenav: any;
 
@@ -327,6 +336,12 @@ export class SideBarPanelComponent implements OnInit, OnDestroy {
     this.fetchModules();
     this.loadRealtimeCounts();
     this.getProfile();
+
+    // notification preferences: load, stay in sync across devices, deliver by them
+    this.prefs.load();
+    this.prefs.startSync();
+    this.delivery.start();
+    this.activitySub = this.delivery.activityUnread$.subscribe(n => { this.activityUnread = n; this.updateTitle(this.bellCount); });
   }
 
   // ================= PROFILE =================
@@ -426,7 +441,7 @@ export class SideBarPanelComponent implements OnInit, OnDestroy {
       this.countsSubscription = this.echoService.notificationCount$
         .subscribe(count => {
           this.unreadCount = count;
-          this.updateTitle(count);
+          this.updateTitle(this.bellCount);
         });
     }
   }
@@ -509,6 +524,7 @@ export class SideBarPanelComponent implements OnInit, OnDestroy {
   // ================= CLEANUP =================
   ngOnDestroy(): void {
     this.countsSubscription?.unsubscribe();
+    this.activitySub?.unsubscribe();
     this.breakpointSubscription?.unsubscribe();
     this.routerSubscription?.unsubscribe();
   }

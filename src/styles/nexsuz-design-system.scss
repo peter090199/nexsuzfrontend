@@ -30,6 +30,13 @@
 
 // ---------- Base (applies to every module) ----------
 html, body { background: $nx-bg; color: $nx-text; font-family: $nx-font; }
+// One typeface everywhere: Verdana. Form controls and Material text inherit it (icon fonts are untouched).
+button, input, select, textarea, optgroup { font-family: inherit; }
+.mat-typography, .mat-body, .mat-body-1, .mat-body-2, .mat-h1, .mat-h2, .mat-h3, .mat-h4, .mat-h5, .mat-h6,
+.mat-menu-item, .mat-option, .mat-select, .mat-select-value, .mat-input-element, .mat-tooltip,
+.mat-card, .mat-card-title, .mat-card-subtitle, .mat-expansion-panel, .mat-step-label, .mat-checkbox, .mat-radio-button,
+.mat-slide-toggle, .mat-toolbar, .mat-list-base, .mat-paginator, .mat-datepicker-content, .mat-calendar,
+.mat-snack-bar-container, .mat-dialog-title, .mat-tab-label, .mat-button-toggle { font-family: $nx-font; }
 *, *::before, *::after { box-sizing: border-box; }
 img { max-width: 100%; }
 

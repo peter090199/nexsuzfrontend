@@ -1,5 +1,6 @@
-import { Component, EventEmitter, Input, OnDestroy, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild } from '@angular/core';
 import { REACTIONS, ReactionDef, reactionOf } from '../reaction-meta';
+import { ReactionFxService } from '../reaction-fx.service';
 
 /**
  * Facebook-style Like button with a reaction picker.
@@ -22,8 +23,15 @@ export class ReactionButtonComponent implements OnDestroy {
   @Output() react = new EventEmitter<string>();
   @Output() unreact = new EventEmitter<void>();
 
+  @ViewChild('mainBtn') mainBtn?: ElementRef<HTMLButtonElement>;
+
   readonly reactions = REACTIONS;
   open = false;
+  /** plays the little bounce on the face of the button right after a reaction is chosen */
+  popping = false;
+  private popTimer?: any;
+
+  constructor(public fx: ReactionFxService) {}
 
   private openTimer?: any;
   private closeTimer?: any;
@@ -86,18 +94,40 @@ export class ReactionButtonComponent implements OnDestroy {
       return;
     }
     this.open = false;
-    this.myReaction ? this.unreact.emit() : this.react.emit('Like');
+    if (this.myReaction) {
+      this.unreact.emit();
+    } else {
+      this.celebrate('Like');
+      this.react.emit('Like');
+    }
   }
 
   pick(label: string): void {
     if (this.disabled) { return; }
     this.open = false;
+    this.celebrate(label);
     this.react.emit(label);
+  }
+
+  /** Floating emoji, bounce and (if switched on) sound. Runs inside the click, so audio is allowed. */
+  private celebrate(label: string): void {
+    this.popping = true;
+    clearTimeout(this.popTimer);
+    this.popTimer = setTimeout(() => (this.popping = false), 500);
+    this.fx.burst(this.mainBtn?.nativeElement, reactionOf(label)?.emoji, label);
+    this.fx.play(label);
+  }
+
+  toggleSound(event: Event): void {
+    event.stopPropagation();
+    this.fx.setSound(!this.fx.soundOn);
+    if (this.fx.soundOn) { this.fx.play('Like'); }       // a click, so this is a direct user action: confirms it works
   }
 
   ngOnDestroy(): void {
     clearTimeout(this.openTimer);
     clearTimeout(this.closeTimer);
     clearTimeout(this.pressTimer);
+    clearTimeout(this.popTimer);
   }
 }

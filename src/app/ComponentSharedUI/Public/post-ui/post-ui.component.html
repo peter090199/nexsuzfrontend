@@ -1,18 +1,19 @@
 <div class="composer">
 
-  <!-- header -->
+  <!-- header (always visible) -->
   <div class="composer-head">
     <img [src]="getProfileImage(profiles?.photo_pic)" nxFallback alt="" class="composer-avatar" />
     <div class="composer-who">
       <strong>{{ profiles2?.fname }} {{ profiles2?.lname }}</strong>
-      <span class="mode-label" *ngIf="isEdit">Editing your post</span>
       <form [formGroup]="postForm" class="visibility">
-        <mat-icon>{{ postForm.get('status')?.value === 0 ? 'lock' : 'public' }}</mat-icon>
-        <select formControlName="status" aria-label="Who can see this post">
+        <mat-icon class="v-ico">{{ privacyIcon }}</mat-icon>
+        <select formControlName="status" aria-label="Who can see this post" [title]="privacyHint">
           <option *ngFor="let option of statusOptions" [ngValue]="option.value">{{ option.label }}</option>
         </select>
+        <mat-icon class="v-caret" aria-hidden="true">arrow_drop_down</mat-icon>
       </form>
     </div>
+    <span class="composer-title">{{ isEdit ? 'Edit post' : 'Create a post' }}</span>
     <button type="button" mat-icon-button class="composer-close" (click)="cancel()" [disabled]="isUploading"
       aria-label="Close">
       <mat-icon>close</mat-icon>
@@ -23,6 +24,7 @@
   <form [formGroup]="postForm" class="composer-body">
     <textarea formControlName="caption" class="composer-text" rows="5" maxlength="5000"
       placeholder="What do you want to talk about?" aria-label="Post text"></textarea>
+    <div class="char-count" aria-live="polite">{{ postForm.get('caption')?.value?.length || 0 }} / 5000</div>
     <div class="field-error" *ngIf="postForm.get('caption')?.touched && !canPost">
       <mat-icon>error</mat-icon> Write something or attach an image or video.
     </div>

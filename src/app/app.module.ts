@@ -90,6 +90,8 @@ import { ChatWebsitePopUPComponent } from './ComponentUI/messages/chat-website-p
 import { PostUploadImageComponent } from './ComponentSharedUI/Public/post-upload-image/post-upload-image.component';
 import { ImageModalComponent } from './ComponentUI/Modal/image-modal/image-modal.component';
 import { SettingsComponent } from './ComponentUI/profile/settings/settings.component';
+import { SettingsConfirmDialogComponent } from './ComponentUI/profile/settings/confirm-dialog/confirm-dialog.component';
+import { MessageToastComponent } from './ComponentUI/notification/message-toast/message-toast.component';
 import { ChangePasswordComponent } from './ComponentSharedUI/forgot-password-ui/ChangePassword/change-password.component';
 import { ReactionModalComponent } from './ComponentSharedUI/ReactEmoji/reaction-modal/reaction-modal.component';
 import { AllSuggestionsModalComponent } from './ComponentUI/networking/all-suggestions-modal/all-suggestions-modal.component';
@@ -171,6 +173,8 @@ export function HttpLoaderFactory(http: HttpClient) {
 
 @NgModule({
   declarations: [
+    SettingsConfirmDialogComponent,
+    MessageToastComponent,
     AutoHideOnScrollDirective,
     ImgFallbackDirective,
     ImageLightboxComponent,

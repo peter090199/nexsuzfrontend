@@ -1,127 +1,219 @@
-<!-- chat.component.html -->
-<div class="chat-container mat-elevation-z2">
-  <!-- Sidebar -->
-  <mat-card class="chat-sidebar">
-      <mat-card-title>Messages</mat-card-title>
-      <mat-divider></mat-divider>
-      <mat-progress-bar *ngIf="isLoading" mode="indeterminate" color="primary"></mat-progress-bar>
-    
-    <mat-card-header class="notifications-header">
-      <button mat-button color="primary" (click)="markAllAsRead()">Read All</button>
-    </mat-card-header>
+<div class="msgr" [class.chat-open]="chatOpen">
 
-    <mat-card-content>
-      <mat-tab-group class="card-content">
-        <!-- Unread Tab -->
-        <mat-tab label="Unread ({{ unreadNotifications().length }})">
-          <div *ngIf="!notifications.length" class="no-notifications">No new messages</div>
-
-          <mat-accordion>
-            <mat-expansion-panel *ngFor="let notif of unreadNotifications()">
-              <mat-expansion-panel-header>
-                <mat-panel-title>
-                  <img [src]="notif.photo_pic || 'assets/images/default.png'" width="40" height="40" style="border-radius: 50%; margin-right: 10px;" />
-                  {{ notif.fullname }}
-                </mat-panel-title>
-                <mat-panel-description>
-                  {{ notif.created_at | date:'short' }}
-                  <mat-icon *ngIf="!notif.is_read" color="primary">mark_email_unread</mat-icon>
-                </mat-panel-description>
-              
-              </mat-expansion-panel-header>
-
-              <div class="message-preview" 
-                  [class.unread]="!notif.read" 
-                  (click)="openChatWith(notif)">
-              <span>{{ notif.message }}</span>
-            </div>
-         
-              
-            </mat-expansion-panel>
-          </mat-accordion>
-
-    
-          
-        </mat-tab>
-
-        <!-- Read Tab -->
-        <mat-tab label="Read ({{ readNotifications().length }})">
-          <mat-accordion>
-            <mat-expansion-panel *ngFor="let notif of readNotifications()">
-              <mat-expansion-panel-header>
-                <mat-panel-title>
-                  <img [src]="notif.photo_pic || 'assets/images/default.png'" width="40" height="40" style="border-radius: 50%; margin-right: 10px;" />
-                  {{ notif.fullname }}
-                </mat-panel-title>
-                <mat-panel-description>
-                  {{ notif.created_at | date:'short' }}
-                </mat-panel-description>
-              </mat-expansion-panel-header>
-
-              
-              <div class="message-preview" 
-                  (click)="openChatWith(notif)">
-              <span>{{ notif.message }}</span>
-            </div>
-
-            </mat-expansion-panel>
-          </mat-accordion>
-        </mat-tab>
-      </mat-tab-group>
-    </mat-card-content>
-  </mat-card>
-
-  <!-- Chat Window -->
-  <mat-card class="chat-window" *ngIf="selectedUser">
-
-    <mat-card-title>Chat with {{ selectedUser.fullname }}</mat-card-title>
-
-    <div class="chat-messages">
-      <div *ngFor="let msg of selectedUser.messages" class="chat-bubble" 
-       [ngClass]="{'sent': msg.sender_id === myUserId, 'received': msg.sender_id !== myUserId}">
-        <span>{{ msg.message }}</span>
-        <small class="message-time">{{ msg.created_at | date:'short' }}</small>
-      </div>
-    </div>
-    
-    <div class="chat-input">
-      <mat-form-field appearance="standard" class="chat-search">
-        <mat-label>Type a message...</mat-label>
-        <textarea matInput [(ngModel)]="newMessage"
-                  (ngModelChange)="onMessageChange()"
-                  (keydown.enter)="sendMessage()" rows="2">
-        </textarea>
-      </mat-form-field>
-    
-      <button mat-icon-button color="primary" (click)="sendMessage()" [disabled]="isSendDisabled">
-        <mat-icon>send</mat-icon>
+  <!-- ============================== LEFT: conversations ============================== -->
+  <aside class="msgr-side" aria-label="Conversations">
+    <header class="side-head">
+      <h1>Messages <span class="total-badge" *ngIf="unreadTotal && showBadges" [attr.aria-label]="unreadTotal + ' unread'">{{ unreadTotal > 99 ? '99+' : unreadTotal }}</span></h1>
+      <button type="button" mat-icon-button class="new-btn" (click)="openNew()" matTooltip="New message" aria-label="New message">
+        <mat-icon>edit</mat-icon>
       </button>
+    </header>
+
+    <div class="search">
+      <mat-icon aria-hidden="true">search</mat-icon>
+      <input type="search" [(ngModel)]="query" (ngModelChange)="onSearchInput()" placeholder="Search people or messages"
+        aria-label="Search people or messages" autocomplete="off" />
+      <button type="button" class="clear" *ngIf="query" (click)="clearSearch()" aria-label="Clear search"><mat-icon>close</mat-icon></button>
     </div>
-    
-    
-    
-  </mat-card>
 
-  <!-- Placeholder when no chat selected -->
-  <mat-card class="chat-placeholder" *ngIf="!selectedUser">
-    <p>Select a chat to start messaging</p>
-  </mat-card>
+    <div class="tabs" role="tablist" aria-label="Filter conversations">
+      <button type="button" role="tab" [class.on]="tab === 'all'" [attr.aria-selected]="tab === 'all'" (click)="setTab('all')">All</button>
+      <button type="button" role="tab" [class.on]="tab === 'unread'" [attr.aria-selected]="tab === 'unread'" (click)="setTab('unread')">
+        Unread<span class="n" *ngIf="unreadCount && showBadges">{{ unreadCount }}</span></button>
+      <button type="button" role="tab" [class.on]="tab === 'online'" [attr.aria-selected]="tab === 'online'" (click)="setTab('online')">
+        Online<span class="n" *ngIf="onlineCount">{{ onlineCount }}</span></button>
+      <button type="button" role="tab" [class.on]="tab === 'archived'" [attr.aria-selected]="tab === 'archived'" (click)="setTab('archived')">
+        Archived<span class="n" *ngIf="archivedCount">{{ archivedCount }}</span></button>
+    </div>
 
-  <mat-card class="chat-sidebar">
-    <mat-card-title>Followers</mat-card-title>
-    <mat-divider></mat-divider>
-    <div *ngFor="let user of users" class="user" (click)="selectUser(user)">
-      <img [src]="user.photo || 'assets/images/default.png'" class="avatar" />
-      <div class="user-info">
-        <h4>{{ user.name }}</h4>
-        <p>{{ user.lastMessage }}</p>
+    <div class="list" role="list">
+
+      <!-- loading -->
+      <ng-container *ngIf="loadingList">
+        <div class="skeleton-row" *ngFor="let _ of [1,2,3,4,5,6]"><span class="sk-av"></span><span class="sk-lines"><i></i><i></i></span></div>
+      </ng-container>
+
+      <!-- error -->
+      <div class="state" *ngIf="!loadingList && listError" role="alert">
+        <mat-icon>cloud_off</mat-icon>
+        <strong>Couldn't load your conversations</strong>
+        <span>Check your connection and try again.</span>
+        <button mat-flat-button color="primary" type="button" (click)="retryList()">Try again</button>
       </div>
+
+      <ng-container *ngIf="!loadingList && !listError">
+        <!-- conversations -->
+        <div class="conv-wrap" role="listitem" *ngFor="let c of visible; trackBy: trackConv">
+          <button type="button" class="conv" [class.active]="selected?.user_id === c.user_id" [class.unread]="c.unread_count > 0"
+            (click)="open(c)" [attr.aria-current]="selected?.user_id === c.user_id ? 'true' : null">
+            <span class="av">
+              <img [src]="c.photo_pic || 'assets/images/default.png'" nxFallback alt="" />
+              <i class="dot" *ngIf="c.is_online" title="Online"></i>
+            </span>
+            <span class="meta">
+              <span class="row1">
+                <strong class="name">{{ c.fullname }}</strong>
+                <time class="when">{{ listTime(c.last_message?.created_at) }}</time>
+              </span>
+              <span class="row2">
+                <span class="prev">{{ preview(c) }}</span>
+                <span class="badge" *ngIf="c.unread_count && showBadges" [attr.aria-label]="c.unread_count + ' unread messages'">{{ c.unread_count > 99 ? '99+' : c.unread_count }}</span>
+              </span>
+            </span>
+          </button>
+          <button type="button" class="arch" (click)="toggleArchive(c, $event)"
+            [attr.aria-label]="isArchived(c) ? 'Move ' + c.fullname + ' back to inbox' : 'Archive conversation with ' + c.fullname"
+            [matTooltip]="isArchived(c) ? 'Unarchive' : 'Archive'">
+            <mat-icon>{{ isArchived(c) ? 'unarchive' : 'archive' }}</mat-icon>
+          </button>
+        </div>
+
+        <!-- people (search) -->
+        <ng-container *ngIf="matchingPeople.length">
+          <h2 class="section">People</h2>
+          <button type="button" class="conv person" role="listitem" *ngFor="let p of matchingPeople; trackBy: trackConv" (click)="open(p)">
+            <span class="av"><img [src]="p.photo_pic || 'assets/images/default.png'" nxFallback alt="" /><i class="dot" *ngIf="p.is_online"></i></span>
+            <span class="meta"><span class="row1"><strong class="name">{{ p.fullname }}</strong></span><span class="row2"><span class="prev">Start a conversation</span></span></span>
+          </button>
+        </ng-container>
+
+        <!-- empty states -->
+        <div class="state" *ngIf="!visible.length && !matchingPeople.length">
+          <mat-icon>{{ query ? 'search_off' : tab === 'archived' ? 'archive' : tab === 'unread' ? 'mark_chat_read' : tab === 'online' ? 'wifi_tethering_off' : 'chat_bubble_outline' }}</mat-icon>
+          <strong *ngIf="query">No results for "{{ query }}"</strong>
+          <strong *ngIf="!query && tab === 'all'">No conversations yet</strong>
+          <strong *ngIf="!query && tab === 'unread'">You're all caught up</strong>
+          <strong *ngIf="!query && tab === 'online'">Nobody you've talked to is online</strong>
+          <strong *ngIf="!query && tab === 'archived'">No archived conversations</strong>
+          <span *ngIf="!query && tab === 'all'">Send a message to someone to get started.</span>
+          <button mat-flat-button color="primary" type="button" *ngIf="!query && tab === 'all'" (click)="openNew()">New message</button>
+        </div>
+      </ng-container>
+    </div>
+  </aside>
+
+  <!-- ============================== RIGHT: active chat ============================== -->
+  <section class="msgr-chat" aria-label="Chat">
+
+    <!-- nothing selected (desktop) -->
+    <div class="blank" *ngIf="!selected">
+      <div class="blank-ico"><mat-icon>forum</mat-icon></div>
+      <h2>Your messages</h2>
+      <p>Pick a conversation from the list, or start a new one.</p>
+      <button mat-flat-button color="primary" type="button" (click)="openNew()"><mat-icon>edit</mat-icon> New message</button>
     </div>
 
+    <ng-container *ngIf="selected">
+      <header class="chat-head">
+        <button type="button" mat-icon-button class="back" (click)="closeChat()" aria-label="Back to conversations"><mat-icon>arrow_back</mat-icon></button>
+        <span class="av"><img [src]="selected.photo_pic || 'assets/images/default.png'" nxFallback alt="" /><i class="dot" *ngIf="selected.is_online"></i></span>
+        <span class="who">
+          <strong>{{ selected.fullname }}</strong>
+          <small [class.on]="selected.is_online">{{ selected.is_online ? 'Online' : 'Offline' }}</small>
+        </span>
+        <a mat-icon-button class="prof" *ngIf="selected.code" [routerLink]="['/' + routines.getRole() + '/profile', selected.code]"
+          matTooltip="View profile" aria-label="View profile"><mat-icon>person</mat-icon></a>
+      </header>
 
-  </mat-card>
+      <div class="chat-body" #scroller (scroll)="onScroll()" role="log" aria-live="polite" aria-label="Messages">
 
+        <ng-container *ngIf="loadingChat">
+          <div class="sk-msg" *ngFor="let w of [58, 40, 66, 34, 52]; let i = index" [class.me]="i % 2 === 1"><i [style.width.%]="w"></i></div>
+        </ng-container>
 
+        <div class="state" *ngIf="!loadingChat && chatError" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          <strong>Couldn't load this conversation</strong>
+          <button mat-flat-button color="primary" type="button" (click)="retryChat()">Try again</button>
+        </div>
+
+        <div class="state hello" *ngIf="!loadingChat && !chatError && !groups.length">
+          <img [src]="selected.photo_pic || 'assets/images/default.png'" nxFallback alt="" />
+          <strong>{{ selected.fullname }}</strong>
+          <span>No messages yet. Say hello! 👋</span>
+        </div>
+
+        <ng-container *ngIf="!loadingChat && !chatError">
+          <div class="day" *ngFor="let g of groups; trackBy: trackGroup">
+            <div class="sep"><span>{{ g.label }}</span></div>
+
+            <div class="msg" *ngFor="let v of g.items; trackBy: trackMsg" [class.mine]="v.mine" [class.first]="v.firstOfRun"
+              [class.last]="v.lastOfRun" [class.failed]="v.state === 'failed'" [class.sending]="v.state === 'sending'">
+              <img class="peer-av" *ngIf="!v.mine && v.lastOfRun" [src]="selected.photo_pic || 'assets/images/default.png'" nxFallback alt="" />
+              <span class="peer-av ghost" *ngIf="!v.mine && !v.lastOfRun"></span>
+
+              <div class="stack">
+                <div class="line">
+                  <button type="button" class="act copy" *ngIf="v.mine" (click)="copy(v.m)" matTooltip="Copy" aria-label="Copy message"><mat-icon>content_copy</mat-icon></button>
+                  <div class="bubble">{{ v.m.message }}</div>
+                  <button type="button" class="act copy" *ngIf="!v.mine" (click)="copy(v.m)" matTooltip="Copy" aria-label="Copy message"><mat-icon>content_copy</mat-icon></button>
+                </div>
+
+                <div class="foot" *ngIf="v.showTime || v.state === 'failed' || v.state === 'sending'">
+                  <time *ngIf="v.state !== 'failed' && v.state !== 'sending'">{{ clock(v.m.created_at) }}</time>
+                  <ng-container *ngIf="v.mine">
+                    <span class="st sending" *ngIf="v.state === 'sending'"><mat-icon>schedule</mat-icon> Sending…</span>
+                    <span class="st sent" *ngIf="v.state === 'sent'" title="Delivered"><mat-icon>done</mat-icon> Delivered</span>
+                    <span class="st read" *ngIf="v.state === 'read'" title="Seen"><mat-icon>done_all</mat-icon> Seen</span>
+                    <span class="st fail" *ngIf="v.state === 'failed'" role="alert">
+                      <mat-icon>error_outline</mat-icon> Not sent
+                      <button type="button" (click)="retry(v.m)">Retry</button>
+                    </span>
+                  </ng-container>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+
+      <button type="button" class="jump" *ngIf="!atBottom && groups.length" (click)="scrollToBottom(true)" aria-label="Jump to the latest message">
+        <mat-icon>arrow_downward</mat-icon><span *ngIf="newBelow">{{ newBelow }} new</span>
+      </button>
+
+      <!-- composer: always pinned to the bottom -->
+      <footer class="composer">
+        <div class="emoji-panel" *ngIf="emojiOpen" role="dialog" aria-label="Emoji">
+          <button type="button" *ngFor="let e of emojis" (click)="addEmoji(e)" [attr.aria-label]="'Insert ' + e">{{ e }}</button>
+        </div>
+
+        <div class="row">
+          <button type="button" mat-icon-button class="emoji-btn" [class.on]="emojiOpen" (click)="toggleEmoji()" aria-label="Emoji" aria-haspopup="dialog"
+            [attr.aria-expanded]="emojiOpen"><mat-icon>sentiment_satisfied_alt</mat-icon></button>
+
+          <textarea #composerInput class="input" rows="1" [(ngModel)]="draft" (input)="resizeComposer()" (keydown)="onKeydown($event)"
+            [maxlength]="maxLength" placeholder="Aa" aria-label="Write a message"></textarea>
+
+          <button type="button" class="send" (click)="send()" [disabled]="!canSend" aria-label="Send message"><mat-icon>send</mat-icon></button>
+        </div>
+        <small class="count" *ngIf="draft.length > maxLength - 300">{{ draft.length }} / {{ maxLength }}</small>
+      </footer>
+    </ng-container>
+  </section>
 </div>
 
-
+<!-- ============================== New message dialog ============================== -->
+<ng-template #newDialog>
+  <div class="nm">
+    <header>
+      <h2>New message</h2>
+      <button type="button" mat-icon-button (click)="startChatClose()" aria-label="Close"><mat-icon>close</mat-icon></button>
+    </header>
+    <div class="nm-search">
+      <mat-icon>search</mat-icon>
+      <input type="search" [(ngModel)]="newQuery" placeholder="Search people" aria-label="Search people" autocomplete="off" cdkFocusInitial />
+    </div>
+    <div class="nm-list">
+      <div class="state" *ngIf="!peopleLoaded && !peopleError"><mat-spinner diameter="28"></mat-spinner></div>
+      <div class="state" *ngIf="peopleError" role="alert">
+        <mat-icon>cloud_off</mat-icon><strong>Couldn't load people</strong>
+        <button mat-flat-button color="primary" type="button" (click)="loadPeople()">Try again</button>
+      </div>
+      <button type="button" class="conv" *ngFor="let p of newMatches; trackBy: trackConv" (click)="startChat(p)">
+        <span class="av"><img [src]="p.photo_pic || 'assets/images/default.png'" nxFallback alt="" /><i class="dot" *ngIf="p.is_online"></i></span>
+        <span class="meta"><span class="row1"><strong class="name">{{ p.fullname }}</strong></span><span class="row2"><span class="prev">{{ p.is_online ? 'Online' : 'Offline' }}</span></span></span>
+      </button>
+      <div class="state" *ngIf="peopleLoaded && !newMatches.length"><mat-icon>search_off</mat-icon><strong>No people found</strong></div>
+    </div>
+  </div>
+</ng-template>

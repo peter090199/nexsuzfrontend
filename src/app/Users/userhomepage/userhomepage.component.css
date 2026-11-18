@@ -121,7 +121,7 @@
 }
 /* List Item Styles */
 .list-unstyled li button {
-   font-family: 'tahoma';
+   font-family: Verdana, Geneva, Tahoma, sans-serif;
    font-size: 14px;
 }
 

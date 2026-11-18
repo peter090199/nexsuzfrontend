@@ -120,3 +120,17 @@ mat-expansion-panel {
 ::ng-deep .mat-tab-header-pagination {
   display: none;
 }
+
+
+/* Activity tab */
+.activity-list { list-style: none; margin: 0; padding: 4px 0; }
+.activity-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 8px; border-radius: 10px; cursor: pointer; transition: background .15s ease; }
+.activity-item:hover, .activity-item:focus-visible { background: #f1f6fc; outline: 0; }
+.activity-item.unread { background: #eaf3fc; }
+.act-av { position: relative; flex: none; width: 44px; height: 44px; }
+.act-av img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: #eaf3fc; }
+.act-badge { position: absolute; right: -4px; bottom: -4px; width: 20px; height: 20px; padding: 2px; box-sizing: border-box; border-radius: 50%; background: #0a66c2; color: #fff; font-size: 14px; line-height: 16px; overflow: hidden; }
+.act-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 13px; line-height: 1.4; color: #1b2a4a; overflow-wrap: anywhere; }
+.act-excerpt { color: #6b7a99; font-size: 12px; }
+.act-text time { color: #8a97b0; font-size: 11px; }
+.act-unread { flex: none; width: 10px; height: 10px; margin-top: 6px; border-radius: 50%; background: #0a66c2; }

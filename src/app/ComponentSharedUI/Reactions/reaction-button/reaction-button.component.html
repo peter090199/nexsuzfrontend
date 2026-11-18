@@ -8,12 +8,17 @@
       <span class="emoji">{{ r.emoji }}</span>
       <span class="tip">{{ r.label }}</span>
     </button>
+    <button type="button" class="snd" role="menuitemcheckbox" [attr.aria-checked]="fx.soundOn"
+      [attr.aria-label]="fx.soundOn ? 'Reaction sounds on. Turn off' : 'Reaction sounds off. Turn on'"
+      [title]="fx.soundOn ? 'Sound on' : 'Sound off'" (click)="toggleSound($event)">
+      <mat-icon>{{ fx.soundOn ? 'volume_up' : 'volume_off' }}</mat-icon>
+    </button>
   </div>
 
-  <button type="button" class="main" [class.active]="!!myReaction" [style.color]="current?.color" [disabled]="disabled"
+  <button type="button" #mainBtn class="main" [class.active]="!!myReaction" [style.color]="current?.color" [disabled]="disabled"
     [attr.aria-pressed]="!!myReaction" aria-haspopup="menu" (click)="onMainClick()" (touchstart)="onTouchStart()"
     (touchend)="onTouchEnd()" (touchcancel)="onTouchEnd()" (contextmenu)="$event.preventDefault()">
-    <span class="emoji" *ngIf="current; else thumb">{{ current.emoji }}</span>
+    <span class="emoji" [class.pop]="popping" *ngIf="current; else thumb">{{ current.emoji }}</span>
     <ng-template #thumb><mat-icon>thumb_up_off_alt</mat-icon></ng-template>
     <span class="label">{{ current ? current.label : 'Like' }}</span>
   </button>

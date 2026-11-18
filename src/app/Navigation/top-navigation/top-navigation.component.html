@@ -1,34 +1,50 @@
 <!-- LOADING -->
-<mat-progress-bar *ngIf="isLoading" mode="indeterminate"></mat-progress-bar>
-<mat-sidenav-container class="layout-container">
-  <mat-toolbar color="primary" class="premium-toolbar" nxAutoHide nxAutoHideScroller=".page-content"
-    [nxAutoHidePause]="isSidebarOpen">
-    <div class="mobile-header" *ngIf="isMobile">
-      <app-app-logo></app-app-logo>
+<mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="top-loader"></mat-progress-bar>
 
-      <button mat-icon-button class="toolbar-icon" (click)="openSearch()">
-        <mat-icon>search</mat-icon>
+<mat-sidenav-container class="layout-container">
+
+  <!-- =========================
+       TOP BAR (LinkedIn style)
+  ========================= -->
+  <mat-toolbar class="premium-toolbar" nxAutoHide nxAutoHideScroller=".page-content"
+    [nxAutoHidePause]="isSidebarOpen">
+
+    <!-- MOBILE HEADER: avatar | search | notifications -->
+    <div class="mobile-header" *ngIf="isMobile">
+      <button class="avatar-btn" aria-label="Open menu" (click)="toggleSidebar()">
+        <img *ngIf="profileservices?.photo_pic; else mobileDefaultAvatar" [src]="profileservices?.photo_pic" alt="" nxFallback />
+        <ng-template #mobileDefaultAvatar><mat-icon>account_circle</mat-icon></ng-template>
       </button>
 
-      <!-- <button mat-icon-button class="toolbar-icon" (click)="toggleSidebar()">
-          <mat-icon>{{ isSidebarOpen ? 'close' : 'menu' }}</mat-icon>
-        </button> -->
+      <button class="search-pill" aria-label="Search" (click)="openSearch()">
+        <mat-icon>search</mat-icon>
+        <span>Search</span>
+      </button>
 
+      <button mat-icon-button class="toolbar-icon" aria-label="Notifications" [matBadge]="bellCount"
+        [matBadgeHidden]="!bellCount" matBadgeColor="warn" matBadgeSize="small" (click)="openNotifications()">
+        <mat-icon>notifications</mat-icon>
+      </button>
     </div>
+
     <!-- DESKTOP HEADER -->
     <section class="desktop-header" *ngIf="!isMobile">
-      <app-app-logo></app-app-logo>
 
-      <div class="desktop-nav">
+      <div class="header-left">
+        <app-app-logo></app-app-logo>
+      </div>
+
+      <!-- ALL MENUS: left side of the top bar -->
+      <nav class="desktop-nav desktop-menus" aria-label="Primary">
         <ng-container *ngFor="let link of nav_module">
 
           <ng-container *ngIf="link.submenus?.length; else normalMenu">
-            <button mat-button class="nav-btn" [matMenuTriggerFor]="menuMap">
+            <button class="nav-btn" [matMenuTriggerFor]="menuMap">
               <i [class]="link.icon"></i>
-              <span>{{ link.description }}</span>
+              <span class="nav-label">{{ link.description }}<mat-icon class="caret">arrow_drop_down</mat-icon></span>
             </button>
 
-            <mat-menu #menu="matMenu" #menuMap="matMenu">
+            <mat-menu #menuMap="matMenu" class="nx-menu">
               <button mat-menu-item *ngFor="let sub of link.submenus" [routerLink]="sub.route">
                 <i [class]="sub.icon"></i>
                 {{ sub.description }}
@@ -37,74 +53,80 @@
           </ng-container>
 
           <ng-template #normalMenu>
-            <button mat-button class="nav-btn" [routerLink]="link.route">
+            <a class="nav-btn" [routerLink]="link.route" routerLinkActive="active">
               <i [class]="link.icon"></i>
-              <span>{{ link.description }}</span>
-            </button>
+              <span class="nav-label">{{ link.description }}</span>
+            </a>
           </ng-template>
 
         </ng-container>
-      </div>
+      </nav>
 
-      <div class="desktop-actions">
-        <div class="glass-box">
-          <!-- 
-          <button mat-icon-button class="toolbar-icon" (click)="searchSidenav.open()">
-            <mat-icon>search</mat-icon>
-          </button> -->
+      <!-- ACTIONS: right side -->
+      <nav class="desktop-nav desktop-actions" aria-label="Actions">
+        <button class="search-pill" aria-label="Search" matTooltip="Search.." (click)="openSearch()">
+          <mat-icon>search</mat-icon>
+          <span>Search</span>
+        </button>
 
-          <button mat-icon-button class="toolbar-icon" matTooltip="Search.." (click)=openSearch()>
-            <mat-icon>search</mat-icon>
-          </button>
-
-          <!-- NOTIFICATIONS -->
-          <button mat-icon-button class="toolbar-icon" matTooltip="Notifications" [matBadge]="unreadCount"
-            [matBadgeHidden]="!unreadCount" matBadgeColor="warn" (click)="openNotifications()">
+        <!-- NOTIFICATIONS -->
+        <button class="nav-btn" (click)="openNotifications()">
+          <span class="nav-icon-wrap" [matBadge]="bellCount" [matBadgeHidden]="!bellCount"
+            matBadgeColor="warn" matBadgeSize="small">
             <mat-icon>notifications</mat-icon>
+          </span>
+          <span class="nav-label">Notifications</span>
+        </button>
+
+        <!-- ME -->
+        <button class="nav-btn me-btn" [matMenuTriggerFor]="userMenu">
+          <span class="nav-icon-wrap">
+            <img *ngIf="profileservices?.photo_pic; else defaultProfile" class="me-avatar"
+              [src]="profileservices?.photo_pic" alt="" nxFallback />
+            <ng-template #defaultProfile><mat-icon class="default-avatar">account_circle</mat-icon></ng-template>
+          </span>
+          <span class="nav-label">Me<mat-icon class="caret">arrow_drop_down</mat-icon></span>
+        </button>
+
+        <mat-menu #userMenu="matMenu" class="nx-menu">
+          <button mat-menu-item [routerLink]="sharedRoutines.getClientProfileRoute(profileservices?.code)">
+            <mat-icon color="primary">person</mat-icon>
+            <span>Profile</span>
           </button>
-
-          <button mat-icon-button class="profile-btn" [matMenuTriggerFor]="userMenu">
-            <ng-container *ngIf="profileservices?.photo_pic; else defaultProfile">
-              <img [src]="profileservices?.photo_pic" nxFallback />
-            </ng-container>
-            <ng-template #defaultProfile>
-              <mat-icon class="default-avatar">account_circle</mat-icon>
-            </ng-template>
+          <button mat-menu-item [routerLink]="sharedRoutines.getsettingsRoute()">
+            <mat-icon color="primary">settings</mat-icon>
+            <span>Settings</span>
           </button>
+          <button mat-menu-item (click)="sharedService.onLogout()">
+            <mat-icon color="primary">logout</mat-icon>
+            <span>Logout</span>
+          </button>
+        </mat-menu>
+      </nav>
 
-          <mat-menu #userMenu="matMenu">
-            <button mat-menu-item [routerLink]="sharedRoutines.getClientProfileRoute(profileservices?.code)">
-              <mat-icon color="primary">person</mat-icon>
-              <span>Profile</span>
-            </button>
-            <button mat-menu-item [routerLink]="sharedRoutines.getsettingsRoute()">
-              <mat-icon color="primary">settings</mat-icon>
-              <span>Settings</span>
-            </button>
-            <button mat-menu-item (click)="sharedService.onLogout()">
-              <mat-icon color="primary">logout</mat-icon>
-              <span>Logout</span>
-            </button>
-          </mat-menu> 
-
-        </div>
-      </div>
     </section>
-
   </mat-toolbar>
 
   <!-- =========================
-       MAIN AREA (FIX OVERFLOW)
+       MAIN AREA
   ========================= -->
   <div class="layout-body">
-    <!-- SIDEBAR -->
-    <aside class="sidebar" [class.active]="isSidebarOpen">
-      <div class="side-header">NEXSUZ</div>
-      <div class="side-menu">
 
+    <!-- SIDEBAR DRAWER (mobile only) -->
+    <div class="sidebar-backdrop" *ngIf="isSidebarOpen" (click)="toggleSidebar()"></div>
+    <aside class="sidebar" [class.active]="isSidebarOpen">
+      <div class="side-header">
+        <img *ngIf="profileservices?.photo_pic; else sideDefaultAvatar" class="side-avatar"
+          [src]="profileservices?.photo_pic" alt="" nxFallback />
+        <ng-template #sideDefaultAvatar><mat-icon class="side-avatar-icon">account_circle</mat-icon></ng-template>
+        <span class="side-brand">NEXSUZ</span>
+      </div>
+
+      <div class="side-menu">
         <ng-container *ngFor="let link of nav_module">
 
-          <a *ngIf="!link.submenus?.length" class="menu-item" [routerLink]="link.route" (click)="toggleSidebar()">
+          <a *ngIf="!link.submenus?.length" class="menu-item" [routerLink]="link.route"
+            routerLinkActive="active" (click)="isMobile && toggleSidebar()">
             <i [class]="link.icon"></i>
             <span>{{ link.description }}</span>
           </a>
@@ -116,7 +138,7 @@
             </div>
 
             <a *ngFor="let sub of link.submenus" class="submenu-item" [routerLink]="sub.route"
-              (click)="toggleSidebar()">
+              routerLinkActive="active" (click)="isMobile && toggleSidebar()">
               <i [class]="sub.icon"></i>
               {{ sub.description }}
             </a>
@@ -124,17 +146,24 @@
 
         </ng-container>
 
-        <div class="menu-item logout" (click)="sharedService.onLogout()">
+        <a class="menu-item" [routerLink]="sharedRoutines.getsettingsRoute()" (click)="isMobile && toggleSidebar()">
+          <mat-icon>settings</mat-icon>
+          <span>Settings</span>
+        </a>
+
+        <div class="menu-item logout" role="button" tabindex="0" (click)="sharedService.onLogout()"
+          (keydown.enter)="sharedService.onLogout()">
           <mat-icon>logout</mat-icon>
           <span>Logout</span>
         </div>
-
       </div>
     </aside>
 
     <!-- CONTENT AREA -->
     <main class="page-content" [class.has-mobile-footer]="isMobile">
-      <router-outlet></router-outlet>
+      <div class="page-inner">
+        <router-outlet></router-outlet>
+      </div>
     </main>
 
   </div>
@@ -145,7 +174,7 @@
     <div class="search-box">
       <app-search></app-search>
 
-      <button mat-icon-button class="close-btn" (click)="toggleSearch()">
+      <button mat-icon-button class="close-btn" aria-label="Close search" (click)="toggleSearch()">
         <mat-icon>close</mat-icon>
       </button>
     </div>
@@ -155,41 +184,25 @@
     <app-search></app-search>
   </mat-sidenav>
 
-  <!-- MOBILE BOTTOM TAB -->
-  <nav class="mobile-footer" *ngIf="isMobile">
+  <!-- MOBILE BOTTOM TAB BAR (first 4 modules + More) -->
+  <nav class="mobile-footer" *ngIf="isMobile" aria-label="Primary">
+    <ng-container *ngFor="let link of nav_module | slice:0:4">
+      <a *ngIf="!link.submenus?.length; else footerMore" [routerLink]="link.route" routerLinkActive="active">
+        <i [class]="link.icon"></i>
+        <span>{{ link.description }}</span>
+      </a>
+      <ng-template #footerMore>
+        <a role="button" tabindex="0" (click)="toggleSidebar()">
+          <i [class]="link.icon"></i>
+          <span>{{ link.description }}</span>
+        </a>
+      </ng-template>
+    </ng-container>
 
-    <a href="/DEF-USERS/home" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">
-      <mat-icon>home</mat-icon>
-      <span>Home</span>
+    <a role="button" tabindex="0" (click)="toggleSidebar()" [class.active]="isSidebarOpen">
+      <mat-icon>menu</mat-icon>
+      <span>More</span>
     </a>
-
-    <a href="/DEF-USERS/network" routerLinkActive="active">
-      <mat-icon>groups</mat-icon>
-      <span>Nexsuz</span>
-    </a>
-
-    <!-- <button class="add-post" type="button">
-      <mat-icon>add</mat-icon>
-    </button> -->
-
-    <a href="/DEF-USERS/message" routerLinkActive="active">
-      <mat-icon [matBadge]="messageCount" [matBadgeHidden]="!messageCount" matBadgeColor="warn">
-        chat
-      </mat-icon>
-      <span>Messages</span>
-    </a>
-
-    <a href="/DEF-USERS/profile" routerLinkActive="active">
-      <img *ngIf="profileservices?.photo_pic" [src]="profileservices.photo_pic" class="footer-avatar" alt="Your avatar" nxFallback>
-      <mat-icon *ngIf="!profileservices?.photo_pic">account_circle</mat-icon>
-      <span>Me</span>
-    </a>
-
-    <a (click)="sharedService.onLogout()" routerLinkActive="active">
-      <mat-icon>logout</mat-icon>
-      <span>Logout</span>
-    </a>
-
   </nav>
 
 </mat-sidenav-container>
