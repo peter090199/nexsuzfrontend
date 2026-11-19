@@ -111,6 +111,34 @@ export class ProfileUIComponent implements OnInit {
     });
   }
 
+  /** "not_following" / "none" -> Connect, "pending" -> Pending, "accepted" / "connected" -> Connected */
+  personState(u: any): 'connect' | 'pending' | 'connected' {
+    const s = u?.follow_status;
+    return s === 'accepted' || s === 'connected' ? 'connected' : s === 'pending' ? 'pending' : 'connect';
+  }
+
+  connectPerson(u: any): void {
+    if (!u?.code || u.busy) { return; }
+    const state = this.personState(u);
+    const ask = state === 'connected' ? `Remove ${u.fullname} from your connections?` : state === 'pending' ? 'Cancel connection request?' : 'Send connection request?';
+    this.alert.popupWarning(u.fullname, ask).then(result => {
+      if (!result.value) { return; }
+      u.busy = true;
+      this.followServices.AddFollow(u.code).subscribe({
+        next: (res: any) => {
+          u.busy = false;
+          if (!res?.status) { this.alert.toastrWarning(res?.message || 'Could not update.'); return; }
+          this.alert.toastrSuccess(res.message);
+          u.follow_status = res.follow_status;
+        },
+        error: (err: any) => {
+          u.busy = false;
+          this.alert.toastrWarning(err.error?.message || 'Something went wrong.');
+        }
+      });
+    });
+  }
+
   initData(): void {
     this.loadPeople();
     this.loadUserPost();
@@ -390,12 +418,13 @@ export class ProfileUIComponent implements OnInit {
             return;
           }
           this.alert.toastrSuccess(res.message);
-          // Update UI immediately
+          // Update UI immediately (the button reads followStatus, not data.follow_status)
           data.follow_status = res.follow_status;
+          this.followStatus = res.follow_status;
         },
 
         error: (err: any) => {
-          if (err.error.status == false) {
+          if (err.error?.status == false) {
             this.alert.toastrWarning(err.error?.message || 'Connection limit reached.');
             return;
           }

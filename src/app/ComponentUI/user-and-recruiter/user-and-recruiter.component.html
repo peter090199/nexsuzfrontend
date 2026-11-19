@@ -152,7 +152,7 @@ person.follow_status === 'connect_back' ? 'Connect Back' : ''
                     </p>
                     <div class="client-action" *ngIf="currentUserCode !== person.code">
                     <button mat-flat-button class="connect-btn" [color]=" person.follow_status === 'accepted' ? 'accent' :person.follow_status === 'pending' ? 'warn' : person.follow_status === 'connect_back' ? 'primary' :
-                        'primary' " [ngClass]="person.follow_status" (click)="AddConnect( person.code,person.fullname,person.follow_status, person.id)" [disabled]="person.follow_status === 'pending'">
+                        'primary' " [ngClass]="person.follow_status" (click)="AddConnect( person.code,person.fullname,person.follow_status, person.id)">
                             <mat-icon *ngIf="person.follow_status === 'not_following'">
                                 person_add
                             </mat-icon>

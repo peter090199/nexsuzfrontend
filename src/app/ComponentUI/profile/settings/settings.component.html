@@ -301,6 +301,30 @@
               <div class="st-toggle-text"><strong>Post comments and replies</strong><span>When someone comments on your post or replies to your comment.</span></div>
               <mat-slide-toggle color="primary" [checked]="np.post_comments" (change)="setPref('post_comments', $event.checked)" aria-label="Post comments and replies"></mat-slide-toggle>
             </div>
+            <mat-divider></mat-divider>
+            <div class="st-toggle">
+              <mat-icon>work</mat-icon>
+              <div class="st-toggle-text"><strong>Job applications</strong><span>When someone applies to your job posting.</span></div>
+              <mat-slide-toggle color="primary" [checked]="np.job_applications" (change)="setPref('job_applications', $event.checked)" aria-label="Job applications"></mat-slide-toggle>
+            </div>
+            <mat-divider></mat-divider>
+            <div class="st-toggle">
+              <mat-icon>event</mat-icon>
+              <div class="st-toggle-text"><strong>Interview invites</strong><span>When you are invited to an interview.</span></div>
+              <mat-slide-toggle color="primary" [checked]="np.job_interviews" (change)="setPref('job_interviews', $event.checked)" aria-label="Interview invites"></mat-slide-toggle>
+            </div>
+            <mat-divider></mat-divider>
+            <div class="st-toggle">
+              <mat-icon>verified</mat-icon>
+              <div class="st-toggle-text"><strong>Application decisions</strong><span>When your application is approved or rejected.</span></div>
+              <mat-slide-toggle color="primary" [checked]="np.job_status" (change)="setPref('job_status', $event.checked)" aria-label="Application decisions"></mat-slide-toggle>
+            </div>
+            <mat-divider></mat-divider>
+            <div class="st-toggle">
+              <mat-icon>rate_review</mat-icon>
+              <div class="st-toggle-text"><strong>Application reviews</strong><span>When your application is under review.</span></div>
+              <mat-slide-toggle color="primary" [checked]="np.job_reviews" (change)="setPref('job_reviews', $event.checked)" aria-label="Application reviews"></mat-slide-toggle>
+            </div>
           </mat-card>
 
           <!-- preview -->

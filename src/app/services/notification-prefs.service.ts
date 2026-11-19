@@ -20,6 +20,11 @@ export interface NotificationPrefs {
   friend_accepts: boolean;
   post_reactions: boolean;
   post_comments: boolean;
+  // jobs
+  job_applications: boolean;
+  job_interviews: boolean;
+  job_status: boolean;
+  job_reviews: boolean;
 }
 
 /** Sound and desktop notifications are OFF until the user turns them on. */
@@ -36,6 +41,10 @@ export const DEFAULT_PREFS: NotificationPrefs = {
   friend_accepts: true,
   post_reactions: true,
   post_comments: true,
+  job_applications: true,
+  job_interviews: true,
+  job_status: true,
+  job_reviews: true,
 };
 
 export const BOOLEAN_KEYS = (Object.keys(DEFAULT_PREFS) as (keyof NotificationPrefs)[]).filter(k => k !== 'sound_volume' && k !== 'nav_color');

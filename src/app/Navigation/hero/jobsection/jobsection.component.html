@@ -1,40 +1,51 @@
-<section class="section">
+<section class="section search-page">
 
-    <!-- SEARCH BAR -->
-    <div class="search-container">
-        <mat-form-field appearance="outline" class="premium-search">
-            <mat-icon matPrefix>search</mat-icon>
-            <input matInput [placeholder]="searchPlaceholder" [(ngModel)]="searchText" (keyup)="onSearch()"
-                (keyup.enter)="onEnter()">
-            <button *ngIf="searchText" matSuffix mat-icon-button (click)="clearSearch()">
-                <mat-icon>close</mat-icon>
-            </button>
-            <button matSuffix mat-icon-button [matMenuTriggerFor]="searchSettingsMenu" aria-label="Search settings">
-                <mat-icon>tune</mat-icon>
-            </button>
-        </mat-form-field>
+    <!-- HEADER + SEARCH -->
+    <header class="search-hero">
+        <h1>{{ searchType === 'jobs' ? 'Find your next job' : 'Find people' }}</h1>
+        <p>{{ searchType === 'jobs' ? 'Search by title, position or location.' : 'Search by name, profession or skills.' }}</p>
 
-        <mat-menu #searchSettingsMenu="matMenu">
-            <button mat-menu-item (click)="setSearchType('people')">
-                <mat-icon [color]="searchType === 'people' ? 'primary' : ''">person</mat-icon>
-                <span>People</span>
+        <div class="search-container">
+            <mat-form-field appearance="outline" class="premium-search">
+                <mat-icon matPrefix>search</mat-icon>
+                <input matInput [placeholder]="searchPlaceholder" [(ngModel)]="searchText" (keyup)="onSearch()"
+                    (keyup.enter)="onEnter()" aria-label="Search">
+                <button *ngIf="searchText" matSuffix mat-icon-button (click)="clearSearch()" aria-label="Clear search">
+                    <mat-icon>close</mat-icon>
+                </button>
+            </mat-form-field>
+        </div>
+
+        <!-- FILTER: always visible, one tap -->
+        <div class="type-filter" role="tablist" aria-label="Search type">
+            <button type="button" role="tab" class="type-chip" [class.active]="searchType === 'people'"
+                [attr.aria-selected]="searchType === 'people'" [attr.title]="isLoggedIn ? null : 'Sign in to view people'" (click)="setSearchType('people')">
+                <mat-icon>people</mat-icon> People
+                <mat-icon class="lock" *ngIf="!isLoggedIn" matTooltip="Sign in to view people">lock</mat-icon>
             </button>
-            <button mat-menu-item (click)="setSearchType('jobs')">
-                <mat-icon [color]="searchType === 'jobs' ? 'primary' : ''">work</mat-icon>
-                <span>Jobs</span>
+            <button type="button" role="tab" class="type-chip" [class.active]="searchType === 'jobs'"
+                [attr.aria-selected]="searchType === 'jobs'" (click)="setSearchType('jobs')">
+                <mat-icon>work</mat-icon> Jobs
             </button>
-        </mat-menu>
-    </div>
+        </div>
+    </header>
 
     <!-- LOADING -->
-    <div class="text-center mt-5" *ngIf="isLoading">
-        <p style="text-align: center;">Loading {{ searchType === 'jobs' ? 'jobs' : 'people' }}...</p>
+    <div class="state-box" *ngIf="isLoading">
+        <p>Loading {{ searchType === 'jobs' ? 'jobs' : 'people' }}...</p>
     </div>
+
+    <!-- RESULT COUNT -->
+    <p class="result-count" *ngIf="!isLoading && searchType === 'jobs' && filteredJobs.length">
+        {{ filteredJobs.length }} job{{ filteredJobs.length === 1 ? '' : 's' }}<ng-container *ngIf="searchText"> for "{{ searchText }}"</ng-container>
+    </p>
+    <p class="result-count" *ngIf="!isLoading && searchType === 'people' && (filteredOnlinePeople.length + filteredOfflinePeople.length)">
+        {{ filteredOnlinePeople.length + filteredOfflinePeople.length }} {{ (filteredOnlinePeople.length + filteredOfflinePeople.length) === 1 ? 'person' : 'people' }}<ng-container *ngIf="searchText"> for "{{ searchText }}"</ng-container>
+    </p>
 
     <!-- JOBS VIEW -->
     <div class="jobs-grid" *ngIf="!isLoading && searchType === 'jobs'">
         <div class="job-card" *ngFor="let job of filteredJobs" (click)="selectJob(job)">
-            <div class="card-top-bar"></div>
             <div class="card-body">
                 <div class="job-header">
                     <div class="job-logo">
@@ -64,23 +75,10 @@
             <h4 class="people-section-title">
                 <span class="status-dot online"></span> Online ({{ filteredOnlinePeople.length }})
             </h4>
-            <div class="jobs-grid">
-                <div class="job-card person-card" *ngFor="let person of filteredOnlinePeople"
-                    (click)="selectPerson(person)">
-                    <div class="card-top-bar"></div>
-                    <div class="card-body">
-                        <div class="job-header">
-                            <div class="job-logo">
-                                <img [src]="person.image" [alt]="person.fullname"
-                                    (error)="person.image = placeholderImg">
-                                <span class="status-dot online avatar-dot"></span>
-                            </div>
-                            <span class="work-type-badge default">{{ person.profession }}</span>
-                        </div>
-                        <h3 class="job-name">{{ person.fullname }}</h3>
-                        <p class="job-position"><i class="fas fa-tools"></i> {{ person.skills }}</p>
-                    </div>
-                </div>
+            <div class="people-grid">
+                <ng-container *ngFor="let person of filteredOnlinePeople">
+                    <ng-container *ngTemplateOutlet="personCard; context: { $implicit: person, status: 'online' }"></ng-container>
+                </ng-container>
             </div>
         </div>
 
@@ -88,46 +86,51 @@
             <h4 class="people-section-title">
                 <span class="status-dot offline"></span> Offline ({{ filteredOfflinePeople.length }})
             </h4>
-            <div class="jobs-grid">
-                <div class="job-card person-card" *ngFor="let person of filteredOfflinePeople"
-                    (click)="selectPerson(person)">
-                    <div class="card-top-bar"></div>
-                    <div class="card-body">
-                        <div class="job-header">
-                            <div class="job-logo">
-                                <img [src]="person.image" [alt]="person.fullname"
-                                    (error)="person.image = placeholderImg">
-                                <span class="status-dot offline avatar-dot"></span>
-                            </div>
-                            <span class="work-type-badge default">{{ person.profession }}</span>
-                        </div>
-                        <h3 class="job-name">{{ person.fullname }}</h3>
-                        <!-- <p class="job-position" *ngIf="person.profession"><i class="fas fa-user-tie"></i> {{ person.profession }}</p> -->
-                        <p class="job-position"><i class="fas fa-tools"></i> {{ person.skills }}</p>
-                    </div>
-                </div>
+            <div class="people-grid">
+                <ng-container *ngFor="let person of filteredOfflinePeople">
+                    <ng-container *ngTemplateOutlet="personCard; context: { $implicit: person, status: 'offline' }"></ng-container>
+                </ng-container>
             </div>
         </div>
 
     </ng-container>
 
+    <!-- one person: avatar, name, profession, skills -->
+    <ng-template #personCard let-person let-status="status">
+        <div class="person-card" (click)="selectPerson(person)" tabindex="0" role="button"
+            (keydown.enter)="selectPerson(person)">
+            <div class="person-avatar">
+                <img [src]="person.image" [alt]="person.fullname" (error)="person.image = placeholderImg">
+                <span class="status-dot avatar-dot" [ngClass]="status"></span>
+            </div>
+            <div class="person-info">
+                <h3 class="person-name">{{ person.fullname }}</h3>
+                <p class="person-profession" *ngIf="person.profession">{{ person.profession }}</p>
+                <p class="person-skills" *ngIf="person.skills"><i class="fas fa-tools"></i> {{ person.skills }}</p>
+            </div>
+            <mat-icon class="person-go">chevron_right</mat-icon>
+        </div>
+    </ng-template>
+
     <!-- EMPTY STATES -->
-    <div class="text-center mt-5" *ngIf="!isLoading && searchType === 'jobs' && filteredJobs.length === 0">
-        <h3>No jobs found.</h3>
-        <p style="text-align: center;">Try searching with another keyword.</p>
+    <div class="state-box" *ngIf="!isLoading && searchType === 'jobs' && filteredJobs.length === 0">
+        <mat-icon>work_off</mat-icon>
+        <h3>No jobs found</h3>
+        <p>Try another keyword, or check the spelling.</p>
     </div>
 
-    <div class="text-center mt-5"
+    <div class="state-box"
         *ngIf="!isLoading && searchType === 'people' && filteredOnlinePeople.length === 0 && filteredOfflinePeople.length === 0">
-        <h3>No people found.</h3>
-        <p style="text-align: center;">Try searching with another keyword.</p>
+        <mat-icon>person_search</mat-icon>
+        <h3>No people found</h3>
+        <p>Try another name, profession or skill.</p>
     </div>
 
     <!-- LOAD MORE -->
-    <div class="text-center mt-5"
+    <div class="load-more"
         *ngIf="!isLoading && !searchText && ((searchType === 'jobs' && hasMore) || (searchType === 'people' && peopleHasMore))">
         <button class="browse-btn" (click)="loadMore()" [disabled]="isLoadingMore">
-            {{ isLoadingMore ? 'Loading...' : 'Load More' }}
+            {{ isLoadingMore ? 'Loading...' : 'Load more' }}
         </button>
     </div>
 

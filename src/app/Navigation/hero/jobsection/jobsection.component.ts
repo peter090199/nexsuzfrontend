@@ -80,9 +80,21 @@ export class JobsectionComponent implements OnInit {
     this.currentUserCode = this.authService.getAuthCode();
     this.code = this.route.snapshot.paramMap.get('code') || window.location.href.split('/').pop() || '';
     this.getActiveJobsByCode();
+
+    // arrived from sign in via "People": open the people view straight away
+    if (this.route.snapshot.queryParamMap.get('type') === 'people' && this.isLoggedIn) {
+      this.setSearchType('people');
+    }
   }
 
+  /** People are only for signed-in users; guests are sent to sign in */
+  get isLoggedIn(): boolean { return this.authService.isLoggedIn(); }
+
   setSearchType(type: SearchType): void {
+    if (type === 'people' && !this.isLoggedIn) {
+      this.router.navigate(['/signin'], { queryParams: { view: 'people' } });   // after signing in, come back to the people
+      return;
+    }
     this.searchType = type;
     this.searchText = '';
 

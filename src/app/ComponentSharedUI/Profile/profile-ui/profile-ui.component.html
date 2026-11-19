@@ -1,98 +1,5 @@
-<div class="profile-page">
   <div class="nx-container profile-grid">
 
-
-    <!-- CENTER: profile card, about, activity (feed) -->
-    <!-- LEFT sidebar: CV sections (fixed 90vh, scrolls on its own) -->
-    <aside class="profile-left" aria-label="Experience, education and skills">
-
-        <!-- Work experience -->
-        <section class="nx-card">
-          <h2 class="nx-card-title"><mat-icon>work</mat-icon> Experience</h2>
-          <ng-container *ngIf="profiles?.lines?.employment?.length > 0; else noData">
-            <article class="entry" *ngFor="let job of profiles.lines.employment">
-              <span class="entry-ico"><mat-icon>business</mat-icon></span>
-              <div class="entry-body">
-              <h3>{{ job.position }}</h3>
-              <p class="sub">{{ job.company_name }}</p>
-              <p class="meta" *ngIf="job.date_completed">{{ job.date_completed }}</p>
-              <p class="desc" *ngIf="job.job_description">{{ job.job_description }}</p>
-            </div>
-            </article>
-          </ng-container>
-        </section>
-
-        <!-- Education -->
-        <section class="nx-card">
-          <h2 class="nx-card-title"><mat-icon>school</mat-icon> Education</h2>
-          <ng-container *ngIf="profiles?.lines?.education?.length > 0; else noData">
-            <article class="entry" *ngFor="let education of profiles.lines.education">
-              <span class="entry-ico"><mat-icon>school</mat-icon></span>
-              <div class="entry-body">
-              <h3>{{ education.school_name }}</h3>
-              <p class="sub">{{ education.highest_education }}</p>
-              <p class="meta">{{ education.start_month }} {{ education.start_year }} – {{ education.end_month }} {{
-                education.end_year }}</p>
-            </div>
-            </article>
-          </ng-container>
-        </section>
-
-        <!-- Skills -->
-        <section class="nx-card">
-          <h2 class="nx-card-title"><mat-icon>bolt</mat-icon> Skills</h2>
-          <div class="chips" *ngIf="profiles?.lines?.skills?.length > 0; else noData">
-            <span class="nx-badge" *ngFor="let skill of profiles.lines.skills">{{ skill.skills }}</span>
-          </div>
-        </section>
-
-        <!-- Trainings -->
-        <section class="nx-card">
-          <h2 class="nx-card-title"><mat-icon>model_training</mat-icon> Trainings</h2>
-          <ng-container *ngIf="profiles?.lines?.training?.length > 0; else noData">
-            <article class="entry" *ngFor="let training of profiles.lines.training">
-              <span class="entry-ico"><mat-icon>model_training</mat-icon></span>
-              <div class="entry-body">
-              <h3>{{ training.training_title }}</h3>
-              <p class="sub">{{ training.training_provider }}</p>
-              <p class="meta">{{ training.date_completed }}</p>
-            </div>
-            </article>
-          </ng-container>
-        </section>
-
-        <!-- Seminars -->
-        <section class="nx-card">
-          <h2 class="nx-card-title"><mat-icon>groups</mat-icon> Seminars</h2>
-          <ng-container *ngIf="profiles?.lines?.seminar?.length > 0; else noData">
-            <article class="entry" *ngFor="let seminar of profiles.lines.seminar">
-              <span class="entry-ico"><mat-icon>groups</mat-icon></span>
-              <div class="entry-body">
-              <h3>{{ seminar.seminar_title }}</h3>
-              <p class="sub">{{ seminar.seminar_provider }}</p>
-              <p class="meta">{{ seminar.date_completed }}</p>
-            </div>
-            </article>
-          </ng-container>
-        </section>
-
-        <!-- Certificates -->
-        <section class="nx-card">
-          <h2 class="nx-card-title"><mat-icon>workspace_premium</mat-icon> Certificates</h2>
-          <ng-container *ngIf="profiles?.lines?.certificate?.length > 0; else noData">
-            <article class="entry" *ngFor="let certificates of profiles.lines.certificate">
-              <span class="entry-ico"><mat-icon>workspace_premium</mat-icon></span>
-              <div class="entry-body">
-              <h3>{{ certificates.certificate_title }}</h3>
-              <p class="sub">{{ certificates.certificate_provider }}</p>
-              <p class="meta">{{ certificates.date_completed }}</p>
-            </div>
-            </article>
-          </ng-container>
-        </section>
-
-
-    </aside>
 
       <main class="profile-main">
 
@@ -206,6 +113,94 @@
           <app-private-post *ngIf="!isloading" [ownerPhoto]="profiles?.photo_pic"></app-private-post>
         </section>
 
+
+        <!-- CV sections (LinkedIn style: stacked cards in the main column) -->
+        <!-- Work experience -->
+        <section class="nx-card">
+          <h2 class="nx-card-title"><mat-icon>work</mat-icon> Experience</h2>
+          <ng-container *ngIf="profiles?.lines?.employment?.length > 0; else noData">
+            <article class="entry" *ngFor="let job of profiles.lines.employment">
+              <span class="entry-ico"><mat-icon>business</mat-icon></span>
+              <div class="entry-body">
+              <h3>{{ job.position }}</h3>
+              <p class="sub">{{ job.company_name }}</p>
+              <p class="meta" *ngIf="job.date_completed">{{ job.date_completed }}</p>
+              <p class="desc" *ngIf="job.job_description">{{ job.job_description }}</p>
+            </div>
+            </article>
+          </ng-container>
+        </section>
+
+        <!-- Education -->
+        <section class="nx-card">
+          <h2 class="nx-card-title"><mat-icon>school</mat-icon> Education</h2>
+          <ng-container *ngIf="profiles?.lines?.education?.length > 0; else noData">
+            <article class="entry" *ngFor="let education of profiles.lines.education">
+              <span class="entry-ico"><mat-icon>school</mat-icon></span>
+              <div class="entry-body">
+              <h3>{{ education.school_name }}</h3>
+              <p class="sub">{{ education.highest_education }}</p>
+              <p class="meta">{{ education.start_month }} {{ education.start_year }} – {{ education.end_month }} {{
+                education.end_year }}</p>
+            </div>
+            </article>
+          </ng-container>
+        </section>
+
+        <!-- Skills -->
+        <section class="nx-card">
+          <h2 class="nx-card-title"><mat-icon>bolt</mat-icon> Skills</h2>
+          <div class="chips" *ngIf="profiles?.lines?.skills?.length > 0; else noData">
+            <span class="nx-badge" *ngFor="let skill of profiles.lines.skills">{{ skill.skills }}</span>
+          </div>
+        </section>
+
+        <!-- Trainings -->
+        <section class="nx-card">
+          <h2 class="nx-card-title"><mat-icon>model_training</mat-icon> Trainings</h2>
+          <ng-container *ngIf="profiles?.lines?.training?.length > 0; else noData">
+            <article class="entry" *ngFor="let training of profiles.lines.training">
+              <span class="entry-ico"><mat-icon>model_training</mat-icon></span>
+              <div class="entry-body">
+              <h3>{{ training.training_title }}</h3>
+              <p class="sub">{{ training.training_provider }}</p>
+              <p class="meta">{{ training.date_completed }}</p>
+            </div>
+            </article>
+          </ng-container>
+        </section>
+
+        <!-- Seminars -->
+        <section class="nx-card">
+          <h2 class="nx-card-title"><mat-icon>groups</mat-icon> Seminars</h2>
+          <ng-container *ngIf="profiles?.lines?.seminar?.length > 0; else noData">
+            <article class="entry" *ngFor="let seminar of profiles.lines.seminar">
+              <span class="entry-ico"><mat-icon>groups</mat-icon></span>
+              <div class="entry-body">
+              <h3>{{ seminar.seminar_title }}</h3>
+              <p class="sub">{{ seminar.seminar_provider }}</p>
+              <p class="meta">{{ seminar.date_completed }}</p>
+            </div>
+            </article>
+          </ng-container>
+        </section>
+
+        <!-- Certificates -->
+        <section class="nx-card">
+          <h2 class="nx-card-title"><mat-icon>workspace_premium</mat-icon> Certificates</h2>
+          <ng-container *ngIf="profiles?.lines?.certificate?.length > 0; else noData">
+            <article class="entry" *ngFor="let certificates of profiles.lines.certificate">
+              <span class="entry-ico"><mat-icon>workspace_premium</mat-icon></span>
+              <div class="entry-body">
+              <h3>{{ certificates.certificate_title }}</h3>
+              <p class="sub">{{ certificates.certificate_provider }}</p>
+              <p class="meta">{{ certificates.date_completed }}</p>
+            </div>
+            </article>
+          </ng-container>
+        </section>
+
+
       </main>
 
     <!-- RIGHT rail (LinkedIn): contact, languages, people you may know -->
@@ -242,6 +237,11 @@
                 {{ user.fullname }}
               </a>
               <p class="client-sub" *ngIf="user.profession">{{ user.profession }}</p>
+              <button type="button" class="connect-btn" [class.pending]="personState(user) === 'pending'"
+                [class.connected]="personState(user) === 'connected'" [disabled]="user.busy" (click)="connectPerson(user)">
+                <mat-icon>{{ personState(user) === 'connected' ? 'check' : personState(user) === 'pending' ? 'hourglass_top' : 'person_add' }}</mat-icon>
+                {{ personState(user) === 'connected' ? 'Connected' : personState(user) === 'pending' ? 'Pending' : 'Connect' }}
+              </button>
             </div>
           </div>
         </ng-container>
@@ -250,7 +250,7 @@
     </aside>
 
   </div>
-</div>
+
 
 <ng-template #noData>
   <p class="no-data nx-muted">No data available.</p>

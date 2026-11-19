@@ -6,6 +6,8 @@ import { NotificationsService } from 'src/app/services/Global/notifications.serv
 import { ClientsService } from 'src/app/services/Networking/clients.service';
 import { ProfileService } from 'src/app/services/Profile/profile.service';
 
+import { normaliseFollowStatus } from '../user-and-recruiter/user-and-recruiter.component';
+
 @Component({
   selector: 'app-base-on-recen-activity',
   templateUrl: './base-on-recen-activity.component.html',
@@ -52,7 +54,7 @@ export class BaseOnRecenActivityComponent implements OnInit {
 
         const newData = (res.data || []).map((person: any) => ({
           ...person,
-          follow_status: person.follow_status || 'not_following'
+          follow_status: normaliseFollowStatus(person.follow_status)
         }));
 
         if (newData.length < this.limit) {
@@ -94,8 +96,15 @@ export class BaseOnRecenActivityComponent implements OnInit {
       confirmMessage = 'Send follow request?';
     } else if (status === 'pending') {
       confirmMessage = 'Cancel request?';
+    } else if (status === 'connect_back') {
+      confirmMessage = 'Accept this connection request?';
     } else {
-      confirmMessage = 'Unfollow user?';
+      confirmMessage = 'Remove this connection?';
+    }
+
+    if (status === 'accepted' && !id) {
+      this.alert.toastrWarning('Please refresh the page and try again.');
+      return;
     }
 
     this.alert.popupWarning(fullName, confirmMessage).then(result => {
@@ -120,7 +129,7 @@ export class BaseOnRecenActivityComponent implements OnInit {
           // ✅ update UI instantly (NO reload)
           this.peopleRecentActivity = this.peopleRecentActivity.map(p =>
             p.code === code
-              ? { ...p, follow_status: res.follow_status }
+              ? { ...p, follow_status: normaliseFollowStatus(res.follow_status), id: normaliseFollowStatus(res.follow_status) === 'not_following' ? null : (res.follow_id ?? null) }
               : p
           );
         },

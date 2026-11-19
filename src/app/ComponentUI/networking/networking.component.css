@@ -1,122 +1,71 @@
-.list-wrapper {
-  padding: 15px;
+/* =====================================================================
+   My Network: clean, light and simple. Main column left, invitations rail right.
+   ===================================================================== */
+:host {
+  --mn-bg: #f4f6fa;
+  --mn-card: #ffffff;
+  --mn-soft: #f8fafd;
+  --mn-border: #e3e8f0;
+  --mn-text: #1b2a4a;
+  --mn-muted: #6b7a99;
+  --mn-accent: #0a66c2;
+  --mn-accent-soft: #eaf3fc;
+  --mn-ok: #057642;
+  display: block;
+  background: var(--mn-bg);
+  color: var(--mn-text);
+  min-height: 100%;
 }
 
-.grid {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(6, minmax(0, 1fr)); /* 6 columns default */
+.mynet { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; width: 100%; max-width: 1400px; margin: 0 auto; padding: 16px 12px 32px; box-sizing: border-box; }
+.mynet-main, .mynet-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+/* phones: invitations first (they need an answer), then people */
+.mynet-side { order: -1; }
+
+@media (min-width: 1024px) {
+  .mynet { grid-template-columns: minmax(0, 1fr) 340px; padding: 24px; gap: 24px; align-items: start; }
+  .mynet-side { order: 0; position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow-y: auto; scrollbar-width: thin; }
 }
 
-@media (max-width: 1440px) {
-  .grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr)); /* 4 columns */
-  }
-}
+.mynet-head h1 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 24px; color: var(--mn-text); }
+.mynet-head h1 mat-icon { color: var(--mn-accent); }
+.mynet-head p { margin: 6px 0 0; font-size: 14px; color: var(--mn-muted); }
 
-@media (max-width: 1024px) {
-  .grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr)); /* 3 columns */
-  }
-}
+.panel { background: var(--mn-card); border: 1px solid var(--mn-border); border-radius: 12px; box-shadow: 0 1px 3px rgba(20, 40, 80, .06); overflow: hidden; }
+.panel-title { display: flex; align-items: center; gap: 8px; margin: 0; padding: 14px 16px; font-size: 16px; font-weight: 700; color: var(--mn-text); border-bottom: 1px solid var(--mn-border); }
+.panel-title mat-icon { color: var(--mn-accent); }
+.list-wrapper { padding: 12px; }
 
-@media (max-width: 640px) {
-  .grid {
-    grid-template-columns: 1fr; /* 1 column mobile */
-  }
-}
+.spinner-wrapper { display: flex; justify-content: center; padding: 30px 0; }
 
-.user-card,
-.company-card {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
+/* ---------- children: tidy the existing cards without touching their templates ---------- */
+.mynet ::ng-deep .section { padding: 0; background: transparent; }
+.mynet ::ng-deep .no-data { color: var(--mn-muted); text-align: center; padding: 16px 0; }
 
-.user-info {
-  display: flex;
-  align-items: center;
-  margin-bottom: 12px;
+/* people grid: fluid columns instead of a fixed 6 */
+.mynet-main ::ng-deep .grid-container, .mynet-main ::ng-deep .skeleton-list, .mynet-main ::ng-deep .suggestions {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; padding: 0;
 }
+/* rail: one invitation per row */
+.mynet-side .grid { display: block; }
+.mynet-side ::ng-deep .grid-container, .mynet-side ::ng-deep .skeleton-list { display: flex; flex-direction: column; gap: 12px; padding: 0; }
 
-.avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: var(--nexsuz-border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  margin-right: 12px;
+.mynet ::ng-deep .suggestion-card {
+  width: auto; max-width: 100%; margin-top: 0; box-sizing: border-box;
+  background: var(--mn-card); border: 1px solid var(--mn-border); border-radius: 12px; box-shadow: none;
+  transition: box-shadow .15s ease, border-color .15s ease;
 }
+.mynet ::ng-deep .suggestion-card:hover { border-color: #c5d6ea; box-shadow: 0 4px 14px rgba(20, 40, 80, .08); }
+.mynet ::ng-deep .custom-title, .mynet ::ng-deep .custom-title:visited { color: var(--mn-text); font-weight: 700; text-decoration: none; }
+.mynet ::ng-deep .custom-title:hover { color: var(--mn-accent); text-decoration: underline; }
+.mynet ::ng-deep .mat-card-subtitle, .mynet ::ng-deep .mat-mdc-card-subtitle, .mynet ::ng-deep .skills-line, .mynet ::ng-deep .based-text { color: var(--mn-muted); }
+.mynet ::ng-deep .profession-badge { background: var(--mn-accent-soft); color: var(--mn-accent); }
+.mynet ::ng-deep .card-top-bar { background: var(--mn-accent); }
 
-.details .name {
-  font-weight: 600;
-}
+/* buttons: clear, rounded, one primary colour */
+.mynet ::ng-deep .mat-flat-button.mat-primary, .mynet ::ng-deep .mat-raised-button.mat-primary,
+.mynet ::ng-deep .mat-mdc-unelevated-button.mat-primary, .mynet ::ng-deep .mat-mdc-raised-button.mat-primary { background: var(--mn-accent); color: #fff; font-weight: 600; border-radius: 18px; }
+.mynet ::ng-deep .mat-flat-button.mat-accent, .mynet ::ng-deep .mat-mdc-unelevated-button.mat-accent { background: #fff; color: var(--mn-ok); border: 1px solid var(--mn-ok); border-radius: 18px; }
+.mynet ::ng-deep .mat-flat-button.mat-warn, .mynet ::ng-deep .mat-mdc-unelevated-button.mat-warn { background: #fff; color: var(--mn-muted); border: 1px solid var(--mn-border); border-radius: 18px; }
 
-.details .title {
-  font-size: 13px;
-  color: var(--nexsuz-muted);
-}
-
-.details .mutuals {
-  font-size: 12px;
-  color: var(--nexsuz-muted);
-}
-
-.invite-actions {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.company-name {
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-
-.company-desc {
-  color: var(--nexsuz-muted);
-  font-size: 13px;
-}
-
-.spinner-wrapper {
-  display: flex;
-  justify-content: center;
-  padding: 30px 0;
-}
-
-.tab-wrapper {
-  display: flex;
-  justify-content: center; /* Horizontal center */
-  width: 100%;
-  padding: 16px;           /* spacing around tabs */
-  box-sizing: border-box;
-  overflow-y: auto;
-  height: 90vh;
-}
-
-mat-tab-group {
-  width: 100%;
-  max-width: 1300px;       /* Limit width on large screens */
-  margin: 10px auto;       /* Corrected syntax to center horizontally */
-}
-
-@media (max-width: 1024px) {
-  mat-tab-group {
-    width: 95%;             /* Slightly smaller than full width */
-    padding: 0 12px;        /* Side padding */
-  }
-}
-
-@media (max-width: 640px) {
-  mat-tab-group {
-    width: 100%;            /* Full width on mobile */
-    padding: 0 8px;         /* Smaller side padding */
-  }
-}
+@media (prefers-reduced-motion: reduce) { .mynet ::ng-deep .suggestion-card { transition: none; } }

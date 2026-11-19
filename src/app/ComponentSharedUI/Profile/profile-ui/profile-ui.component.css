@@ -2,7 +2,7 @@
    PROFILE – uses the global NEXSUZ design system
 ========================================= */
 :host { display: block; font-family: var(--nx-font); }
-.profile-page { background: var(--nx-bg); padding: 16px 0 32px; }
+.profile-page { background: var(--nx-bg); }
 
 /* ---------- Header card ---------- */
 .profile-header { padding: 0; overflow: hidden; margin-bottom: 16px; }
@@ -297,7 +297,7 @@
    3 columns: CV sections (left) | profile card + activity | contact + people (right)
    Both sidebars are a fixed 90vh and scroll on their own.
    ===================================================================== */
-.nx-container.profile-grid { max-width: 1280px; }
+.nx-container.profile-grid { max-width: 1680px; }
 .profile-left, .profile-right { display: flex; flex-direction: column; gap: 16px; }
 
 /* phone: one column, profile first, then sections, then the right-rail cards */
@@ -338,3 +338,37 @@
 /* LinkedIn-style page margins: content centred, equal auto margins left and right, a small gutter on phones */
 .nx-container.profile-grid { box-sizing: border-box; width: 100%; max-width: 1280px; margin-left: auto; margin-right: auto; padding-left: 12px; padding-right: 12px; }
 @media (min-width: 768px) { .nx-container.profile-grid { padding-left: 24px; padding-right: 24px; } }
+
+/* full width: no centred max-width cap */
+.nx-container.profile-grid { width: 100%; max-width: 100%; margin-left: 0; margin-right: 0; }
+:host { width: 100%; }
+
+
+/* =====================================================================
+   LinkedIn layout: ONE main column (profile card, About, Activity, Experience,
+   Education, Skills...) + ONE right rail (contact, languages, people).
+   ===================================================================== */
+.profile-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "main" "right"; grid-template-rows: auto; gap: 16px; align-items: start; }
+.profile-main  { grid-area: main; }
+.profile-right { grid-area: right; position: static; height: auto; overflow: visible; }
+@media (min-width: 768px) and (max-width: 1199px) {
+  .profile-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "main" "right"; grid-template-rows: auto; }
+}
+@media (min-width: 1024px) {
+  .profile-grid { grid-template-columns: minmax(0, 1fr) 300px; grid-template-areas: "main right"; gap: 24px; }
+  .profile-right { position: sticky; top: var(--nx-sticky-top, 12px); height: auto; max-height: calc(100vh - 24px); overflow-y: auto; }
+}
+@media (min-width: 1200px) {
+  .profile-grid { grid-template-columns: minmax(0, 1fr) 320px; grid-template-areas: "main right"; gap: 24px; }
+}
+/* CV cards in the main column look like the other main cards */
+.profile-main > .nx-card { border-radius: 12px; border: 1px solid var(--nx-border); box-shadow: 0 1px 3px rgba(0, 65, 130, .06); }
+.profile-main > .nx-card .nx-card-title { font-size: 18px; margin-bottom: 12px; }
+
+/* Connect button on "People you may know" */
+.connect-btn { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; min-height: 32px; padding: 0 14px; border: 1px solid #0a66c2; border-radius: 16px; background: #fff; color: #0a66c2; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s; }
+.connect-btn:hover:not([disabled]) { background: #eaf3fc; }
+.connect-btn mat-icon { font-size: 16px; width: 16px; height: 16px; line-height: 16px; }
+.connect-btn.pending { border-color: #8a97b0; color: #6b7a99; }
+.connect-btn.connected { border-color: #057642; color: #057642; }
+.connect-btn[disabled] { opacity: .6; cursor: progress; }

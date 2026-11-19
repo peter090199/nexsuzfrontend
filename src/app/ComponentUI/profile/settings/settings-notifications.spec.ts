@@ -79,11 +79,12 @@ describe('Settings > Notifications', () => {
     flush();
   }));
 
-  it('shows every control: 6 message switches, 4 social switches, volume, test sound and the quick actions', fakeAsync(() => {
+  it('shows every control: 6 message switches, 8 social and job switches, volume, test sound and the quick actions', fakeAsync(() => {
     init();
-    expect(qa('mat-slide-toggle').length).toBe(10);
+    expect(qa('mat-slide-toggle').length).toBe(14);
     ['New message notifications', 'Message preview', 'Unread message badges', 'Desktop browser notifications', 'Notification popup', 'Notification sound',
-      'Friend requests', 'Friend request accepted', 'Post reactions', 'Post comments and replies'].forEach(l => expect(toggle(l)).withContext(l).not.toBeNull());
+      'Friend requests', 'Friend request accepted', 'Post reactions', 'Post comments and replies',
+      'Job applications', 'Interview invites', 'Application decisions', 'Application reviews'].forEach(l => expect(toggle(l)).withContext(l).not.toBeNull());
     expect(q('mat-slider')).not.toBeNull();
     expect(button('Test sound')).toBeDefined();
     ['Enable all', 'Disable all', 'Restore defaults'].forEach(l => expect(button(l)).withContext(l).toBeDefined());
@@ -111,6 +112,10 @@ describe('Settings > Notifications', () => {
     ['Friend request accepted', 'friend_accepts', true],
     ['Post reactions', 'post_reactions', true],
     ['Post comments and replies', 'post_comments', true],
+    ['Job applications', 'job_applications', true],
+    ['Interview invites', 'job_interviews', true],
+    ['Application decisions', 'job_status', true],
+    ['Application reviews', 'job_reviews', true],
   ];
   SWITCHES.forEach(([label, key, defaultValue]) => {
     it('the "' + label + '" switch saves ' + key + ' immediately', fakeAsync(() => {

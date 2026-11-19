@@ -9,6 +9,14 @@ import { Router } from '@angular/router';
 import { Optional } from '@angular/core';
 import { NotificationDeliveryService, ActivityItem } from 'src/app/services/notification-delivery.service';
 import { SharedRoutinesService } from 'src/app/services/Function/shared-routines.service';
+export interface FeedItem {
+  kind: 'message' | 'activity';
+  unread: boolean;
+  date: string;
+  message?: any;
+  activity?: ActivityItem;
+}
+
 @Component({
   selector: 'app-notification',
   templateUrl: './notification.component.html',
@@ -33,9 +41,37 @@ export class NotificationComponent implements OnInit {
     @Optional() private dialogRef: MatDialogRef<NotificationComponent>
   ) {}
 
-  /** the Activity tab opens: load it, and once the user has seen it, mark it read */
-  onTab(label: string): void {
-    if (label === 'Activity') { this.loadActivity(true); }
+  /** LinkedIn-style feed: messages + activity in one list, newest first, filtered by the pills on top */
+  filter: 'all' | 'messages' | 'activity' = 'all';
+  feed: FeedItem[] = [];
+
+  setFilter(f: 'all' | 'messages' | 'activity'): void {
+    this.filter = f;
+    if (f === 'activity' && this.activityUnreadCount() > 0) {
+      this.delivery.markActivityRead().subscribe({ error: () => this.delivery.refreshActivity() });
+    }
+  }
+
+  visibleFeed(): FeedItem[] {
+    return this.filter === 'all' ? this.feed : this.feed.filter(i => i.kind === (this.filter === 'messages' ? 'message' : 'activity'));
+  }
+
+  count(kind: 'message' | 'activity'): number { return this.feed.filter(i => i.kind === kind && i.unread).length; }
+
+  private rebuild(): void {
+    const msgs: FeedItem[] = [...this.notifications.map(n => ({ n, unread: true })), ...this.isRead.filter(n => n.is_read).map(n => ({ n, unread: false }))]
+      .map(x => ({ kind: 'message' as const, unread: x.unread, date: x.n.created_at, message: x.n }));
+    const acts: FeedItem[] = this.activity.map(a => ({ kind: 'activity' as const, unread: !!a.unread, date: a.created_at, activity: a }));
+    this.feed = [...msgs, ...acts].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  /** click a notification: mark it read and go to where it came from */
+  open(item: FeedItem): void {
+    if (item.kind === 'activity') { this.openActivity(item.activity!); return; }
+    const m = item.message;
+    if (item.unread) { this.chatService.markMessagesAsRead(m.id).subscribe({ error: () => {} }); }
+    this.dialogRef?.close();
+    this.delivery.openConversation(m.sender_id);
   }
 
   loadActivity(markRead = false): void {
@@ -45,6 +81,7 @@ export class NotificationComponent implements OnInit {
       next: res => {
         this.activity = Array.isArray(res?.data) ? res.data : [];
         this.activityLoading = false;
+        this.rebuild();
         if (markRead && this.activityUnreadCount() > 0) {
           this.delivery.markActivityRead().subscribe({ error: () => this.delivery.refreshActivity() });
         }
@@ -58,6 +95,8 @@ export class NotificationComponent implements OnInit {
   openActivity(a: ActivityItem): void {
     const role = this.routines.getRole();
     const target = a.type === 'friend_request' ? ['/' + role + '/network']
+      : a.type === 'job_application' ? ['/' + role + '/candidates']
+      : a.type === 'job_interview' || a.type === 'job_status' || a.type === 'job_review' ? ['/' + role + '/applied-jobs']
       : a.type === 'friend_accept' && a.actor ? ['/' + role + '/profile', a.actor.code]
       : ['/' + role + '/profile'];                                  // reactions and comments are on your own posts
     this.dialogRef?.close();
@@ -65,7 +104,8 @@ export class NotificationComponent implements OnInit {
   }
 
   activityIcon(a: ActivityItem): string {
-    return a.type === 'friend_request' ? 'person_add' : a.type === 'friend_accept' ? 'how_to_reg' : a.type === 'reaction' ? 'thumb_up' : 'chat_bubble';
+    const icons: any = { friend_request: 'person_add', friend_accept: 'how_to_reg', reaction: 'thumb_up', comment: 'chat_bubble', job_application: 'work', job_interview: 'event', job_status: 'verified', job_review: 'rate_review' };
+    return icons[a.type] || 'notifications';
   }
 
   ago(iso: string): string {
@@ -79,6 +119,7 @@ export class NotificationComponent implements OnInit {
   ngOnInit(): void {
      this.loadNotifications();
      this.loadIsRead();
+     this.loadActivity();
   }
   panelOpenState = false;
   unreadNotifications() {
@@ -94,11 +135,11 @@ export class NotificationComponent implements OnInit {
     this.isLoading = true;
     this.chatService.getIsRead().subscribe({
       next: (res) => {
-        this.isRead = res.notifications;
+        this.isRead = res.notifications; this.rebuild();
         this.isLoading = false;
       },
       error: (err) => {
-        console.error('Error loading notifications:', err);
+        console.error('Error loading notifications:', err); this.isLoading = false;
       }
     });
   }
@@ -107,11 +148,11 @@ export class NotificationComponent implements OnInit {
     this.isLoading = true;
     this.chatService.getNotifications().subscribe({
       next: (res) => {
-        this.notifications = res.notifications;
+        this.notifications = res.notifications; this.rebuild();
         this.isLoading = false;
       },
       error: (err) => {
-        console.error('Error loading notifications:', err);
+        console.error('Error loading notifications:', err); this.isLoading = false;
       }
     });
   }

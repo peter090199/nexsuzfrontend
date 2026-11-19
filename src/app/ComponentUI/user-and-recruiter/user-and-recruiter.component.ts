@@ -176,6 +176,12 @@ import { NotificationsService } from 'src/app/services/Global/notifications.serv
 import { ClientsService } from 'src/app/services/Networking/clients.service';
 import { ProfileService } from 'src/app/services/Profile/profile.service';
 
+
+/** one vocabulary for the buttons: not_following | pending | connect_back | accepted (the API may say none / connected / null) */
+export function normaliseFollowStatus(s: any): 'not_following' | 'pending' | 'connect_back' | 'accepted' {
+  return s === 'accepted' || s === 'connected' ? 'accepted' : s === 'pending' ? 'pending' : s === 'connect_back' ? 'connect_back' : 'not_following';
+}
+
 @Component({
   selector: 'app-user-and-recruiter',
   templateUrl: './user-and-recruiter.component.html',
@@ -230,7 +236,7 @@ export class UserAndRecruiterComponent implements OnInit {
       next: (res) => {
         this.people = (res.data || []).map((person: any) => ({
           ...person,
-          follow_status: person.follow_status || 'not_following',
+          follow_status: normaliseFollowStatus(person.follow_status),
           follow_id: person.follow_id || null,
           role_code: person.role_code
         }));
@@ -262,7 +268,7 @@ export class UserAndRecruiterComponent implements OnInit {
 
         const newData = (res.data || []).map((person: any) => ({
           ...person,
-          follow_status: person.follow_status || 'not_following',
+          follow_status: normaliseFollowStatus(person.follow_status),
           follow_id: person.follow_id || null,
           role_code: person.role_code
         }));
@@ -324,8 +330,17 @@ export class UserAndRecruiterComponent implements OnInit {
         break;
 
       case 'accepted':
-        confirmMessage = 'Unfollow this user?';
+        confirmMessage = 'Remove this connection?';
         break;
+
+      case 'connect_back':
+        confirmMessage = 'Accept this connection request?';
+        break;
+    }
+
+    if (follow_status === 'accepted' && !id) {
+      this.alert.toastrWarning('Please refresh the page and try again.');
+      return;
     }
 
     this.alert
@@ -349,8 +364,8 @@ export class UserAndRecruiterComponent implements OnInit {
                 res.message || 'Success'
               );
 
-              const updatedStatus =
-                res.follow_status || 'not_following';
+              const updatedStatus = normaliseFollowStatus(res.follow_status);
+              const updatedId = updatedStatus === 'not_following' ? null : (res.follow_id ?? null);
 
               this.peopleRecentActivity =
                 this.peopleRecentActivity.map(person => {
@@ -359,7 +374,8 @@ export class UserAndRecruiterComponent implements OnInit {
 
                     return {
                       ...person,
-                      follow_status: updatedStatus
+                      follow_status: updatedStatus,
+                      id: updatedId
                     };
                   }
 
@@ -373,7 +389,8 @@ export class UserAndRecruiterComponent implements OnInit {
 
                     return {
                       ...person,
-                      follow_status: updatedStatus
+                      follow_status: updatedStatus,
+                      id: updatedId
                     };
                   }
 

@@ -1,42 +1,35 @@
-<section class="section">
-  <mat-tab-group >
+<!-- My Network: clean light layout, main column on the LEFT and the invitations rail on the RIGHT -->
+<section class="mynet">
+  <main class="mynet-main">
     <div *ngIf="isLoading" class="spinner-wrapper">
       <mat-spinner diameter="40"></mat-spinner>
     </div>
-    <!-- PEOPLE TAB -->
-    <mat-tab label="People">
-      <ng-template matTabContent>
-        <div class="list-wrapper" *ngIf="!isLoading">
-          <app-user-and-recruiter></app-user-and-recruiter>
-        </div>
 
-        <div class="list-wrapper" *ngIf="!isLoading">
-          <app-base-on-recen-activity></app-base-on-recen-activity>
-        </div>
-      </ng-template>
-    </mat-tab>
+    <div class="panel" *ngIf="!isLoading">
+      <h2 class="panel-title">People you may know</h2>
+      <div class="list-wrapper">
+        <app-user-and-recruiter></app-user-and-recruiter>
+      </div>
+    </div>
 
-    <!-- RECRUITERS TAB -->
-    <!-- <mat-tab label="Recruiters">
-      <ng-template matTabContent>
-        <div class="list-wrapper">
-          <div class="grid">
-            <app-recruiters></app-recruiters>
-          </div>
-        </div>
-      </ng-template>
-    </mat-tab> -->
+    <div class="panel" *ngIf="!isLoading">
+      <h2 class="panel-title">Based on recent activity</h2>
+      <div class="list-wrapper">
+        <app-base-on-recen-activity></app-base-on-recen-activity>
+      </div>
+    </div>
+  </main>
 
-    <!-- INVITES TAB -->
-    <mat-tab label="Invites">
-      <ng-template matTabContent>
-        <div class="list-wrapper">
-          <div class="grid">
-            <app-invites></app-invites>
-          </div>
+  <!-- RAIL (right): invitations to answer -->
+  <aside class="mynet-side" aria-label="Invitations">
+    <div class="panel side-panel">
+      <h2 class="panel-title"><mat-icon>mail</mat-icon> Invitations</h2>
+      <div class="list-wrapper">
+        <div class="grid">
+          <app-invites></app-invites>
         </div>
-      </ng-template>
-    </mat-tab>
-  </mat-tab-group>
+      </div>
+    </div>
+  </aside>
 
 </section>

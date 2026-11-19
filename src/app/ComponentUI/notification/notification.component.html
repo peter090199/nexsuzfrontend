@@ -1,110 +1,56 @@
-
-  <mat-card-header class="notifications-header">
-    <!-- <mat-card-title>Notifications</mat-card-title> -->
-    <button mat-button color="primary" class="read-all-btn" (click)="markAllAsRead()">
-      Read All
+  <div class="notif-head">
+    <h2 class="notif-title">Notifications</h2>
+    <button mat-button color="primary" class="read-all-btn" (click)="markAllAsRead()" [disabled]="isLoading || !unreadNotifications().length">
+      <mat-icon>done_all</mat-icon> Mark messages read
     </button>
-  </mat-card-header>
-  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" color="primary"></mat-progress-bar>
+  </div>
 
-  <mat-card-content>
-    <mat-tab-group *ngIf="!isLoading" (selectedTabChange)="onTab($event.tab.textLabel)">
-      <!-- Unread Notifications -->
-      <mat-tab label="Unread ({{ unreadNotifications().length }})">
-        <div *ngIf="!isLoading && notifications.length === 0" class="no-notifications">
-          No new notifications
-        </div>
-        <mat-accordion>
-          <mat-expansion-panel *ngFor="let notif of unreadNotifications()" class="read">
-            <mat-expansion-panel-header>
-              <mat-panel-title (click)="openChat(notif)">
-                <img
-                  [src]="notif.photo_pic || 'assets/images/default.png'"
-                  width="50"
-                  height="50"
-                  style="border-radius: 50%; margin-right: 10px;"
-                  alt="Avatar"
-                />
-                {{ notif.fullname }}
-              </mat-panel-title>
-              <mat-panel-description>
-                {{ notif.created_at | date: 'short' }}
-              </mat-panel-description>
-            </mat-expansion-panel-header>
-      
-            <div class="message-preview" >{{ notif.message }}</div>
-      
-          </mat-expansion-panel>
-        </mat-accordion>
-      </mat-tab>
-      
+  <div class="pills" role="tablist">
+    <button type="button" role="tab" class="pill" [class.on]="filter === 'all'" (click)="setFilter('all')">All</button>
+    <button type="button" role="tab" class="pill" [class.on]="filter === 'messages'" (click)="setFilter('messages')">
+      Messages <b *ngIf="count('message')">{{ count('message') }}</b>
+    </button>
+    <button type="button" role="tab" class="pill" [class.on]="filter === 'activity'" (click)="setFilter('activity')">
+      Activity <b *ngIf="count('activity')">{{ count('activity') }}</b>
+    </button>
+  </div>
 
+  <mat-progress-bar *ngIf="isLoading || activityLoading" mode="indeterminate" color="primary"></mat-progress-bar>
 
-      <!-- Read Notifications -->
-      <mat-tab label="Read ({{ readNotifications().length }})">
-        <mat-accordion>
-          <mat-expansion-panel *ngFor="let notif of readNotifications()">
-            <mat-expansion-panel-header>
-              <mat-panel-title>
-                <img
-                  [src]="notif.photo_pic || 'assets/images/default.png'"
-                  width="40"
-                  height="40"
-                  style="border-radius: 50%; margin-right: 10px;"
-                  alt="Avatar"
-                />
-                {{ notif.fullname }}
-              </mat-panel-title>
-              <mat-panel-description>
-                {{ notif.created_at | date: 'short' }}
-              </mat-panel-description>
-            </mat-expansion-panel-header>
-      
-            <div class="message-preview">{{ notif.message }}</div>
-      
-          </mat-expansion-panel>
-        </mat-accordion>
-      </mat-tab>
-      
+  <div class="no-notifications" *ngIf="activityError">
+    Couldn't load your activity. <button mat-button color="primary" (click)="loadActivity()">Try again</button>
+  </div>
 
+  <div class="no-notifications" *ngIf="!isLoading && !activityLoading && !visibleFeed().length">
+    <mat-icon>notifications_none</mat-icon>
+    <p>You're all caught up</p>
+  </div>
 
-
-      <!-- Activity: friend requests, accepted requests, reactions, comments -->
-      <mat-tab label="Activity">
-        <mat-progress-bar *ngIf="activityLoading" mode="indeterminate"></mat-progress-bar>
-
-        <div class="no-notifications" *ngIf="activityError">
-          Couldn't load your activity. <button mat-button color="primary" (click)="loadActivity()">Try again</button>
-        </div>
-        <div class="no-notifications" *ngIf="!activityLoading && !activityError && !activity.length">
-          No activity yet. Friend requests, reactions and comments will appear here.
-        </div>
-
-        <ul class="activity-list" *ngIf="activity.length">
-          <li *ngFor="let a of activity" class="activity-item" [class.unread]="a.unread" (click)="openActivity(a)" tabindex="0"
-            (keydown.enter)="openActivity(a)" role="button">
-            <span class="act-av">
-              <img [src]="a.actor?.photo_pic || 'assets/images/default.png'" nxFallback alt="" />
-              <mat-icon class="act-badge">{{ activityIcon(a) }}</mat-icon>
-            </span>
-            <span class="act-text">
-              <span><strong>{{ a.actor?.fullname || 'Someone' }}</strong> {{ a.text }}</span>
-              <span class="act-excerpt" *ngIf="a.excerpt">"{{ a.excerpt }}"</span>
-              <time>{{ ago(a.created_at) }}</time>
-            </span>
-            <i class="act-unread" *ngIf="a.unread" aria-label="New"></i>
-          </li>
-        </ul>
-      </mat-tab>
-    </mat-tab-group>
-  </mat-card-content>
-
-  <!-- Card Footer (Optional) -->
-  <mat-card-actions align="end">
-    <!-- <button mat-stroked-button color="primary" (click)="refreshNotifications()">
-      Refresh
-    </button> -->
-  </mat-card-actions>
-
-
-
+  <ul class="activity-list" *ngIf="visibleFeed().length">
+    <li *ngFor="let item of visibleFeed()" class="activity-item" [class.unread]="item.unread" (click)="open(item)" tabindex="0"
+      (keydown.enter)="open(item)" role="button">
+      <ng-container *ngIf="item.kind === 'message'; else actRow">
+        <span class="act-av">
+          <img [src]="item.message.photo_pic || 'assets/images/default.png'" nxFallback alt="" />
+          <mat-icon class="act-badge">chat_bubble</mat-icon>
+        </span>
+        <span class="act-text">
+          <span><strong>{{ item.message.fullname }}</strong> sent you a message</span>
+          <span class="msg-line">{{ item.message.message }}</span>
+          <time>{{ ago(item.date) }}</time>
+        </span>
+      </ng-container>
+      <ng-template #actRow>
+        <span class="act-av">
+          <img [src]="item.activity?.actor?.photo_pic || 'assets/images/default.png'" nxFallback alt="" />
+          <mat-icon class="act-badge">{{ activityIcon(item.activity!) }}</mat-icon>
+        </span>
+        <span class="act-text">
+          <span><strong>{{ item.activity?.actor?.fullname || 'Someone' }}</strong> {{ item.activity?.text }}</span>
+          <span class="act-excerpt" *ngIf="item.activity?.excerpt">"{{ item.activity?.excerpt }}"</span>
+          <time>{{ ago(item.date) }}</time>
+        </span>
+      </ng-template>
+      <i class="act-unread" *ngIf="item.unread" aria-label="New"></i>
+    </li>
+  </ul>

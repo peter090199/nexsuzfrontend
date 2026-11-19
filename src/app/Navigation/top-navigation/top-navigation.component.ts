@@ -3,7 +3,7 @@ import { FormControl } from '@angular/forms';
 import { MatMenuPanel } from '@angular/material/menu';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, Subscription, firstValueFrom } from 'rxjs';
-import { map, startWith } from 'rxjs/operators';
+import { map, startWith, distinctUntilChanged, skip } from 'rxjs/operators';
 import { SigInService } from 'src/app/services/signIn/sig-in.service';
 import { TNavigationService } from 'src/app/services/TNavigation/tnavigation.service';
 import { slideUp, slideFade } from 'src/app/animations';
@@ -130,6 +130,12 @@ export class TopNavigationComponent implements OnInit, OnDestroy {
     this.prefs.startSync();
     this.delivery.start();
     this.prefsSub = this.prefs.prefs$.subscribe(() => this.updateTitle(this.bellCount));
+    // the server counts only the activity types switched on, so re-ask as soon as one of those switches changes
+    this.prefsSub.add(this.prefs.prefs$.pipe(
+      map(p => [p.friend_requests, p.friend_accepts, p.post_reactions, p.post_comments, p.job_applications, p.job_interviews, p.job_status, p.job_reviews].join()),
+      distinctUntilChanged(),
+      skip(1)
+    ).subscribe(() => this.delivery.refreshActivity()));
     this.activitySub = this.delivery.activityUnread$.subscribe(n => { this.activityUnread = n; this.updateTitle(this.bellCount); });
 
     // a new / removed profile photo shows in the bar at once
@@ -241,7 +247,7 @@ export class TopNavigationComponent implements OnInit, OnDestroy {
   }
 
   /** unread messages, only when the user wants unread badges */
-  get messageBadge(): number { return this.prefs.prefs.unread_badge ? this.unreadCount : 0; }
+  get messageBadge(): number { return this.prefs.prefs.messages_enabled && this.prefs.prefs.unread_badge ? this.unreadCount : 0; }
 
   /** what the bell shows: unread messages (if badges are on) + waiting friend requests / reactions / comments */
   get bellCount(): number { return this.messageBadge + this.activityUnread; }

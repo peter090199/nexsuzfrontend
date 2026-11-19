@@ -20,6 +20,7 @@ export class SignInUIComponent implements OnInit {
 
   returnUrl: string | null = null;
   applyTransNo: string | null = null;
+  viewPeople = false;
 
   constructor(
     private fb: FormBuilder,
@@ -42,6 +43,7 @@ export class SignInUIComponent implements OnInit {
 
       this.returnUrl = params['returnUrl'] || null;
       this.applyTransNo = params['applyTransNo'] || null;
+      this.viewPeople = params['view'] === 'people';
     });
 
     this.loginForm = this.fb.group({
@@ -81,6 +83,12 @@ export class SignInUIComponent implements OnInit {
         // Came from "Apply Now" -> go straight back to that job
         if (this.applyTransNo) {
           this.redirectTo([`/${res.role}/apply-job`, this.applyTransNo]);
+          return;
+        }
+
+        // Came from "People" on the landing page -> open the people search
+        if (this.viewPeople) {
+          this.redirectTo([`/${res.role}/search`], { type: 'people' });
           return;
         }
 
@@ -131,9 +139,9 @@ export class SignInUIComponent implements OnInit {
     this.redirectTo([routes[role] || '/homepage']);
   }
 
-  private redirectTo(commands: any[]): void {
+  private redirectTo(commands: any[], queryParams?: any): void {
     this.isRedirecting = true;
-    setTimeout(() => this.router.navigate(commands), 1200);
+    setTimeout(() => this.router.navigate(commands, queryParams ? { queryParams } : {}), 1200);
   }
 
   signInWithGoogle(): void {
