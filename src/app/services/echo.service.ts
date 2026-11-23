@@ -197,7 +197,6 @@ export class EchoService {
     // Listen to private user notifications
     this.echo.channel(`notification.count.${this.userId}`)
       .listen('.NotificationCountUpdated', (data: any) => {
-        console.log('📬 Private Notification Count Update:', data);
         this.notificationCountSubject.next(data.unreadCount);
         this.previousUnreadCount = data.unreadCount;
       });
@@ -224,7 +223,6 @@ export class EchoService {
   listenToPosts() {
     this.echo.channel('posts')
       .listen('NewPostCreated', (e: any) => {
-        console.log('📢 NewPostCreated event received:', e);
         this.newPostSubject.next(e.post);
       });
   }

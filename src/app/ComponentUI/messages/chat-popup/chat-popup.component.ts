@@ -49,7 +49,6 @@ export class ChatPopupComponent implements OnInit {
     this.nsfwService.detectNSFW(this.imageUrl).subscribe(
       res => {
         this.result = res;
-        console.log('NSFW Result:', res);
       },
       err => console.error(err)
     );
@@ -154,7 +153,7 @@ export class ChatPopupComponent implements OnInit {
     this.newMessage = '';
 
     this.chatService.sendMessage(receiverId, messageContent).subscribe({
-      next: () => console.log('✅ Message sent successfully'),
+      next: () => {},
       error: (err) => {
         console.error('❌ Error sending message:', err);
         this.notify.toastrError('Failed to send message');
@@ -167,7 +166,6 @@ export class ChatPopupComponent implements OnInit {
   load(){
     this.notificationService.notificationCounts$.subscribe(counts => {
       this.notificationCounts = counts;
-      console.log(this.notificationCounts)
     });
 
 

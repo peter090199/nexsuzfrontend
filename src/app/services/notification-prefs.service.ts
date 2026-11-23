@@ -25,6 +25,8 @@ export interface NotificationPrefs {
   job_interviews: boolean;
   job_status: boolean;
   job_reviews: boolean;
+  // email (security emails are always sent and are not a setting)
+  email_application_updates: boolean;
 }
 
 /** Sound and desktop notifications are OFF until the user turns them on. */
@@ -45,6 +47,7 @@ export const DEFAULT_PREFS: NotificationPrefs = {
   job_interviews: true,
   job_status: true,
   job_reviews: true,
+  email_application_updates: true,
 };
 
 export const BOOLEAN_KEYS = (Object.keys(DEFAULT_PREFS) as (keyof NotificationPrefs)[]).filter(k => k !== 'sound_volume' && k !== 'nav_color');
@@ -151,7 +154,8 @@ export class NotificationPrefsService implements OnDestroy {
    */
   setAll(on: boolean, except: Partial<NotificationPrefs> = {}): void {
     const patch: Partial<NotificationPrefs> = {};
-    BOOLEAN_KEYS.forEach(k => { (patch as any)[k] = on; });
+    // email preferences have their own section: "Enable/Disable all" is for notifications only
+    BOOLEAN_KEYS.filter(k => !k.startsWith('email_')).forEach(k => { (patch as any)[k] = on; });
     this.update({ ...patch, ...except });
   }
 

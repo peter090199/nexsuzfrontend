@@ -576,3 +576,31 @@ app-post-comments { display: block; margin-top: 8px; padding-top: 8px; border-to
 .privacy mat-icon { font-size: 14px; width: 14px; height: 14px; line-height: 14px; margin: 0; }
 .privacy.p2 { background: #e7f6ee; color: #1b6b3d; }
 .privacy.p0 { background: #fff3e0; color: #a35a00; }
+
+/* =====================================================================
+   mat-card: responsive width (fills its column, never wider than the screen)
+   ===================================================================== */
+mat-card {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin-left: auto;
+  margin-right: auto;
+  overflow: hidden;            /* nothing inside can push the card wider */
+}
+mat-card img,
+mat-card video,
+mat-card iframe { max-width: 100%; box-sizing: border-box; }
+
+/* tablets and up: comfortable reading width when the column is very wide */
+@media (min-width: 1400px) {
+  mat-card { max-width: 760px; }
+}
+/* phones: tighter padding so the card uses the full width */
+@media (max-width: 599.98px) {
+  mat-card { padding: 10px; border-radius: 10px; }
+}
+@media (max-width: 359.98px) {
+  mat-card { padding: 8px; }
+}

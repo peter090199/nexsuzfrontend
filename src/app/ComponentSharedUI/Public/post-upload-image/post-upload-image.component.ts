@@ -281,7 +281,6 @@ export class PostUploadImageComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-     console.log(this.data)
     // Load images from dialog data if provided
     // If data.images exists, map it to slides
     if (this.data?.images && this.data.images.length > 0) {
@@ -323,7 +322,6 @@ export class PostUploadImageComponent implements OnInit {
       // Check image with Sightengine
       this.sightService.checkImage(file).subscribe(
         res => {
-          console.log('Sightengine response:', res);
 
           if (res.summary.action === 'reject') {
             const reasons = res.summary.reject_reason

@@ -1,0 +1,5 @@
+@import '../sub-shared';
+
+.cap { text-transform: capitalize; }
+.left { display: block; color: $muted; font-size: 11px; &.soon { color: $warn; font-weight: 600; } }
+@media (max-width: 640px) { .left { display: inline; margin-left: 6px; } }

@@ -198,6 +198,12 @@ export class UserAndRecruiterComponent implements OnInit {
   peopleRecentActivity: any[] = [];
   peopleInvites: any[] = [];
 
+  /** after blocking someone, take them out of the lists on this screen at once */
+  removeBlocked(code: any): void {
+    this.people = (this.people || []).filter((p: any) => String(p.code) !== String(code));
+    this.peopleRecentActivity = (this.peopleRecentActivity || []).filter((p: any) => String(p.code) !== String(code));
+  }
+
   currentUserCode = '';
   cnt = 0;
   limit = 10;

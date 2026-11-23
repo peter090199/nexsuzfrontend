@@ -39,7 +39,6 @@ export class UpgradeRequiredComponent implements OnInit {
       )
       .subscribe({
         next: (res: any) => {
-          console.log(res);
           if (!res.success) {
             this.notification.toastrError(
               res.message || 'Unable to activate free plan.'

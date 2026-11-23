@@ -35,11 +35,17 @@ export class UserPlanService {
   /**
    * READ ALL
    */
-  getAll(): Observable<any> {
+  getAll(includeInactive = false, audience?: string): Observable<any> {
+    const q = [includeInactive ? 'all=1' : '', audience ? `audience=${encodeURIComponent(audience)}` : ''].filter(Boolean).join('&');
     return this.http.get(
-      `${_url}account-plan/list`,
+      `${_url}account-plan/list${q ? '?' + q : ''}`,
       { headers: this.createHeaders() }
     );
+  }
+
+  /** Plans with their features and limits for the signed-in account's own audience (job seeker or recruiter plans). */
+  overview(): Observable<any> {
+    return this.http.get(`${_url}plans/overview`, { headers: this.createHeaders() });
   }
 
   /** Currently authenticated account (used for the checkout account summary) */
@@ -47,8 +53,9 @@ export class UserPlanService {
     return this.http.get(`${_url}user`, { headers: this.createHeaders() });
   }
 
-  getPlan(): Observable<any> {
-    return this.http.get(`${_url}getPlanpublic`);
+  /** Public plan list; `audience` = DEF-USERS (job seekers) or DEF-CLIENT (recruiters), omitted = every plan. */
+  getPlan(audience?: string): Observable<any> {
+    return this.http.get(`${_url}getPlanpublic${audience ? '?audience=' + encodeURIComponent(audience) : ''}`);
   }
 
 
@@ -86,7 +93,7 @@ export class UserPlanService {
   /**
    * DEACTIVATE
    */
-  deactivate(id: number): Observable<any> {
+  deactivate(id: number | string): Observable<any> {
     return this.http.patch(
       `${_url}account-plan/deactivate/${id}`,
       {},
@@ -95,6 +102,26 @@ export class UserPlanService {
   }
 
 
+
+  /** ENABLE (DEF-MASTERADMIN) */
+  activate(planId: string): Observable<any> {
+    return this.http.patch(`${_url}account-plan/activate/${planId}`, {}, { headers: this.createHeaders() });
+  }
+
+  /** MOST POPULAR badge (DEF-MASTERADMIN) */
+  setPopular(planId: string): Observable<any> {
+    return this.http.patch(`${_url}account-plan/popular/${planId}`, {}, { headers: this.createHeaders() });
+  }
+
+  /** A user's active subscription (DEF-MASTERADMIN) */
+  getUserSubscription(code: string | number): Observable<any> {
+    return this.http.get(`${_url}account-plan/user-subscription/${code}`, { headers: this.createHeaders() });
+  }
+
+  /** Admin plan change for a user (DEF-MASTERADMIN). Not a payment. */
+  assignPlan(data: { code: string | number; planId: string; remarks?: string }): Observable<any> {
+    return this.http.post(`${_url}account-plan/assign`, data, { headers: this.createHeaders() });
+  }
 
   // Feature APIs
   saveFeature(data: any) {

@@ -1,0 +1,66 @@
+<mat-card class="rm-card rm-hero">
+  <div class="rm-hero-icon"><mat-icon>description</mat-icon></div>
+  <div class="rm-hero-text">
+    <strong>Your resumes</strong>
+    <span>Keep your resumes here and pick a default. When you apply for a job, your default resume is used automatically.</span>
+  </div>
+  <span class="rm-chip"><mat-icon>folder_open</mat-icon> {{ resumes.length }} / {{ max }}</span>
+</mat-card>
+
+<!-- upload -->
+<mat-card class="rm-card">
+  <h3 class="rm-title">Upload a resume or CV</h3>
+  <label class="rm-drop" [class.over]="dragOver" [class.disabled]="limitReached || uploading"
+    (dragover)="$event.preventDefault(); dragOver = true" (dragleave)="dragOver = false" (drop)="onDrop($event)">
+    <input type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" (change)="onPicked($event)" [disabled]="limitReached || uploading" hidden />
+    <mat-spinner *ngIf="uploading" diameter="28"></mat-spinner>
+    <mat-icon *ngIf="!uploading">cloud_upload</mat-icon>
+    <strong>{{ uploading ? 'Uploading…' : (limitReached ? 'Resume limit reached' : 'Choose a file or drop it here') }}</strong>
+    <span>{{ limitReached ? 'Delete one of your resumes to upload another.' : 'PDF, DOC or DOCX, up to 5 MB each. We read it and offer to fill your profile for you. The first one you upload becomes your default.' }}</span>
+  </label>
+</mat-card>
+
+<!-- the list -->
+<mat-card class="rm-card">
+  <h3 class="rm-title">Saved resumes</h3>
+
+  <div class="rm-state" *ngIf="loading"><mat-spinner diameter="22"></mat-spinner> Loading your resumes…</div>
+
+  <div class="rm-state empty" *ngIf="!loading && !resumes.length">
+    <mat-icon>description</mat-icon>
+    <strong>No resumes yet</strong>
+    <span>Upload one above and it will be ready the next time you apply.</span>
+  </div>
+
+  <ul class="rm-list" *ngIf="!loading && resumes.length">
+    <li class="rm-item" *ngFor="let r of resumes" [class.is-default]="r.is_default">
+      <mat-icon class="rm-pdf" [class.word]="r.type !== 'pdf'">{{ r.type === 'pdf' ? 'picture_as_pdf' : 'description' }}</mat-icon>
+      <div class="rm-meta">
+        <strong>{{ r.name }}</strong>
+        <span>{{ typeLabel(r) }} · {{ formatSize(r.size) }} · uploaded {{ r.created_at | date:'mediumDate' }}</span>
+        <span class="rm-note" *ngIf="r.is_default && r.type !== 'pdf'"><mat-icon>info_outline</mat-icon>Job applications need a PDF: upload one when you apply.</span>
+      </div>
+      <span class="rm-default" *ngIf="r.is_default"><mat-icon>star</mat-icon> Default</span>
+      <div class="rm-actions">
+        <button mat-flat-button color="primary" type="button" class="rm-import" (click)="importFrom(r)" [disabled]="busyId !== null" [attr.aria-label]="'Import data from ' + r.name">
+          <mat-icon>auto_awesome</mat-icon> Import to profile
+        </button>
+        <button mat-stroked-button type="button" *ngIf="!r.is_default" (click)="makeDefault(r)" [disabled]="busyId !== null">
+          <mat-icon>star_outline</mat-icon> Set as default
+        </button>
+        <button mat-icon-button type="button" matTooltip="{{ r.type === 'pdf' ? 'View' : 'Download' }}" [attr.aria-label]="(r.type === 'pdf' ? 'View ' : 'Download ') + r.name" (click)="view(r)"><mat-icon>{{ r.type === 'pdf' ? 'visibility' : 'download' }}</mat-icon></button>
+        <button mat-icon-button type="button" color="warn" matTooltip="Delete" [attr.aria-label]="'Delete ' + r.name" (click)="confirmDelete(r)" [disabled]="busyId !== null"><mat-icon>delete_outline</mat-icon></button>
+      </div>
+    </li>
+  </ul>
+</mat-card>
+
+<!-- fill up a CV with the builder (not offered when the master admin chose "upload a CV / resume only") -->
+<mat-card class="rm-card rm-builder" *ngIf="!uploadOnly">
+  <mat-icon class="rm-builder-icon">edit_note</mat-icon>
+  <div class="rm-builder-text">
+    <strong>Fill up your CV</strong>
+    <span>Don't have a file? Build your CV online: education, skills, experience and more.</span>
+  </div>
+  <button mat-flat-button color="primary" type="button" (click)="openCvBuilder()"><mat-icon>edit</mat-icon> Open CV builder</button>
+</mat-card>

@@ -3,6 +3,9 @@ import { FormControl } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import { AuthService } from 'src/app/services/auth.service';
+import { CurriculumVitaeService } from 'src/app/services/CV/curriculum-vitae.service';
+import { SharedRoutinesService } from 'src/app/services/Function/shared-routines.service';
 import { MatDialog } from '@angular/material/dialog';
 import { ChatWebsitePopUPComponent } from 'src/app/ComponentUI/messages/chat-website-pop-up/chat-website-pop-up.component';
 
@@ -24,7 +27,7 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
     'client-section'
   ];
   private readonly chatStorageKey = 'chatOpened';
-  private readonly mobileBreakpoint = 768;
+  private readonly mobileBreakpoint = 959;   // same width as the CSS that hides the desktop links
   private readonly scrollTopThreshold = 300;
   private readonly sectionOffset = 120;
 
@@ -88,15 +91,48 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
   ];
 
 
+  /** the menu shown in the mobile side menu */
+  readonly navLinks = [
+    { id: 'home-section', label: 'Home', icon: 'home' },
+    { id: 'about-section', label: 'About', icon: 'info' },
+    { id: 'pricing-section', label: 'Pricing', icon: 'sell' },
+    { id: 'jobs-section', label: 'Jobs', icon: 'work' },
+    { id: 'client-section', label: 'Clients', icon: 'business' },
+    { id: 'contact-section', label: 'Contact us', icon: 'contacts' },
+  ];
+  trackLink(_: number, l: { id: string }): string { return l.id; }
+
+  // ---- account icon (only when someone is signed in)
+  loggedIn = false;
+  accountName = '';
+  accountPhoto: string | null = null;
+  accountRole = '';
+
+  private static readonly HOME: Record<string, string> = {
+    'DEF-USERS': '/DEF-USERS/home', 'DEF-CLIENT': '/DEF-CLIENT/client-dashboard',
+    'DEF-ADMIN': '/DEF-ADMIN/admin-dashboard', 'DEF-MASTERADMIN': '/DEF-MASTERADMIN/admin-dashboard'
+  };
+  private static readonly ROLE: Record<string, string> = {
+    'DEF-USERS': 'Job seeker', 'DEF-CLIENT': 'Recruiter', 'DEF-ADMIN': 'Administrator', 'DEF-MASTERADMIN': 'Master administrator'
+  };
+
+  get accountInitials(): string {
+    return (this.accountName || '?').trim().split(/\s+/).slice(0, 2).map(w => w.charAt(0).toUpperCase()).join('') || '?';
+  }
+
   constructor(
     private router: Router,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private auth: AuthService,
+    private cv: CurriculumVitaeService,
+    private routines: SharedRoutinesService
   ) {
     this.updateMobileState();
   }
 
   ngOnInit(): void {
     this.fadeIn = true;
+    this.loadAccount();
 
     this.filteredOptions = this.myControl.valueChanges.pipe(
       startWith(''),
@@ -116,6 +152,26 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.initScrollReveal();
   }
+
+  /** who is signed in on this tab (nothing is shown, and nothing is requested, when nobody is) */
+  private loadAccount(): void {
+    this.loggedIn = this.auth.isLoggedIn();
+    if (!this.loggedIn) { return; }
+    this.accountRole = LandingComponent.ROLE[sessionStorage.getItem('role') || ''] || 'Signed in';
+    this.cv.getDataCV().subscribe({
+      next: (res: any) => { this.accountName = res?.message?.name || ''; this.accountPhoto = res?.message?.photo_pic || null; },
+      error: () => { /* the icon still works with initials only */ }
+    });
+  }
+
+  openWorkspace(): void {
+    this.router.navigateByUrl(LandingComponent.HOME[sessionStorage.getItem('role') || ''] || '/');
+  }
+
+  /** sign out of this account and go straight to the sign-in page to use another one */
+  switchAccount(): void { this.routines.onLogout('/signin'); }
+
+  signOut(): void { this.routines.onLogout('/'); }
 
   ngOnDestroy(): void {
     this.revealObserver?.disconnect();

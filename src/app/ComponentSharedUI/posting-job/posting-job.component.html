@@ -1,158 +1,376 @@
-<div class="container">
-  <div class="page-header">
-    <h2>{{ btnSave }} Job Posting</h2>
-  </div>
+<div class="pj">
 
-  <mat-divider></mat-divider>
+  <!-- ================= HEADER ================= -->
+  <header class="pj-head">
+    <div class="pj-title">
+      <h1>
+        {{ isEdit ? (isPublished ? 'Edit job' : 'Edit draft') : 'Post a job' }}
+        <span class="status" *ngIf="isEdit" [class.live]="isPublished">{{ isPublished ? 'Published' : 'Draft' }}</span>
+      </h1>
+      <p>Fill in the details candidates will see. The preview updates as you type.</p>
+    </div>
 
-  <!-- Progress Bar -->
-  <mat-progress-bar
-    color="accent"
-    [mode]="loading ? 'indeterminate' : 'determinate'"
-    [value]="loading ? null : progressValue">
-  </mat-progress-bar>
+    <div class="pj-head-actions">
+      <button mat-stroked-button type="button" [matMenuTriggerFor]="draftsMenu" *ngIf="drafts.length" [disabled]="busy">
+        <mat-icon>drafts</mat-icon> Drafts ({{ drafts.length }})
+      </button>
+      <button mat-stroked-button type="button" (click)="cancel()" [disabled]="busy">Cancel</button>
+    </div>
 
-  <!-- Stepper -->
-  <mat-horizontal-stepper #stepper linear (selectionChange)="onStepChange($event)">
+    <mat-menu #draftsMenu="matMenu" class="drafts-menu">
+      <div class="drafts-title" (click)="$event.stopPropagation()">Continue a draft</div>
+      <button mat-menu-item *ngFor="let d of drafts; trackBy: trackIdx" (click)="openDraft(d)">
+        <mat-icon>edit_note</mat-icon>
+        <span class="draft-name">{{ d.job_name || 'Untitled draft' }}<small>{{ (d.updated_at || d.created_at) | date:'MMM d, y' }}</small></span>
+        <mat-icon class="draft-del" (click)="deleteDraft(d, $event)" aria-label="Delete draft">delete_outline</mat-icon>
+      </button>
+    </mat-menu>
+  </header>
 
-    <!-- Step 1: Image Upload -->
-    <mat-step [stepControl]="imageForm">
-      <form [formGroup]="imageForm" class="form-container">
-        <ng-template matStepLabel>Upload Job Image</ng-template>
+  <mat-progress-bar *ngIf="loadingJob" mode="indeterminate" class="pj-loading"></mat-progress-bar>
 
-        <input id="fileUpload" type="file" (change)="onUploadPhoto($event)" />
+  <div class="pj-grid">
 
-        <div *ngIf="fileError" class="text-red-500 text-sm">{{ fileError }}</div>
+    <!-- ================= FORM ================= -->
+    <form class="pj-main" [formGroup]="form" (ngSubmit)="publish()" novalidate>
 
-        <div *ngIf="previewUrl" class="image-preview-container mt-2">
-          <img [src]="previewUrl" alt="Preview" class="preview-img" />
+      <!-- 1. BASICS -->
+      <mat-card class="sec">
+        <header class="sec-head"><span class="sec-ico"><mat-icon>work_outline</mat-icon></span>
+          <div><h2>Job information</h2><p>The essentials: what the job is and where it is.</p></div></header>
+
+        <div class="image-row">
+          <div class="thumb" [class.empty]="!imageUrl">
+            <img *ngIf="imageUrl" [src]="imageUrl" alt="Job image">
+            <mat-icon *ngIf="!imageUrl">add_photo_alternate</mat-icon>
+          </div>
+          <div class="image-text">
+            <strong>Job image <span class="opt">(optional)</span></strong>
+            <small>A logo or banner shown with the job. JPG or PNG, up to 2 MB.</small>
+            <div class="image-actions">
+              <input #fileInput type="file" accept="image/jpeg,image/png" hidden (change)="onUploadPhoto($event)">
+              <button mat-stroked-button type="button" (click)="fileInput.click()"><mat-icon>upload</mat-icon> {{ imageUrl ? 'Replace' : 'Choose image' }}</button>
+              <button mat-button color="warn" type="button" *ngIf="imageUrl" (click)="removeImage()"><mat-icon>delete_outline</mat-icon> Remove</button>
+            </div>
+            <p class="field-error" *ngIf="fileError" role="alert"><mat-icon>error_outline</mat-icon> {{ fileError }}</p>
+          </div>
         </div>
 
-        <div class="button-end" *ngIf="previewUrl">
-          <button mat-raised-button color="accent" (click)="nextStep(stepper)" [disabled]="!imageForm.valid">
-            Next
-          </button>
-        </div>
-      </form>
-    </mat-step>
+        <mat-form-field appearance="outline" class="full" *ngIf="templates.length">
+          <mat-label>Job template</mat-label>
+          <mat-icon matPrefix>dashboard_customize</mat-icon>
+          <mat-select formControlName="template_id">
+            <mat-option *ngFor="let t of templates" [value]="t.id">{{ t.name }}<ng-container *ngIf="t.is_default"> (default)</ng-container></mat-option>
+          </mat-select>
+          <mat-hint>How the job looks to applicants: colours, layout and sections. The preview shows your choice.</mat-hint>
+        </mat-form-field>
 
-    <!-- Step 2: Job Details -->
-    <mat-step [stepControl]="jobForm">
-      <form [formGroup]="jobForm">
-        <ng-template matStepLabel>Job Details</ng-template>
-
-        <div class="form-row">
-          <mat-form-field class="form-field">
-            <mat-label>Job Name</mat-label>
-            <input matInput formControlName="job_name" required />
+        <div class="grid2">
+          <mat-form-field appearance="outline" class="span2">
+            <mat-label>Job title</mat-label>
+            <input matInput formControlName="job_name" maxlength="255" required autocomplete="off" placeholder="e.g. Senior Frontend Developer">
+            <mat-error>The job title is required.</mat-error>
           </mat-form-field>
 
-          <mat-form-field class="form-field">
-            <mat-label>Position</mat-label>
-            <input matInput formControlName="job_position" required />
+          <mat-form-field appearance="outline">
+            <mat-label>Department / job category</mat-label>
+            <input matInput formControlName="job_position" maxlength="255" required autocomplete="off" placeholder="e.g. Engineering">
+            <mat-error>Enter a department or category.</mat-error>
           </mat-form-field>
-        </div>
 
-        <div class="form-row">
-          <mat-form-field class="form-field">
-            <mat-label>Location</mat-label>
-            <input matInput formControlName="location" required />
+          <mat-form-field appearance="outline">
+            <mat-label>Number of vacancies</mat-label>
+            <input matInput type="number" inputmode="numeric" min="1" formControlName="vacancies" required>
+            <mat-error>Enter at least 1.</mat-error>
           </mat-form-field>
-        </div>
 
-        <div class="form-row">
-          <mat-form-field class="form-field">
-            <mat-label>Benefits</mat-label>
-            <textarea matInput rows="3" formControlName="benefits" required></textarea>
+          <mat-form-field appearance="outline">
+            <mat-label>Employment type</mat-label>
+            <mat-select formControlName="employment_type" required>
+              <mat-option *ngFor="let t of employmentTypes" [value]="t">{{ t }}</mat-option>
+            </mat-select>
+            <mat-error>Choose an employment type.</mat-error>
           </mat-form-field>
-        </div>
 
-        <div class="form-row">
-          <mat-form-field class="form-field">
-            <mat-label>About the Job</mat-label>
-            <textarea matInput rows="2" formControlName="job_about" required></textarea>
-          </mat-form-field>
-        </div>
-
-        <div class="form-row">
-          <mat-form-field class="form-field">
-            <mat-label>Job Description</mat-label>
-            <textarea matInput rows="3" formControlName="job_description" required></textarea>
-          </mat-form-field>
-        </div>
-
-        <div class="button-end">
-          <button mat-raised-button color="warn" (click)="previousStep(stepper)">Previous</button>
-          <button mat-raised-button color="accent" (click)="nextStep(stepper)" [disabled]="!jobForm.valid">
-            Next
-          </button>
-        </div>
-      </form>
-    </mat-step>
-
-    <!-- Step 3: Company Info -->
-    <mat-step [stepControl]="companyForm">
-      <form [formGroup]="companyForm">
-        <ng-template matStepLabel>Company Info</ng-template>
-
-        <div class="form-row">
-          <mat-form-field class="form-field">
-            <mat-label>Qualification</mat-label>
-            <textarea matInput rows="3" formControlName="qualification" required></textarea>
-          </mat-form-field>
-        </div>
-
-        <div class="form-row">
-          <mat-form-field class="form-field">
-            <mat-label>Work Type</mat-label>
+          <mat-form-field appearance="outline">
+            <mat-label>Workplace type</mat-label>
             <mat-select formControlName="work_type" required>
-              <mat-option *ngFor="let type of worktypes" [value]="type">{{ type }}</mat-option>
+              <mat-option *ngFor="let w of worktypes" [value]="w.value">{{ w.label }}</mat-option>
+            </mat-select>
+            <mat-error>Choose a workplace type.</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Work location</mat-label>
+            <mat-icon matPrefix>location_on</mat-icon>
+            <input matInput formControlName="location" maxlength="255" required autocomplete="off" placeholder="City, country">
+            <mat-error>Enter the work location.</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Experience level</mat-label>
+            <mat-select formControlName="experience_level">
+              <mat-option value="">Not specified</mat-option>
+              <mat-option *ngFor="let l of experienceLevels" [value]="l">{{ l }}</mat-option>
             </mat-select>
           </mat-form-field>
         </div>
 
-        <div class="button-end">
-          <button mat-raised-button color="warn" (click)="previousStep(stepper)">Previous</button>
-          <button mat-raised-button color="accent" (click)="nextStep(stepper)" [disabled]="!companyForm.valid">
-            Next
-          </button>
+        <div class="salary" formGroupName="salary">
+          <mat-form-field appearance="outline" class="cur">
+            <mat-label>Currency</mat-label>
+            <mat-select formControlName="currency" required>
+              <mat-option *ngFor="let c of currencies" [value]="c.code">{{ c.symbol }} {{ c.code }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Minimum salary</mat-label>
+            <span matPrefix>{{ symbol }}&nbsp;</span>
+            <input matInput type="number" inputmode="decimal" min="0" formControlName="min_salary" required>
+            <mat-error>Enter a minimum salary.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Maximum salary</mat-label>
+            <span matPrefix>{{ symbol }}&nbsp;</span>
+            <input matInput type="number" inputmode="decimal" min="0" formControlName="max_salary" required>
+            <mat-error>Enter a maximum salary.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Salary period</mat-label>
+            <mat-select formControlName="salary_period">
+              <mat-option *ngFor="let p of salaryPeriods" [value]="p">{{ p }}</mat-option>
+            </mat-select>
+          </mat-form-field>
         </div>
-      </form>
-    </mat-step>
+        <p class="field-error" *ngIf="salary.hasError('salaryRange') && salary.get('max_salary')?.touched" role="alert">
+          <mat-icon>error_outline</mat-icon> The maximum salary can't be lower than the minimum.
+        </p>
+      </mat-card>
 
-    <!-- Step 4: Applied Questions -->
-    <mat-step [stepControl]="appliedQuestionForm">
-      <form [formGroup]="appliedQuestionForm">
-        <ng-template matStepLabel>Applied Questions</ng-template>
+      <!-- 2. DESCRIPTION -->
+      <mat-card class="sec">
+        <header class="sec-head"><span class="sec-ico"><mat-icon>article</mat-icon></span>
+          <div><h2>Job description</h2><p>Tell candidates what they will do. Line breaks are kept.</p></div></header>
 
-        <button mat-button color="primary" type="button" (click)="addQuestion()">Add Question</button>
-        <br />
-        <mat-divider></mat-divider>
-        <br />
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Short summary</mat-label>
+          <textarea matInput rows="2" formControlName="job_about" required placeholder="One or two sentences that sell the job"></textarea>
+          <mat-error>Write a short summary.</mat-error>
+        </mat-form-field>
 
-        <div formArrayName="questions">
-          <div *ngIf="questions.length === 0" class="no-questions">No questions added yet.</div>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Full description</mat-label>
+          <textarea matInput rows="8" formControlName="job_description" required placeholder="Responsibilities, day-to-day work, team…"></textarea>
+          <mat-error>The job description is required.</mat-error>
+        </mat-form-field>
+      </mat-card>
 
-          <div *ngFor="let question of questions.controls; let i = index" [formGroupName]="i" class="question-item">
-            <div class="form-row">
-              <mat-form-field class="form-field2" appearance="standard">
-                <mat-label>{{ 'Question ' + (i + 1) }}</mat-label>
-                <input matInput placeholder="Enter question" formControlName="question_text" required />
+      <!-- 3. REQUIREMENTS -->
+      <mat-card class="sec">
+        <header class="sec-head"><span class="sec-ico"><mat-icon>fact_check</mat-icon></span>
+          <div><h2>Requirements and benefits</h2><p>Who you are looking for and what you offer.</p></div></header>
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Education requirements</mat-label>
+          <input matInput formControlName="education" maxlength="255" autocomplete="off" placeholder="e.g. Bachelor's degree in Computer Science">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Required skills</mat-label>
+          <mat-chip-list #chipList aria-label="Required skills">
+            <mat-chip *ngFor="let s of skills" (removed)="removeSkill(s)">{{ s }}<mat-icon matChipRemove>cancel</mat-icon></mat-chip>
+            <input placeholder="Type a skill and press Enter" [matChipInputFor]="chipList"
+              [matChipInputSeparatorKeyCodes]="separatorKeys" [matChipInputAddOnBlur]="true" (matChipInputTokenEnd)="addSkill($event)">
+          </mat-chip-list>
+          <mat-hint>Up to 30 skills</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Qualifications</mat-label>
+          <textarea matInput rows="4" formControlName="qualification" required placeholder="Must-have experience and qualifications"></textarea>
+          <mat-error>Describe the qualifications.</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Preferred qualifications</mat-label>
+          <textarea matInput rows="3" formControlName="preferred_qualifications" placeholder="Nice to have (optional)"></textarea>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Benefits and perks</mat-label>
+          <textarea matInput rows="4" formControlName="benefits" maxlength="2000" placeholder="Health insurance, bonuses, flexible hours…"></textarea>
+          <mat-hint align="end">{{ benefitsLength }} / 2000</mat-hint>
+        </mat-form-field>
+      </mat-card>
+
+      <!-- 4. APPLICATION SETTINGS -->
+      <mat-card class="sec">
+        <header class="sec-head"><span class="sec-ico"><mat-icon>tune</mat-icon></span>
+          <div><h2>Application settings</h2><p>How people apply and how long the job stays open.</p></div></header>
+
+        <div class="grid2">
+          <mat-form-field appearance="outline">
+            <mat-label>Application deadline</mat-label>
+            <input matInput [matDatepicker]="dp" [min]="today" formControlName="application_deadline" readonly (click)="dp.open()" placeholder="No deadline">
+            <button mat-icon-button matSuffix type="button" *ngIf="form.get('application_deadline')?.value" (click)="form.get('application_deadline')?.setValue(null); $event.stopPropagation()" aria-label="Clear deadline"><mat-icon>close</mat-icon></button>
+            <mat-datepicker-toggle matSuffix [for]="dp"></mat-datepicker-toggle>
+            <mat-datepicker #dp></mat-datepicker>
+            <mat-hint>Applicants can apply until the end of this day.</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Application limit</mat-label>
+            <input matInput type="number" inputmode="numeric" min="1" formControlName="application_limit" placeholder="No limit">
+            <mat-hint>Applications close when this many people have applied.</mat-hint>
+            <mat-error>Enter 1 or more, or leave it empty.</mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="switch">
+          <mat-slide-toggle formControlName="allow_cv" color="primary">Applicants must upload a CV (PDF)</mat-slide-toggle>
+          <small>Turn this off to accept applications without a CV.</small>
+        </div>
+
+        <div class="switch">
+          <mat-slide-toggle formControlName="auto_screen" color="primary">Screen applicants automatically</mat-slide-toggle>
+          <small>Applicants who score below the passing mark on the questions that have a correct answer are marked <strong>Rejected</strong>; the others move to <strong>In review</strong>. You can still change any status yourself.</small>
+          <div class="pass" *ngIf="form.get('auto_screen')?.value">
+            <mat-form-field appearance="outline">
+              <mat-label>Minimum passing score (%)</mat-label>
+              <input matInput type="number" inputmode="numeric" min="0" max="100" formControlName="min_pass_score">
+              <mat-error>Enter a score from 0 to 100.</mat-error>
+            </mat-form-field>
+            <p class="field-error" *ngIf="!hasObjective && !questionsLocked" role="alert"><mat-icon>info</mat-icon> Mark a correct answer on at least one question below, or nothing can be scored.</p>
+          </div>
+        </div>
+      </mat-card>
+
+      <!-- 5. SCREENING QUESTIONS -->
+      <mat-card class="sec">
+        <header class="sec-head"><span class="sec-ico"><mat-icon>quiz</mat-icon></span>
+          <div><h2>Screening questions</h2><p>Applicants answer these when they apply. At least one is needed to publish. Drag to reorder.</p></div></header>
+
+        <div class="notice" *ngIf="questionsLocked" role="status">
+          <mat-icon>lock</mat-icon>
+          <span>{{ applications }} {{ applications === 1 ? 'person has' : 'people have' }} already applied, so the questions can't be changed any more. Everything else can.</span>
+        </div>
+
+        <div class="qlist" formArrayName="questions" cdkDropList (cdkDropListDropped)="drop($event)" [cdkDropListDisabled]="questionsLocked">
+          <div class="qcard" cdkDrag *ngFor="let q of questions.controls; let i = index; trackBy: trackIdx" [formGroupName]="i" [cdkDragDisabled]="questionsLocked">
+            <div class="qhead">
+              <span class="drag" cdkDragHandle *ngIf="!questionsLocked" aria-label="Drag to reorder" title="Drag to reorder"><mat-icon>drag_indicator</mat-icon></span>
+              <span class="qno">{{ i + 1 }}</span>
+
+              <mat-form-field appearance="outline" class="qtype">
+                <mat-label>Type</mat-label>
+                <mat-select formControlName="question_type" (selectionChange)="onTypeChange(q)">
+                  <mat-option *ngFor="let t of questionTypes" [value]="t.value"><mat-icon>{{ t.icon }}</mat-icon> {{ t.label }}</mat-option>
+                </mat-select>
               </mat-form-field>
 
-              <button mat-icon-button color="warn" type="button" (click)="removeQuestion(i)">
-                <mat-icon>delete</mat-icon>
-              </button>
+              <div class="qtools" *ngIf="!questionsLocked">
+                <button mat-icon-button type="button" (click)="move(i, -1)" [disabled]="i === 0" aria-label="Move up"><mat-icon>arrow_upward</mat-icon></button>
+                <button mat-icon-button type="button" (click)="move(i, 1)" [disabled]="i === questions.length - 1" aria-label="Move down"><mat-icon>arrow_downward</mat-icon></button>
+                <button mat-icon-button type="button" color="warn" (click)="removeQuestion(i)" [disabled]="questions.length === 1" aria-label="Delete question"><mat-icon>delete_outline</mat-icon></button>
+              </div>
+            </div>
+
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Question {{ i + 1 }}</mat-label>
+              <input matInput formControlName="question_text" maxlength="255" autocomplete="off" required placeholder="e.g. Are you willing to relocate?">
+              <mat-error>Write the question.</mat-error>
+            </mat-form-field>
+
+            <!-- multiple choice options -->
+            <div class="options" *ngIf="q.get('question_type')?.value === 'multiple_choice'" formArrayName="options">
+              <div class="opt" *ngFor="let o of optionsOf(q).controls; let j = index; trackBy: trackIdx">
+                <span class="radio" aria-hidden="true"></span>
+                <mat-form-field appearance="outline" class="opt-field">
+                  <mat-label>Option {{ j + 1 }}</mat-label>
+                  <input matInput [formControlName]="j" maxlength="120" autocomplete="off">
+                </mat-form-field>
+                <button mat-icon-button type="button" (click)="removeOption(q, j)" *ngIf="!questionsLocked" [disabled]="optionsOf(q).length <= 2" aria-label="Remove option"><mat-icon>close</mat-icon></button>
+              </div>
+              <button mat-button color="primary" type="button" (click)="addOption(q)" *ngIf="!questionsLocked && optionsOf(q).length < 10"><mat-icon>add</mat-icon> Add option</button>
+            </div>
+
+            <p class="field-error" *ngIf="q.hasError('options') && (q.touched || q.dirty)" role="alert"><mat-icon>error_outline</mat-icon> Add at least two different options.</p>
+            <p class="field-error" *ngIf="q.hasError('correct') && (q.touched || q.dirty)" role="alert"><mat-icon>error_outline</mat-icon> The correct answer must be one of the options (or a number).</p>
+
+            <div class="qfoot">
+              <mat-slide-toggle formControlName="is_required" color="primary">Required</mat-slide-toggle>
+
+              <ng-container [ngSwitch]="q.get('question_type')?.value">
+                <mat-form-field appearance="outline" class="correct" *ngSwitchCase="'yes_no'">
+                  <mat-label>Correct answer</mat-label>
+                  <mat-select formControlName="correct_answer">
+                    <mat-option value="">No correct answer</mat-option>
+                    <mat-option value="yes">Yes</mat-option>
+                    <mat-option value="no">No</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="correct" *ngSwitchCase="'multiple_choice'">
+                  <mat-label>Correct answer</mat-label>
+                  <mat-select formControlName="correct_answer">
+                    <mat-option value="">No correct answer</mat-option>
+                    <mat-option *ngFor="let o of filledOptions(q)" [value]="o">{{ o }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="correct" *ngSwitchCase="'numeric'">
+                  <mat-label>Correct number</mat-label>
+                  <input matInput type="number" inputmode="decimal" formControlName="correct_answer" placeholder="Optional">
+                </mat-form-field>
+
+                <small class="muted" *ngSwitchDefault>Written answers are reviewed by you, not scored.</small>
+              </ng-container>
             </div>
           </div>
         </div>
-      </form>
 
-      <div class="button-end">
-        <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="loading">
-          {{ btnSave }}
+        <button mat-stroked-button color="primary" type="button" class="add-q" (click)="addQuestion()" *ngIf="!questionsLocked">
+          <mat-icon>add</mat-icon> Add question
         </button>
+      </mat-card>
+    </form>
+
+    <!-- ================= LIVE PREVIEW ================= -->
+    <aside class="pj-aside" aria-label="Live preview">
+      <div class="pj-aside-sticky">
+        <h2><mat-icon>visibility</mat-icon> Live preview</h2>
+        <app-job-preview [job]="preview" [questions]="previewQuestions" [template]="currentTemplate" [companyName]="companyName" [logoUrl]="logoUrl" [imageUrl]="imageUrl"></app-job-preview>
       </div>
-    </mat-step>
-  </mat-horizontal-stepper>
+    </aside>
+  </div>
+
+  <!-- ================= ACTIONS ================= -->
+  <div class="pj-bar" role="toolbar" aria-label="Posting actions">
+    <button mat-stroked-button type="button" class="b-cancel" (click)="cancel()" [disabled]="busy">Cancel</button>
+    <span class="spacer"></span>
+    <button mat-stroked-button type="button" (click)="saveDraft()" *ngIf="!isPublished" [disabled]="busy">
+      <mat-spinner *ngIf="saving === 'draft'" diameter="18"></mat-spinner>
+      <mat-icon *ngIf="saving !== 'draft'">save</mat-icon> Save as draft
+    </button>
+    <button mat-stroked-button type="button" (click)="openPreview()" [disabled]="busy"><mat-icon>visibility</mat-icon> Preview job</button>
+    <button mat-flat-button color="primary" type="button" (click)="publish()" [disabled]="busy">
+      <mat-spinner *ngIf="saving === 'publish'" diameter="18"></mat-spinner>
+      <mat-icon *ngIf="saving !== 'publish'">{{ isPublished ? 'check' : 'rocket_launch' }}</mat-icon>
+      {{ saving === 'publish' ? 'Saving…' : (isPublished ? 'Save changes' : 'Publish job') }}
+    </button>
+  </div>
 </div>
+
+<!-- full preview (opened by "Preview job"; the only preview on phones and tablets) -->
+<ng-template #previewTpl>
+  <div class="pv-head">
+    <h2>Job preview</h2>
+    <button mat-icon-button type="button" (click)="closePreview()" aria-label="Close preview"><mat-icon>close</mat-icon></button>
+  </div>
+  <mat-dialog-content class="pv-body">
+    <app-job-preview [job]="preview" [questions]="previewQuestions" [template]="currentTemplate" [companyName]="companyName" [logoUrl]="logoUrl" [imageUrl]="imageUrl"></app-job-preview>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="closePreview()">Keep editing</button>
+  </mat-dialog-actions>
+</ng-template>

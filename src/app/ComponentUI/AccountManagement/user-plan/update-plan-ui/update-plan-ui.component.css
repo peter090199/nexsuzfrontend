@@ -1,0 +1,23 @@
+.feature-form {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 12px;
+}
+
+.w-100 {
+    width: 100%;
+}
+
+.button-end {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+@media (max-width: 600px) {
+    .button-end button {
+        width: 100%;
+    }
+}

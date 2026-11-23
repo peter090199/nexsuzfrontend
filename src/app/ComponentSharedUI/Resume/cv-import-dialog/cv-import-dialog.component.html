@@ -1,0 +1,240 @@
+<!-- header -->
+<div class="cvi-head">
+  <div class="cvi-head-icon"><mat-icon>auto_awesome</mat-icon></div>
+  <div class="cvi-head-text">
+    <h2>Import from your CV</h2>
+    <span class="cvi-file"><mat-icon>description</mat-icon>{{ data.resume.name }}</span>
+  </div>
+  <button mat-icon-button type="button" class="cvi-x" aria-label="Close" (click)="close()" [disabled]="stage === 'saving'"><mat-icon>close</mat-icon></button>
+</div>
+
+<!-- 1. reading the file -->
+<div class="cvi-body cvi-center" *ngIf="stage === 'extracting'" role="status" aria-live="polite">
+  <mat-spinner diameter="46"></mat-spinner>
+  <strong>{{ steps[stepIndex] }}</strong>
+  <ol class="cvi-steps">
+    <li *ngFor="let s of steps; let i = index" [class.done]="i < stepIndex" [class.now]="i === stepIndex">
+      <mat-icon>{{ i < stepIndex ? 'check_circle' : (i === stepIndex ? 'pending' : 'radio_button_unchecked') }}</mat-icon>{{ s }}
+    </li>
+  </ol>
+  <span class="cvi-muted">Nothing is saved to your profile until you confirm.</span>
+</div>
+
+<!-- 2. could not read it -->
+<div class="cvi-body cvi-center" *ngIf="stage === 'error' && failure" role="alert">
+  <div class="cvi-bad"><mat-icon>{{ failure.code === 'scanned' ? 'image_not_supported' : (failure.code === 'unreadable' ? 'font_download_off' : 'error_outline') }}</mat-icon></div>
+  <strong>We could not read this file</strong>
+  <p class="cvi-msg">{{ failure.message }}</p>
+  <ul class="cvi-tips" *ngIf="failure.code !== 'network'">
+    <li><mat-icon>check</mat-icon> Text-based PDFs and DOCX files work best.</li>
+    <li><mat-icon>check</mat-icon> A scan or a photo of a page has no text to read.</li>
+    <li><mat-icon>check</mat-icon> You can still fill up your profile by hand.</li>
+  </ul>
+  <div class="cvi-actions"><button mat-flat-button color="primary" type="button" (click)="close()">Close</button></div>
+</div>
+
+<!-- 3. the preview -->
+<ng-container *ngIf="stage === 'preview' || stage === 'saving'">
+  <div class="cvi-body">
+
+    <div class="cvi-intro">
+      <mat-icon>fact_check</mat-icon>
+      <div>
+        <strong>{{ foundCount }} {{ foundCount === 1 ? 'detail' : 'details' }} found in your CV.</strong>
+        <span>Check them, fix anything that is wrong, and untick what you don't want. Only what is ticked is imported. Your existing information is kept unless you tick a replacement.</span>
+      </div>
+    </div>
+
+    <ul class="cvi-warn" *ngIf="warnings.length">
+      <li *ngFor="let w of warnings"><mat-icon>info_outline</mat-icon>{{ w }}</li>
+    </ul>
+
+    <mat-tab-group class="cvi-tabs" animationDuration="0ms" mat-stretch-tabs="false" dynamicHeight>
+
+      <!-- personal information -->
+      <mat-tab>
+        <ng-template mat-tab-label><mat-icon>person</mat-icon><span>Personal</span><span class="cvi-count">{{ profileSelected }}</span></ng-template>
+        <div class="cvi-pane">
+          <div class="cvi-tools">
+            <button mat-button type="button" (click)="setAllProfile(true)">Tick all found</button>
+            <button mat-button type="button" (click)="setAllProfile(false)">Untick all</button>
+          </div>
+          <div class="cvi-field" *ngFor="let f of fields" [class.on]="profile[f.key].sel" [class.wide]="f.type === 'area'">
+            <mat-checkbox color="primary" [(ngModel)]="profile[f.key].sel" [disabled]="!profile[f.key].value.trim()" [attr.aria-label]="'Import ' + f.label"></mat-checkbox>
+            <div class="cvi-field-main">
+              <label [for]="'cvi-' + f.key"><mat-icon>{{ f.icon }}</mat-icon>{{ f.label }}</label>
+              <textarea *ngIf="f.type === 'area'" [id]="'cvi-' + f.key" rows="3" maxlength="255" [(ngModel)]="profile[f.key].value" (ngModelChange)="touched(f.key)" placeholder="Not found in your CV"></textarea>
+              <input *ngIf="f.type !== 'area'" [id]="'cvi-' + f.key" [type]="f.type" [(ngModel)]="profile[f.key].value" (ngModelChange)="touched(f.key)" placeholder="Not found in your CV" />
+              <small class="cvi-cur" *ngIf="profile[f.key].same"><mat-icon>check_circle</mat-icon> Same as your profile</small>
+              <small class="cvi-cur diff" *ngIf="profile[f.key].current && !profile[f.key].same && profile[f.key].value">Your profile now has: <b>{{ profile[f.key].current }}</b></small>
+              <small class="cvi-hint" *ngIf="f.hint && profile[f.key].value">{{ f.hint }}</small>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- education -->
+      <mat-tab>
+        <ng-template mat-tab-label><mat-icon>school</mat-icon><span>Education</span><span class="cvi-count">{{ sel(education) }}/{{ education.length }}</span></ng-template>
+        <div class="cvi-pane">
+          <div class="cvi-empty" *ngIf="!education.length"><mat-icon>school</mat-icon>No education found in your CV.</div>
+          <div class="cvi-tools" *ngIf="education.length"><button mat-button type="button" (click)="setAll(education, true)">Tick all</button><button mat-button type="button" (click)="setAll(education, false)">Untick all</button></div>
+          <mat-card class="cvi-card" *ngFor="let r of education; trackBy: trackRow" [class.off]="!r.sel" [class.bad]="r.sel && problemEdu(r)">
+            <div class="cvi-card-head">
+              <mat-checkbox color="primary" [(ngModel)]="r.sel" aria-label="Import this education">Import</mat-checkbox>
+              <span class="cvi-dup" *ngIf="r.exists"><mat-icon>check_circle</mat-icon> Already on your profile</span>
+              <button mat-icon-button type="button" (click)="remove(education, r)" aria-label="Remove this education from the list"><mat-icon>delete_outline</mat-icon></button>
+            </div>
+            <div class="cvi-grid">
+              <label class="cvi-in w2">Degree / level<input type="text" [(ngModel)]="r.d.highest_education" /></label>
+              <label class="cvi-in w2">School<input type="text" [(ngModel)]="r.d.school_name" /></label>
+              <label class="cvi-in">Start month<select [(ngModel)]="r.d.start_month"><option [ngValue]="null">—</option><option *ngFor="let m of months" [value]="m">{{ m }}</option></select></label>
+              <label class="cvi-in">Start year<select [(ngModel)]="r.d.start_year"><option [ngValue]="null">—</option><option *ngFor="let y of years()" [ngValue]="y">{{ y }}</option></select></label>
+              <label class="cvi-in">End month<select [(ngModel)]="r.d.end_month"><option [ngValue]="null">—</option><option *ngFor="let m of months" [value]="m">{{ m }}</option></select></label>
+              <label class="cvi-in">End year<select [(ngModel)]="r.d.end_year"><option [ngValue]="null">—</option><option *ngFor="let y of years()" [ngValue]="y">{{ y }}</option></select></label>
+              <label class="cvi-in w2">Status<select [(ngModel)]="r.d.status"><option [ngValue]="null">Choose…</option><option *ngFor="let s of statuses" [value]="s.v">{{ s.l }}</option></select></label>
+            </div>
+            <p class="cvi-problem" *ngIf="r.sel && problemEdu(r)"><mat-icon>error_outline</mat-icon>{{ problemEdu(r) }}</p>
+          </mat-card>
+        </div>
+      </mat-tab>
+
+      <!-- work experience -->
+      <mat-tab>
+        <ng-template mat-tab-label><mat-icon>work</mat-icon><span>Experience</span><span class="cvi-count">{{ sel(jobs) }}/{{ jobs.length }}</span></ng-template>
+        <div class="cvi-pane">
+          <div class="cvi-empty" *ngIf="!jobs.length"><mat-icon>work_outline</mat-icon>No work experience found in your CV.</div>
+          <div class="cvi-tools" *ngIf="jobs.length"><button mat-button type="button" (click)="setAll(jobs, true)">Tick all</button><button mat-button type="button" (click)="setAll(jobs, false)">Untick all</button></div>
+          <mat-card class="cvi-card" *ngFor="let r of jobs; trackBy: trackRow" [class.off]="!r.sel" [class.bad]="r.sel && problemJob(r)">
+            <div class="cvi-card-head">
+              <mat-checkbox color="primary" [(ngModel)]="r.sel" aria-label="Import this job">Import</mat-checkbox>
+              <span class="cvi-dup" *ngIf="r.exists"><mat-icon>check_circle</mat-icon> Already on your profile</span>
+              <button mat-icon-button type="button" (click)="remove(jobs, r)" aria-label="Remove this job from the list"><mat-icon>delete_outline</mat-icon></button>
+            </div>
+            <div class="cvi-grid">
+              <label class="cvi-in w2">Position<input type="text" [(ngModel)]="r.d.position" /></label>
+              <label class="cvi-in w2">Company<input type="text" [(ngModel)]="r.d.company_name" /></label>
+              <label class="cvi-in w2">Date completed <small>(empty if you still work there)</small><input type="date" [(ngModel)]="r.d.date_completed" /></label>
+              <label class="cvi-in w4">What you did<textarea rows="3" [(ngModel)]="r.d.job_description"></textarea></label>
+            </div>
+            <p class="cvi-problem" *ngIf="r.sel && problemJob(r)"><mat-icon>error_outline</mat-icon>{{ problemJob(r) }}</p>
+          </mat-card>
+        </div>
+      </mat-tab>
+
+      <!-- skills and languages -->
+      <mat-tab>
+        <ng-template mat-tab-label><mat-icon>psychology</mat-icon><span>Skills</span><span class="cvi-count">{{ sel(skills) + sel(languages) }}</span></ng-template>
+        <div class="cvi-pane">
+          <h3 class="cvi-sub">Skills</h3>
+          <div class="cvi-tools"><button mat-button type="button" (click)="setAll(skills, true)">Tick all</button><button mat-button type="button" (click)="setAll(skills, false)">Untick all</button></div>
+          <div class="cvi-chips">
+            <span class="cvi-chip" *ngFor="let r of skills; trackBy: trackRow" [class.on]="r.sel" [class.dup]="r.exists">
+              <button type="button" class="cvi-chip-main" (click)="r.sel = !r.sel" [attr.aria-pressed]="r.sel">
+                <mat-icon>{{ r.sel ? 'check_box' : 'check_box_outline_blank' }}</mat-icon>{{ r.d.skills }}<small *ngIf="r.exists"> · already saved</small>
+              </button>
+              <button type="button" class="cvi-chip-x" (click)="remove(skills, r)" [attr.aria-label]="'Remove ' + r.d.skills"><mat-icon>close</mat-icon></button>
+            </span>
+            <span class="cvi-none" *ngIf="!skills.length">No skills found in your CV.</span>
+          </div>
+          <div class="cvi-add"><input type="text" placeholder="Add a skill" [(ngModel)]="newSkill" (keydown.enter)="addSkill(); $event.preventDefault()" aria-label="Add a skill" /><button mat-stroked-button type="button" (click)="addSkill()" [disabled]="!newSkill.trim()"><mat-icon>add</mat-icon>Add</button></div>
+
+          <h3 class="cvi-sub">Languages</h3>
+          <div class="cvi-chips">
+            <span class="cvi-chip" *ngFor="let r of languages; trackBy: trackRow" [class.on]="r.sel" [class.dup]="r.exists">
+              <button type="button" class="cvi-chip-main" (click)="r.sel = !r.sel" [attr.aria-pressed]="r.sel">
+                <mat-icon>{{ r.sel ? 'check_box' : 'check_box_outline_blank' }}</mat-icon>{{ r.d.language }}<small *ngIf="r.exists"> · already saved</small>
+              </button>
+              <button type="button" class="cvi-chip-x" (click)="remove(languages, r)" [attr.aria-label]="'Remove ' + r.d.language"><mat-icon>close</mat-icon></button>
+            </span>
+            <span class="cvi-none" *ngIf="!languages.length">No languages found in your CV.</span>
+          </div>
+          <div class="cvi-add"><input type="text" placeholder="Add a language" [(ngModel)]="newLanguage" (keydown.enter)="addLanguage(); $event.preventDefault()" aria-label="Add a language" /><button mat-stroked-button type="button" (click)="addLanguage()" [disabled]="!newLanguage.trim()"><mat-icon>add</mat-icon>Add</button></div>
+        </div>
+      </mat-tab>
+
+      <!-- training, seminars, certificates -->
+      <mat-tab>
+        <ng-template mat-tab-label><mat-icon>workspace_premium</mat-icon><span>Credentials</span><span class="cvi-count">{{ sel(training) + sel(seminars) + sel(certificates) }}</span></ng-template>
+        <div class="cvi-pane">
+          <div class="cvi-empty" *ngIf="!training.length && !seminars.length && !certificates.length"><mat-icon>workspace_premium</mat-icon>No certificates, trainings or seminars found in your CV.</div>
+
+          <ng-container *ngIf="certificates.length"><h3 class="cvi-sub">Certificates</h3>
+            <mat-card class="cvi-card" *ngFor="let r of certificates; trackBy: trackRow" [class.off]="!r.sel" [class.bad]="r.sel && problemTitle(r.d.certificate_title)">
+              <div class="cvi-card-head"><mat-checkbox color="primary" [(ngModel)]="r.sel">Import</mat-checkbox><span class="cvi-dup" *ngIf="r.exists"><mat-icon>check_circle</mat-icon> Already on your profile</span>
+                <button mat-icon-button type="button" (click)="remove(certificates, r)" aria-label="Remove this certificate from the list"><mat-icon>delete_outline</mat-icon></button></div>
+              <div class="cvi-grid">
+                <label class="cvi-in w2">Certificate<input type="text" [(ngModel)]="r.d.certificate_title" /></label>
+                <label class="cvi-in w2">Issued by<input type="text" [(ngModel)]="r.d.certificate_provider" /></label>
+                <label class="cvi-in w2">Date<input type="date" [(ngModel)]="r.d.date_completed" /></label>
+              </div>
+              <p class="cvi-problem" *ngIf="r.sel && problemTitle(r.d.certificate_title)"><mat-icon>error_outline</mat-icon>{{ problemTitle(r.d.certificate_title) }}</p>
+            </mat-card>
+          </ng-container>
+
+          <ng-container *ngIf="training.length"><h3 class="cvi-sub">Trainings</h3>
+            <mat-card class="cvi-card" *ngFor="let r of training; trackBy: trackRow" [class.off]="!r.sel" [class.bad]="r.sel && problemTitle(r.d.training_title)">
+              <div class="cvi-card-head"><mat-checkbox color="primary" [(ngModel)]="r.sel">Import</mat-checkbox><span class="cvi-dup" *ngIf="r.exists"><mat-icon>check_circle</mat-icon> Already on your profile</span>
+                <button mat-icon-button type="button" (click)="remove(training, r)" aria-label="Remove this training from the list"><mat-icon>delete_outline</mat-icon></button></div>
+              <div class="cvi-grid">
+                <label class="cvi-in w2">Training<input type="text" [(ngModel)]="r.d.training_title" /></label>
+                <label class="cvi-in w2">Provider<input type="text" [(ngModel)]="r.d.training_provider" /></label>
+                <label class="cvi-in w2">Date completed<input type="date" [(ngModel)]="r.d.date_completed" /></label>
+              </div>
+              <p class="cvi-problem" *ngIf="r.sel && problemTitle(r.d.training_title)"><mat-icon>error_outline</mat-icon>{{ problemTitle(r.d.training_title) }}</p>
+            </mat-card>
+          </ng-container>
+
+          <ng-container *ngIf="seminars.length"><h3 class="cvi-sub">Seminars and workshops</h3>
+            <mat-card class="cvi-card" *ngFor="let r of seminars; trackBy: trackRow" [class.off]="!r.sel" [class.bad]="r.sel && problemTitle(r.d.seminar_title)">
+              <div class="cvi-card-head"><mat-checkbox color="primary" [(ngModel)]="r.sel">Import</mat-checkbox><span class="cvi-dup" *ngIf="r.exists"><mat-icon>check_circle</mat-icon> Already on your profile</span>
+                <button mat-icon-button type="button" (click)="remove(seminars, r)" aria-label="Remove this seminar from the list"><mat-icon>delete_outline</mat-icon></button></div>
+              <div class="cvi-grid">
+                <label class="cvi-in w2">Seminar<input type="text" [(ngModel)]="r.d.seminar_title" /></label>
+                <label class="cvi-in w2">Provider<input type="text" [(ngModel)]="r.d.seminar_provider" /></label>
+                <label class="cvi-in w2">Date completed<input type="date" [(ngModel)]="r.d.date_completed" /></label>
+              </div>
+              <p class="cvi-problem" *ngIf="r.sel && problemTitle(r.d.seminar_title)"><mat-icon>error_outline</mat-icon>{{ problemTitle(r.d.seminar_title) }}</p>
+            </mat-card>
+          </ng-container>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+
+  <!-- footer -->
+  <div class="cvi-foot">
+    <mat-checkbox color="primary" [(ngModel)]="setDefault" [disabled]="data.resume.is_default || stage === 'saving'">
+      {{ data.resume.is_default ? 'This is already your default resume' : 'Use this resume as my default' }}
+    </mat-checkbox>
+    <span class="cvi-grow"></span>
+    <span class="cvi-error" *ngIf="saveError" role="alert"><mat-icon>error_outline</mat-icon>{{ saveError }}</span>
+    <span class="cvi-need" *ngIf="invalidSelected && !saveError"><mat-icon>error_outline</mat-icon>Complete or untick the highlighted items.</span>
+    <button mat-stroked-button type="button" (click)="close()" [disabled]="stage === 'saving'">Cancel</button>
+    <button mat-flat-button color="primary" type="button" (click)="import()" [disabled]="!canImport">
+      <mat-spinner *ngIf="stage === 'saving'" diameter="18"></mat-spinner>
+      <mat-icon *ngIf="stage !== 'saving'">download_done</mat-icon>
+      {{ stage === 'saving' ? 'Importing…' : 'Import ' + selectedCount + ' selected' }}
+    </button>
+  </div>
+</ng-container>
+
+<!-- 4. done -->
+<div class="cvi-body cvi-center" *ngIf="stage === 'done' && report" role="status" aria-live="polite">
+  <div class="cvi-ok"><mat-icon>check_circle</mat-icon></div>
+  <strong>{{ report.total_added || report.profile_fields.length ? 'Your profile was updated' : 'Nothing new to import' }}</strong>
+  <p class="cvi-msg" *ngIf="!report.total_added && !report.profile_fields.length">Everything you selected was already on your profile.</p>
+
+  <div class="cvi-sum" *ngIf="report.profile_fields.length || addedLines.length">
+    <span class="cvi-pill" *ngIf="report.profile_fields.length"><mat-icon>person</mat-icon>{{ report.profile_fields.length }} profile {{ report.profile_fields.length === 1 ? 'field' : 'fields' }}</span>
+    <span class="cvi-pill" *ngFor="let l of addedLines"><mat-icon>add_circle_outline</mat-icon>{{ l.n }} {{ l.label }}</span>
+  </div>
+  <p class="cvi-muted" *ngIf="duplicateTotal">{{ duplicateTotal }} {{ duplicateTotal === 1 ? 'item was' : 'items were' }} already on your profile and not added again.</p>
+
+  <ul class="cvi-warn left" *ngIf="report.skipped.length">
+    <li class="cvi-skip-title"><mat-icon>info_outline</mat-icon>{{ report.skipped.length }} {{ report.skipped.length === 1 ? 'item was' : 'items were' }} not imported:</li>
+    <li *ngFor="let s of report.skipped"><mat-icon>remove</mat-icon><b>{{ s.section === 'profile' ? fieldLabel(s.item) : s.item }}</b> — {{ s.reason }}</li>
+  </ul>
+
+  <div class="cvi-actions"><button mat-flat-button color="primary" type="button" (click)="close()">Done</button></div>
+</div>

@@ -1,0 +1,46 @@
+:host { display: block; font-family: Verdana, Geneva, Tahoma, sans-serif; }
+
+.ap-head { display: flex; align-items: center; justify-content: space-between; padding-right: 8px; }
+.ap-head h2 { margin: 0; font-size: 18px; color: #1b2a4a; }
+
+mat-dialog-content { min-width: min(440px, 80vw); max-width: 100%; }
+
+.ap-full { width: 100%; }
+
+.ap-note {
+  display: flex; gap: 8px; align-items: flex-start;
+  margin: 0 0 14px; padding: 10px 12px; border-radius: 10px;
+  background: #eef6fd; color: #1d4e89; font-size: 12px; line-height: 1.5; text-align: left;
+}
+.ap-note mat-icon { flex: none; font-size: 18px; width: 18px; height: 18px; }
+
+.ap-user { font-size: 13px; }
+.ap-role { margin-left: 8px; color: #6b7a99; font-size: 11px; }
+
+.ap-current {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px;
+  margin: -4px 0 14px; padding: 10px 12px; border-radius: 10px;
+  background: #f6f8fc; font-size: 13px; position: relative;
+}
+.ap-current > span { color: #6b7a99; font-size: 12px; }
+.ap-current small { color: #6b7a99; }
+.ap-current mat-progress-bar { position: absolute; left: 0; right: 0; top: 0; border-radius: 10px 10px 0 0; }
+
+.ap-warn { color: #c62828; }
+
+.ap-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin: 0 0 14px; padding: 4px 12px 4px 8px; border-radius: 999px; font-size: 12px; font-weight: 700;
+}
+.ap-chip mat-icon { font-size: 18px; width: 18px; height: 18px; }
+.ap-chip.upgrade, .ap-chip.new { background: #e7f6ee; color: #1b8a4b; }
+.ap-chip.downgrade { background: #fff3e0; color: #a35a00; }
+
+.ap-actions { padding: 8px 24px 16px; gap: 8px; }
+.ap-actions button mat-spinner { display: inline-block; margin-right: 8px; }
+
+@media (max-width: 600px) {
+  mat-dialog-content { min-width: 0; }
+  .ap-actions { flex-direction: column-reverse; }
+  .ap-actions button { width: 100%; min-height: 44px; }
+}

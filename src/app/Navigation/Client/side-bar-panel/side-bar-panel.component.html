@@ -1,52 +1,83 @@
 <mat-sidenav-container class="layout-container">
   <!-- ================= SIDEBAR ================= -->
-  <mat-sidenav mode="side" [(opened)]="sidebarOpen" class="sidebar" [fixedInViewport]="true" [fixedTopGap]="0">
+  <!-- desktop/tablet: fixed side panel (can collapse to an icon rail) | mobile: overlay drawer with backdrop -->
+  <mat-sidenav [mode]="isMobile ? 'over' : 'side'" [(opened)]="sidebarOpen" [disableClose]="!isMobile"
+    class="sidebar" [class.rail]="railMode" [class.drawer]="isMobile" [fixedInViewport]="true" [fixedTopGap]="0">
     <div class="sidebar-inner">
 
-      <div class="logo-section">
-        <app-app-logo></app-app-logo>
+      <!-- BRAND HEADER -->
+      <div class="sb-header">
+        <div class="sb-brand">
+          <app-app-logo></app-app-logo>
+          <span class="sb-brand-text" *ngIf="!railMode">NEXSUZ</span>
+        </div>
+
+        <button type="button" class="sb-icon-btn" *ngIf="!isMobile" (click)="toggleCollapse()"
+          [attr.aria-label]="collapsed ? 'Expand sidebar' : 'Collapse sidebar'" [attr.aria-expanded]="!collapsed"
+          [matTooltip]="collapsed ? 'Expand sidebar' : 'Collapse sidebar'" matTooltipPosition="right">
+          <mat-icon>{{ collapsed ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+        </button>
+
+        <button type="button" class="sb-icon-btn" *ngIf="isMobile" (click)="closeMobile()" aria-label="Close menu">
+          <mat-icon>close</mat-icon>
+        </button>
       </div>
 
-      <!-- MENU (scrollable) -->
-      <mat-nav-list class="menu-list">
-        <ng-container *ngFor="let item of menuItems">
+      <!-- MENU (scrollable, grouped) -->
+      <nav class="menu-list" aria-label="Main navigation">
+        <ng-container *ngFor="let g of groups; trackBy: trackByKey">
 
-          <!-- NORMAL MENU -->
-          <a *ngIf="!item.submenus?.length" mat-list-item [routerLink]="item.route" routerLinkActive="active-link"
-            [routerLinkActiveOptions]="{ exact: true }" class="menu-item">
-            <div class="menu-left">
-              <!-- <mat-icon *ngIf="item.icon">{{ item.icon }}</mat-icon> -->
-              <span class="menu-label">{{ item.label }}</span>
-            </div>
-          </a>
+          <div class="menu-group-title" *ngIf="groups.length > 1 && !railMode">{{ g.label }}</div>
+          <div class="menu-group-sep" *ngIf="groups.length > 1 && railMode" aria-hidden="true"></div>
 
-          <!-- SUBMENU -->
-          <div *ngIf="item.submenus?.length" class="submenu-wrapper">
-            <a mat-list-item class="menu-item" (click)="toggleSubmenu(item)">
-              <div class="menu-left">
-                <span class="menu-label">{{ item.label }}</span>
-              </div>
-              <mat-icon class="expand-icon">
-                {{ item.expanded ? 'expand_less' : 'expand_more' }}
-              </mat-icon>
+          <ng-container *ngFor="let item of g.items; trackBy: trackByItem">
+
+            <!-- NORMAL MENU -->
+            <a *ngIf="!item.submenus?.length" class="menu-item" [routerLink]="item.route"
+              routerLinkActive="active-link" [routerLinkActiveOptions]="{ exact: true }"
+              [matTooltip]="railMode ? item.label : ''" matTooltipPosition="right" [attr.aria-label]="item.label">
+              <span class="menu-icon">
+                <i *ngIf="faIcon(item); else matIco" [class]="faIcon(item)" aria-hidden="true"></i>
+                <ng-template #matIco><mat-icon>{{ materialIcon(item) }}</mat-icon></ng-template>
+              </span>
+              <span class="menu-label" *ngIf="!railMode">{{ item.label }}</span>
             </a>
 
-            <div class="submenu" *ngIf="item.expanded">
-              <a mat-list-item *ngFor="let sub of item.submenus" [routerLink]="sub.route" routerLinkActive="active-link"
-                [routerLinkActiveOptions]="{ exact: true }" class="submenu-item">
-                <span class="submenu-label">{{ sub.label || sub.description }}</span>
-              </a>
-            </div>
-          </div>
+            <!-- SUBMENU -->
+            <div *ngIf="item.submenus?.length" class="submenu-wrapper" [class.has-active]="isParentActive(item)">
+              <button type="button" class="menu-item parent" (click)="onParentClick(item)"
+                [class.active-parent]="isParentActive(item)"
+                [attr.aria-expanded]="item.expanded && !railMode"
+                [matTooltip]="railMode ? item.label : ''" matTooltipPosition="right" [attr.aria-label]="item.label">
+                <span class="menu-icon">
+                  <i *ngIf="faIcon(item); else matIcoP" [class]="faIcon(item)" aria-hidden="true"></i>
+                  <ng-template #matIcoP><mat-icon>{{ materialIcon(item) }}</mat-icon></ng-template>
+                </span>
+                <span class="menu-label" *ngIf="!railMode">{{ item.label }}</span>
+                <mat-icon class="expand-icon" [class.open]="item.expanded" *ngIf="!railMode">expand_more</mat-icon>
+              </button>
 
+              <div class="submenu-collapse" [class.open]="item.expanded && !railMode">
+                <div class="submenu" role="group" [attr.aria-label]="item.label + ' submenu'">
+                  <a *ngFor="let sub of item.submenus" class="submenu-item" [routerLink]="sub.route"
+                    routerLinkActive="active-link" [routerLinkActiveOptions]="{ exact: true }"
+                    [attr.tabindex]="item.expanded && !railMode ? 0 : -1">
+                    <span class="sub-dot" aria-hidden="true"></span>
+                    <span class="submenu-label">{{ sub.label || sub.description }}</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+          </ng-container>
         </ng-container>
-      </mat-nav-list>
+      </nav>
 
       <!-- ============ PROFILE FOOTER (pinned bottom) ============ -->
       <div class="sidebar-footer">
         <button class="profile-footer-btn" disableRipple matRipple [matRippleColor]="'rgba(255,255,255,0.12)'"
-          [matMenuTriggerFor]="userMenu" [matTooltip]="profile?.email || 'My Account'" matTooltipPosition="right"
-          aria-label="Open account menu">
+          [matMenuTriggerFor]="userMenu" [matTooltip]="railMode ? (profile?.name || profile?.email || 'My Account') : ''"
+          matTooltipPosition="right" aria-label="Open account menu">
           <span class="avatar-wrap">
             <img *ngIf="profile?.photo_pic; else defaultAvatar" [src]="profile?.photo_pic" alt="" class="avatar-img" />
             <ng-template #defaultAvatar>
@@ -54,9 +85,11 @@
             </ng-template>
           </span>
 
-
-          <span class="profile-sub" *ngIf="profile?.email">{{ profile?.email }}</span>
-          <mat-icon class="footer-caret">more_vert</mat-icon>
+          <span class="profile-info" *ngIf="!railMode">
+            <span class="profile-name" *ngIf="profile?.name">{{ profile?.name }}</span>
+            <span class="profile-sub" *ngIf="profile?.email">{{ profile?.email }}</span>
+          </span>
+          <mat-icon class="footer-caret" *ngIf="!railMode">unfold_more</mat-icon>
         </button>
       </div>
 
@@ -67,18 +100,25 @@
   <mat-sidenav-content>
     <mat-toolbar class="topbar" nxAutoHide nxAutoHideScroller=".mat-drawer-content">
       <div class="toolbar-left">
-        <button *ngIf="isMobile" mat-icon-button class="menu-btn" (click)="toggleSidebar()">
-          <mat-icon>menu</mat-icon>
-        </button>
         <div class="page-info">
-          <button mat-button class="back-btn" (click)="sharedService.goBack()">← Back</button>
+          <button mat-icon-button class="back-btn" matTooltip="Back" aria-label="Go back" (click)="sharedService.goBack()">
+            <mat-icon>arrow_back</mat-icon>
+          </button>
           <h3>{{ pageTitle }}</h3>
         </div>
       </div>
 
       <div class="toolbar-right">
-        <button mat-icon-button (click)="toggleSearch()">
+        <button mat-icon-button *appFeature="FEATURE.SEARCH_ACCESS" (click)="toggleSearch()" aria-label="Search">
           <mat-icon>search</mat-icon>
+        </button>
+
+        <!-- Saved jobs -->
+        <button mat-icon-button class="saved-btn" matTooltip="Saved jobs" aria-label="Saved jobs"
+          [matMenuTriggerFor]="savedMenu" (menuOpened)="savedJobsState.load()"
+          [matBadge]="(savedJobsState.list$ | async)?.length" [matBadgeHidden]="!(savedJobsState.list$ | async)?.length"
+          matBadgeColor="primary" matBadgeSize="small">
+          <mat-icon>bookmark_border</mat-icon>
         </button>
 
         <button mat-icon-button matTooltip="Notifications" (click)="openNotifications()" [matBadge]="bellCount"
@@ -87,6 +127,33 @@
         </button>
       </div>
     </mat-toolbar>
+
+    <!-- SAVED JOBS MENU -->
+    <mat-menu #savedMenu="matMenu" class="saved-jobs-menu" xPosition="before">
+      <div class="saved-menu-head" (click)="$event.stopPropagation()">
+        <strong>Saved jobs</strong>
+        <span>{{ (savedJobsState.list$ | async)?.length || 0 }}</span>
+      </div>
+
+      <ng-container *ngIf="savedJobsState.list$ | async as saved">
+        <div class="saved-menu-empty" *ngIf="!saved.length && !savedJobsState.loading" (click)="$event.stopPropagation()">
+          <mat-icon>bookmark_border</mat-icon>
+          <p>No saved jobs yet.</p>
+          <small>Tap Save on a job and it will appear here.</small>
+        </div>
+
+        <button mat-menu-item class="saved-item" *ngFor="let job of saved; trackBy: trackSaved" (click)="openSavedJob(job)">
+          <img [src]="job.job_image || 'assets/images/logo2.png'" alt="" class="saved-logo" (error)="$any($event.target).src='assets/images/logo2.png'">
+          <span class="saved-text">
+            <span class="saved-name">{{ job.job_name }}</span>
+            <small>{{ job.company || '' }}<ng-container *ngIf="job.work_type"> · {{ job.work_type }}</ng-container></small>
+            <small *ngIf="job.location">{{ job.location }}</small>
+          </span>
+          <span class="saved-remove" role="button" tabindex="0" matTooltip="Remove" aria-label="Remove from saved jobs"
+            (click)="removeSaved(job, $event)" (keydown.enter)="removeSaved(job, $event)"><mat-icon>bookmark_remove</mat-icon></span>
+        </button>
+      </ng-container>
+    </mat-menu>
 
     <div class="page-content">
       <router-outlet></router-outlet>
@@ -117,3 +184,35 @@
     <span>Logout</span>
   </button>
 </mat-menu>
+<!-- ================= MOBILE TAB BAR (Ionic style): first 4 menu items + More ================= -->
+<nav class="tab-bar" *ngIf="isMobile" aria-label="Primary">
+  <ng-container *ngFor="let item of tabItems; trackBy: trackByItem">
+    <a *ngIf="!item.submenus?.length; else tabParent" class="tab-btn" [routerLink]="item.route"
+      routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" [attr.aria-label]="item.label">
+      <span class="tab-icon">
+        <i *ngIf="faIcon(item); else tabMat" [class]="faIcon(item)" aria-hidden="true"></i>
+        <ng-template #tabMat><mat-icon>{{ materialIcon(item) }}</mat-icon></ng-template>
+        <span class="tab-badge" *ngIf="isMessageTab(item) && unreadCount">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+      </span>
+      <span class="tab-label">{{ item.label }}</span>
+    </a>
+    <ng-template #tabParent>
+      <button type="button" class="tab-btn" [class.active]="isParentActive(item)" (click)="openMoreFor(item)"
+        [attr.aria-label]="item.label">
+        <span class="tab-icon">
+          <i *ngIf="faIcon(item); else tabMatP" [class]="faIcon(item)" aria-hidden="true"></i>
+          <ng-template #tabMatP><mat-icon>{{ materialIcon(item) }}</mat-icon></ng-template>
+        </span>
+        <span class="tab-label">{{ item.label }}</span>
+      </button>
+    </ng-template>
+  </ng-container>
+
+  <button type="button" class="tab-btn" [class.active]="sidebarOpen" (click)="toggleSidebar()" aria-label="More">
+    <span class="tab-icon">
+      <mat-icon>menu</mat-icon>
+      <span class="tab-badge" *ngIf="bellCount">{{ bellCount > 99 ? '99+' : bellCount }}</span>
+    </span>
+    <span class="tab-label">More</span>
+  </button>
+</nav>

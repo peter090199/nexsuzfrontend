@@ -79,7 +79,6 @@ export class PostUploadVideosComponent implements OnInit {
 
   /** Final upload */
   sendPostVideo() {
-    console.log("Uploading videos:", this.videos);
 
     // Add your upload logic here
   }

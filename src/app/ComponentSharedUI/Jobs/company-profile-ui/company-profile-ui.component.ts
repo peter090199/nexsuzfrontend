@@ -661,11 +661,30 @@ export class CompanyProfileUIComponent implements OnInit {
 
   currentUserCode!: string;
   ownCode: any;
+  /** false until we know whose account is signed in (Connect never flashes on your own profile) */
+  ownCodeKnown = false;
   followId: number = 0;
   followStatus: 'none' | 'pending' | 'accepted' | 'cancelled' = 'none';
 
   isloading = false;
+  /** the company details themselves (separate from the posts, which load on their own) */
+  profileLoading = true;
+  loaded = false;
   append = false;
+
+  /** an admin or master admin is looking at this recruiter account: no Connect / Block, but contact details are shown */
+  get isAdminViewer(): boolean {
+    const r = this.sharedRoutines.getRole();
+    return r === 'DEF-ADMIN' || r === 'DEF-MASTERADMIN';
+  }
+
+  /** the saved website with a protocol, safe to put in a link; empty when none or not http(s) */
+  get websiteUrl(): string {
+    const w = String(this.profiles?.companywebsite || '').trim();
+    if (!w) { return ''; }
+    const url = /^[a-z][a-z0-9+.-]*:/i.test(w) ? w : 'https://' + w;
+    return /^https?:\/\//i.test(url) ? url : '';
+  }
 
   // Reaction-related data
   postReactions: { [postId: number]: { reactions: any[], totalCount: number } } = {};
@@ -702,6 +721,19 @@ export class CompanyProfileUIComponent implements OnInit {
     this.skeletonPosts = Array.from({ length: 5 });
 
     this.ownCode = this.authService.getAuthCode();
+    this.ownCodeKnown = !!this.ownCode;
+    if (!this.ownCodeKnown) {
+      // the code is only stored after Home / the feed has loaded (or at sign-in): ask the server who is signed in,
+      // so your own profile never offers "Connect" to yourself
+      this.authService.getProfilecode().subscribe({
+        next: (res: any) => {
+          const c = res?.message?.code;
+          if (c !== undefined && c !== null) { this.ownCode = String(c); sessionStorage.setItem('code', String(c)); }
+          this.ownCodeKnown = true;
+        },
+        error: () => { this.ownCodeKnown = true; }
+      });
+    }
     this.currentUserCode = this.route.snapshot.paramMap.get('code') || window.location.href.split('/').pop() || '';
 
     this.loadProfileCV(this.currentUserCode);
@@ -732,9 +764,10 @@ export class CompanyProfileUIComponent implements OnInit {
   // 🏢 PROFILE + FOLLOW
   // ===========================
   loadProfileCV(code: string): void {
+    this.profileLoading = true;
     this.profile.getCompanyProfile(code).subscribe({
-      next: res => { if (res.success) this.profiles = res.message; },
-      error: err => console.error('Error loading profile:', err)
+      next: res => { if (res.success) this.profiles = res.message; this.profileLoading = false; this.loaded = true; },
+      error: err => { console.error('Error loading profile:', err); this.profileLoading = false; this.loaded = true; }
     });
   }
 
@@ -761,6 +794,11 @@ export class CompanyProfileUIComponent implements OnInit {
       this.followStatus = res.follow_status || 'none';
       this.followId = res.data?.[0]?.id || 0;
     });
+  }
+
+  /** after blocking this account their profile is no longer available: go back to Home */
+  onBlocked(): void {
+    this.router.navigate(['/' + this.sharedRoutines.getRole() + '/home']);
   }
 
   AddFollow(code: any, status: string, fname: any, lname: any): void {

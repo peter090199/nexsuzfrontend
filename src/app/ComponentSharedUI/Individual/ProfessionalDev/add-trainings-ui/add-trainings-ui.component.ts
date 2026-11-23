@@ -91,7 +91,6 @@ export class AddTrainingsUiComponent implements OnInit {
       date_completed: this.datePipe.transform(item.date_completed, 'yyyy-MM-dd')
     }));
 
-    console.log('🚀 Sending payload:', payload);
 
     this.loading = true;
 
@@ -156,7 +155,6 @@ export class AddTrainingsUiComponent implements OnInit {
       date_completed: this.datePipe.transform(item.date_completed, 'yyyy-MM-dd')
     }));
 
-    console.log('🚀 Sending payload:', payload);
 
     this.cvDataServices.saveTrainings(payload).subscribe({
       next: (res) => {

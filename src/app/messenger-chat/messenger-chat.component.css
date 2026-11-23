@@ -203,3 +203,95 @@ button { font-family: inherit; }
 
 /* icons never spill outside their own box (icon font blocked / still loading) */
 .msgr mat-icon, .nm mat-icon { overflow: hidden; }
+
+/* =====================================================================
+   RESPONSIVE: Android + iPhone (small, large, landscape), tablets and desktop
+   Shell: 72px top bar, page padding 24px (16px on phones), 56px bottom tab bar on phones.
+   ===================================================================== */
+
+/* desktop + tablet: exactly fit the area under the top bar (no page scroll) */
+@media (min-width: 768px) {
+  .msgr { height: calc(100vh - 72px - 48px - 24px); height: calc(100dvh - 72px - 48px - 24px); }
+}
+
+/* phones */
+@media (max-width: 767.98px) {
+  /* conversation list: fills the space between the top bar and the bottom tab bar */
+  .msgr {
+    height: calc(100vh - 72px - 32px - 56px - env(safe-area-inset-bottom, 0px));
+    height: calc(100dvh - 72px - 32px - 56px - env(safe-area-inset-bottom, 0px));
+    min-height: 320px; margin: 0; border-radius: 14px; border: 1px solid #e3e9f3;
+  }
+
+  /* an open chat takes the whole screen (like Messenger / WhatsApp): top bar and tab bar are covered,
+     the message box sits at the very bottom, above the keyboard and the iPhone home bar */
+  .msgr.chat-open .msgr-chat {
+    position: fixed; inset: 0; width: 100%;
+    height: 100vh; height: 100dvh; z-index: 1200; background: #fff;
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .msgr.chat-open .chat-head { padding-top: 8px; }
+  .composer { padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px)); }
+
+  /* 16px text stops iPhone Safari zooming the page when the box is focused */
+  .composer .input, .search input, .nm-search input { font-size: 16px; }
+  .composer .input { min-height: 44px; }
+  .send { width: 44px; height: 44px; }
+  .emoji-btn { width: 44px; height: 44px; }
+  .chat-head .back, .new-btn { width: 44px; height: 44px; }
+  .conv { min-height: 64px; }
+
+  /* filter chips scroll sideways instead of wrapping or overflowing */
+  .tabs { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .tabs::-webkit-scrollbar { display: none; }
+
+  .chat-body { padding: 10px 10px 6px; -webkit-overflow-scrolling: touch; }
+  .jump { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+  .emoji-panel { max-height: 38vh; overflow-y: auto; }
+
+  /* new-message dialog fits the screen */
+  .nm { max-height: 80dvh; }
+  .nm-list { max-height: 60dvh; }
+}
+
+/* small phones (iPhone SE / mini, 320–375px, small Androids) */
+@media (max-width: 375px) {
+  .stack { max-width: 88%; }
+  .bubble { font-size: 13.5px; padding: 8px 11px; }
+  .side-head h1 { font-size: 18px; }
+  .av { width: 44px; height: 44px; }
+  .chat-head .who strong { max-width: 46vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tabs button { padding: 0 10px; }
+}
+
+/* large phones and phablets (Pro Max, Plus, Ultra: 410–480px) */
+@media (min-width: 410px) and (max-width: 767.98px) {
+  .stack { max-width: 78%; }
+  .bubble { font-size: 14.5px; }
+}
+
+/* landscape phones: little vertical room, so slim the headers */
+@media (max-width: 920px) and (max-height: 480px) and (orientation: landscape) {
+  .msgr { height: calc(100dvh - 72px - 24px - env(safe-area-inset-bottom, 0px)); min-height: 0; }
+  .msgr.chat-open .msgr-chat { padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
+  .chat-head { padding-top: 4px; padding-bottom: 4px; }
+  .composer { padding-top: 4px; }
+  .composer .input { min-height: 40px; max-height: 80px; }
+}
+
+/* =====================================================================
+   Keyboard-safe message box (phones): follow the visible viewport (--vvh / --vvt set from the component)
+   ===================================================================== */
+@media (max-width: 767.98px) {
+  .msgr.chat-open .msgr-chat {
+    inset: auto; left: 0; right: 0;
+    top: var(--vvt, 0px);
+    height: var(--vvh, 100dvh);
+    max-height: 100dvh;
+  }
+  /* while the keyboard is open there is no home bar under the box, so no extra bottom space */
+  :host(.kb-open) .composer { padding-bottom: 8px; }
+  /* long drafts stay reachable: the box grows to ~4 lines then scrolls inside */
+  .composer .input { max-height: 112px; }
+  .chat-body { overscroll-behavior: contain; }
+}

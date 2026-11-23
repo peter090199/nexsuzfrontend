@@ -1,186 +1,225 @@
-<section class="container">
-    <div class="page-header">
-        <button mat-button color="primary" [routerLink]="['/' + sharedRoutines.getRole() + '/recommended-jobs',transNo]">
-            <mat-icon>arrow_back</mat-icon>
-            Back
+<section class="aj">
+
+    <!-- ============ top bar ============ -->
+    <div class="aj-top">
+        <button mat-button class="aj-back" [routerLink]="['/' + sharedRoutines.getRole() + '/recommended-jobs',transNo]">
+            <mat-icon>arrow_back</mat-icon> Back to job
         </button>
-
-        <h2>Apply Job</h2>
     </div>
-    <mat-divider></mat-divider>
 
+    <!-- ============ job summary ============ -->
+    <header class="aj-job" *ngIf="job">
+        <img class="aj-logo" [src]="job.job_image || 'assets/images/default2.png'" alt="">
+        <div class="aj-job-text">
+            <small>You are applying for</small>
+            <h1>{{ job.job_name }}</h1>
+            <p>{{ job.comp_name || job.fullname }}<ng-container *ngIf="job.location"> · {{ job.location }}</ng-container></p>
+        </div>
+    </header>
 
-    <!-- Progress Bar -->
-    <mat-progress-bar color="accent" [mode]="loading ? 'indeterminate' : 'determinate'"
-        [value]="loading ? null : progressValue">
-    </mat-progress-bar>
+    <div class="closed-banner" *ngIf="closedReason" role="alert">
+        <mat-icon>block</mat-icon> {{ closedReason }}
+    </div>
 
-    <mat-horizontal-stepper #stepper linear (selectionChange)="onStepChange($event)">
-        <!-- Step 2: Upload Resume -->
-        <mat-step [stepControl]="imageForm">
-            <form [formGroup]="imageForm" class="form-container">
-                <ng-template matStepLabel>Upload Resume</ng-template>
+    <mat-progress-bar *ngIf="loading && !job" mode="indeterminate"></mat-progress-bar>
 
-                <input id="fileUpload" type="file" accept="application/pdf" (change)="onUploadResume($event)" />
+    <mat-card class="aj-error-card" *ngIf="loadError" role="alert">
+        <mat-icon>error_outline</mat-icon>
+        <h2>We couldn't open this job</h2>
+        <p>{{ loadError }}</p>
+        <div class="aj-nav">
+            <button mat-stroked-button type="button" [routerLink]="['/' + sharedRoutines.getRole() + '/recommended-jobs']">Browse jobs</button>
+            <button mat-flat-button color="primary" type="button" (click)="retryLoad()">Try again</button>
+        </div>
+    </mat-card>
 
-                <div *ngIf="fileError" class="text-red-500 text-sm">{{ fileError }}</div>
+    <mat-card class="aj-card" *ngIf="job && !loadError">
+        <mat-progress-bar color="primary" class="aj-progress" [mode]="loading ? 'indeterminate' : 'determinate'"
+            [value]="loading ? null : progressValue">
+        </mat-progress-bar>
 
-                <div *ngIf="resumeName" class="resume-preview mt-2">
-                    <mat-icon>description</mat-icon>
-                    <span>{{ resumeName }}</span>
-                </div>
+        <mat-horizontal-stepper #stepper linear class="aj-stepper" (selectionChange)="onStepChange($event)">
 
-                <div class="button-end" *ngIf="resumeName">
-                    <button mat-raised-button color="accent" (click)="nextStep(stepper)" [disabled]="!imageForm.valid">
-                        Next
-                    </button>
-                </div>
-            </form>
-        </mat-step>
+            <!-- ===== 1. CV ===== -->
+            <mat-step [stepControl]="imageForm">
+                <form [formGroup]="imageForm" class="aj-pane">
+                    <ng-template matStepLabel>CV</ng-template>
 
-        <!-- Step 3: Personal Information -->
-        <mat-step [stepControl]="personalForm">
-            <form [formGroup]="personalForm">
-                <ng-template matStepLabel>Personal Information</ng-template>
+                    <h2>{{ allowCv ? 'Upload your CV' : 'No CV needed' }}</h2>
+                    <p class="aj-lead" *ngIf="allowCv">A PDF the recruiter can read. This is what they review first.</p>
+                    <p class="aj-lead" *ngIf="!allowCv">This job does not ask for a CV. You can continue.</p>
 
-                <!-- Profile picture -->
-                <div class="form-row">
-                    <div *ngIf="profiles" class="form-field">
-                        <div class="profile-picture">
-                            <div class="avatar-container">
-                                <img class="profile-img"
-                                    [src]="profiles.profile_picture || 'assets/images/default2.png'"
-                                    alt="User Profile Picture" />
-                                <mat-icon class="status-icon online">fiber_manual_record</mat-icon>
-                            </div>
+                    <ng-container *ngIf="allowCv">
+                        <input #cv id="fileUpload" type="file" accept="application/pdf" hidden (change)="onUploadResume($event)" />
+
+                        <button type="button" class="aj-drop" [class.has-file]="resumeName" (click)="cv.click()">
+                            <mat-icon>{{ resumeName ? 'description' : 'upload_file' }}</mat-icon>
+                            <strong>{{ resumeName || 'Choose a PDF' }}</strong>
+                            <span>{{ useDefaultResume ? 'Your default resume. Click to upload a different one' : (resumeName ? 'Click to replace' : 'PDF only') }}</span>
+                        </button>
+
+                        <!-- the resume saved in Settings > Resume / CV -->
+                        <p class="aj-lead" *ngIf="useDefaultResume">
+                            <mat-icon style="vertical-align:middle;font-size:18px;width:18px;height:18px">star</mat-icon>
+                            Using your default resume from Settings.
+                            <a [routerLink]="['/' + sharedRoutines.getRole(), 'settings']" [queryParams]="{ section: 'resume' }">Manage resumes</a>
+                        </p>
+                        <p class="aj-lead" *ngIf="!useDefaultResume && defaultResume">
+                            <a href="javascript:void(0)" (click)="switchToDefaultResume()">Use my default resume ({{ defaultResume.name }})</a>
+                        </p>
+                        <p class="aj-lead" *ngIf="defaultResumeIsWord">
+                            Your default resume is a Word file. Job applications need a PDF, so please upload one here.
+                        </p>
+                        <p class="aj-lead" *ngIf="!defaultResume && !defaultResumeIsWord">
+                            Tip: save a resume in
+                            <a [routerLink]="['/' + sharedRoutines.getRole(), 'settings']" [queryParams]="{ section: 'resume' }">Settings &rsaquo; Resume / CV</a>
+                            and it is filled in for you next time.
+                        </p>
+
+                        <p class="aj-error" *ngIf="fileError" role="alert"><mat-icon>error_outline</mat-icon> {{ fileError }}</p>
+                    </ng-container>
+
+                    <div class="aj-nav">
+                        <span></span>
+                        <button mat-flat-button color="primary" type="button" (click)="nextStep(stepper)" [disabled]="!imageForm.valid">
+                            Next <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+                        </button>
+                    </div>
+                </form>
+            </mat-step>
+
+            <!-- ===== 2. Contact ===== -->
+            <mat-step [stepControl]="personalForm">
+                <form [formGroup]="personalForm" class="aj-pane">
+                    <ng-template matStepLabel>Contact</ng-template>
+
+                    <h2>Your contact details</h2>
+                    <p class="aj-lead">Shared with the recruiter so they can reach you.</p>
+
+                    <div class="aj-who" *ngIf="profiles">
+                        <img class="profile-img" [src]="profiles.profile_picture || 'assets/images/default2.png'" alt="Your profile picture" />
+                        <div>
+                            <strong>{{ profiles.fullname }}</strong>
+                            <span>{{ personalForm.get('email')?.value }}</span>
                         </div>
                     </div>
-                </div>
 
-                <!-- Email -->
-                <div class="form-row">
-                    <mat-form-field appearance="standard" class="form-field">
-                        <mat-label>Email Address</mat-label>
+                    <mat-form-field appearance="outline" class="aj-field">
+                        <mat-label>Email address</mat-label>
                         <input matInput type="email" formControlName="email" required readonly />
                     </mat-form-field>
+
+                    <div class="aj-phone">
+                        <mat-form-field appearance="outline" class="aj-field" *ngIf="countryCodes.length">
+                            <mat-label>Country code</mat-label>
+                            <input type="text" matInput [formControl]="countryControl" [matAutocomplete]="autoCountry"
+                                placeholder="Search country code" />
+                            <mat-autocomplete #autoCountry="matAutocomplete"
+                                (optionSelected)="onCountrySelected($event.option.value)">
+                                <mat-option *ngFor="let code of filteredCountryCodes | async" [value]="code.label">{{ code.label }}</mat-option>
+                            </mat-autocomplete>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="aj-field">
+                            <mat-label>Mobile phone number</mat-label>
+                            <input matInput type="tel" formControlName="phone_number" required />
+                        </mat-form-field>
+                    </div>
+
+                    <div class="aj-nav">
+                        <button mat-stroked-button type="button" (click)="previousStep(stepper)"><mat-icon>arrow_back</mat-icon> Back</button>
+                        <button mat-flat-button color="primary" type="button" (click)="nextStep(stepper)">
+                            Next <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+                        </button>
+                    </div>
+                </form>
+            </mat-step>
+
+            <!-- ===== 3. Questions ===== -->
+            <mat-step>
+                <div class="aj-pane">
+                    <ng-template matStepLabel>Questions</ng-template>
+
+                    <h2>A few questions</h2>
+                    <p class="aj-lead" *ngIf="questions.length">Fields marked <span class="req">*</span> are required.</p>
+                    <p class="aj-lead" *ngIf="!questions.length">The recruiter has no questions for this job.</p>
+
+                    <div class="aj-q" *ngFor="let q of questions; let i = index">
+
+                        <ng-container [ngSwitch]="q.question_type">
+
+                            <mat-form-field appearance="outline" class="aj-field" *ngSwitchCase="'multiple_choice'">
+                                <mat-label>{{ q.question_text }}{{ q.is_required ? ' *' : '' }}</mat-label>
+                                <mat-select [(ngModel)]="q.answer" name="answer{{i}}">
+                                    <mat-option *ngIf="!q.is_required" value="">No answer</mat-option>
+                                    <mat-option *ngFor="let o of q.options" [value]="o">{{ o }}</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+
+                            <mat-form-field appearance="outline" class="aj-field" *ngSwitchCase="'numeric'">
+                                <mat-label>{{ q.question_text }}{{ q.is_required ? ' *' : '' }}</mat-label>
+                                <input matInput type="number" inputmode="decimal" [(ngModel)]="q.answer" name="answer{{i}}">
+                            </mat-form-field>
+
+                            <mat-form-field appearance="outline" class="aj-field" *ngSwitchCase="'short_text'">
+                                <mat-label>{{ q.question_text }}{{ q.is_required ? ' *' : '' }}</mat-label>
+                                <input matInput maxlength="255" [(ngModel)]="q.answer" name="answer{{i}}">
+                            </mat-form-field>
+
+                            <mat-form-field appearance="outline" class="aj-field" *ngSwitchCase="'yes_no'">
+                                <mat-label>{{ q.question_text }}{{ q.is_required ? ' *' : '' }}</mat-label>
+                                <mat-select [(ngModel)]="q.answer" name="answer{{i}}">
+                                    <mat-option *ngIf="!q.is_required" value="">No answer</mat-option>
+                                    <mat-option value="yes">Yes</mat-option>
+                                    <mat-option value="no">No</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+
+                            <mat-form-field appearance="outline" class="aj-field" *ngSwitchDefault>
+                                <mat-label>{{ q.question_text }}{{ q.is_required ? ' *' : '' }}</mat-label>
+                                <textarea matInput rows="4" [(ngModel)]="q.answer" name="answer{{i}}"></textarea>
+                            </mat-form-field>
+                        </ng-container>
+                    </div>
+
+                    <div class="aj-nav">
+                        <button mat-stroked-button type="button" (click)="previousStep(stepper)"><mat-icon>arrow_back</mat-icon> Back</button>
+                        <button mat-flat-button color="primary" type="button" (click)="nextStep(stepper)" [disabled]="!areAllQuestionsAnswered()">
+                            Review <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+                        </button>
+                    </div>
                 </div>
+            </mat-step>
 
-                <!-- Country + Phone -->
-                <div class="form-row">
-                    <mat-form-field appearance="standard" class="form-field" *ngIf="countryCodes.length">
-                        <mat-label>Country Code</mat-label>
-                        <input type="text" matInput [formControl]="countryControl" [matAutocomplete]="autoCountry"
-                            placeholder="Select or search country code" />
+            <!-- ===== 4. Review and submit ===== -->
+            <mat-step>
+                <div class="aj-pane">
+                    <ng-template matStepLabel>Review</ng-template>
 
-                        <mat-autocomplete #autoCountry="matAutocomplete"
-                            (optionSelected)="onCountrySelected($event.option.value)">
-                            <mat-option *ngFor="let code of filteredCountryCodes | async" [value]="code.label">
-                                {{ code.label }}
-                            </mat-option>
-                        </mat-autocomplete>
-                    </mat-form-field>
+                    <h2>Review and submit</h2>
+                    <p class="aj-lead">Check everything. You can go back and change it before you send.</p>
 
-                    <mat-form-field appearance="standard" class="form-field">
-                        <mat-label>Mobile Phone Number</mat-label>
-                        <input matInput type="tel" formControlName="phone_number" required />
-                    </mat-form-field>
+                    <dl class="aj-review">
+                        <div *ngIf="allowCv"><dt>CV</dt><dd>{{ resumeName || 'Not uploaded' }}</dd></div>
+                        <div><dt>Email</dt><dd>{{ personalForm.get('email')?.value }}</dd></div>
+                        <div><dt>Phone</dt><dd>{{ personalForm.get('country_code')?.value ? '+' + personalForm.get('country_code')?.value + ' ' : '' }}{{ personalForm.get('phone_number')?.value }}</dd></div>
+                        <div *ngFor="let q of questions">
+                            <dt>{{ q.question_text }}</dt>
+                            <dd>{{ q.answer !== null && q.answer !== undefined && q.answer !== '' ? q.answer : '—' }}</dd>
+                        </div>
+                    </dl>
+
+                    <div class="aj-nav">
+                        <button mat-stroked-button type="button" (click)="previousStep(stepper)" [disabled]="loading"><mat-icon>arrow_back</mat-icon> Back</button>
+                        <button mat-flat-button color="primary" class="aj-submit" type="button" (click)="onSubmit()"
+                            [disabled]="!areAllQuestionsAnswered() || loading || !!closedReason">
+                            <mat-spinner *ngIf="loading" diameter="18"></mat-spinner>
+                            <mat-icon *ngIf="!loading">send</mat-icon>
+                            {{ loading ? 'Sending…' : btnSave }}
+                        </button>
+                    </div>
                 </div>
-
-                <div class="button-end">
-                    <button mat-raised-button color="warn" (click)="previousStep(stepper)">Previous</button>
-                    <button mat-raised-button color="accent" (click)="nextStep(stepper)">Next</button>
-                    <!-- <button mat-raised-button color="accent" (click)="onCheckCountryCode()"
-                        [disabled]="!personalForm.valid">
-                        Next
-                        </button> -->
-                </div>
-            </form>
-        </mat-step>
-
-        <!-- Step 4: Dynamic Questions -->
-        <mat-step>
-            <ng-template matStepLabel>Questions</ng-template>
-
-            <div *ngFor="let q of questions; let i = index" class="form-row">
-
-                <!-- YES / NO TYPE -->
-                <ng-container *ngIf="q.answer_type === 'yes' || q.answer_type === 'no'">
-                    <mat-form-field appearance="standard" class="form-field">
-                        <mat-label>{{ q.question_text }}</mat-label>
-                        <mat-select [(ngModel)]="q.answer" name="answer{{i}}">
-                            <mat-option value="yes">Yes</mat-option>
-                            <mat-option value="no">No</mat-option>
-                        </mat-select>
-                    </mat-form-field>
-                </ng-container>
-
-                <!-- GENERAL TYPE -->
-                <ng-container *ngIf="q.answer_type === 'general'">
-                    <mat-form-field appearance="standard" class="form-field">
-                        <mat-label>{{ q.question_text }}</mat-label>
-                        <textarea matInput rows="3" [(ngModel)]="q.answer" name="answer{{i}}">
-                        </textarea>
-                    </mat-form-field>
-                </ng-container>
-
-            </div>
-
-            <div class="button-end">
-                <button mat-raised-button color="warn" (click)="previousStep(stepper)">
-                    Previous
-                </button>
-
-                <button mat-raised-button color="accent" (click)="onSubmit()" [disabled]="!areAllQuestionsAnswered()">
-                    {{ btnSave }}
-                </button>
-            </div>
-        </mat-step>
-
-        <!-- <mat-step>
-<ng-template matStepLabel>Questions</ng-template>
-
-<div *ngFor="let q of questions; let i = index" class="form-row">
-<mat-form-field appearance="standard" class="form-field">
-<mat-label>{{ q.question_text }}</mat-label>
-<textarea matInput rows="3" [(ngModel)]="q.answer"></textarea>
-</mat-form-field>
-</div>
-
-<div class="button-end">
-<button mat-raised-button color="warn" (click)="previousStep(stepper)">Previous</button>
-<button mat-raised-button color="accent" (click)="nextStep(stepper)">Next</button>
-</div>
-</mat-step> -->
-
-        <!-- Step 5: Submit -->
-        <!-- <mat-step [stepControl]="companyForm">
-<form [formGroup]="companyForm">
-<ng-template matStepLabel>Additional Info</ng-template>
-
-<div class="form-row">
-<mat-form-field class="form-field">
-<mat-label>Qualification</mat-label>
-<textarea matInput rows="3" formControlName="qualification" required></textarea>
-</mat-form-field>
-</div>
-
-<div class="form-row">
-<mat-form-field class="form-field">
-<mat-label>Work Type</mat-label>
-<mat-select formControlName="work_type" required>
-<mat-option *ngFor="let wt of worktypes" [value]="wt">{{ wt }}</mat-option>
-</mat-select>
-</mat-form-field>
-</div>
-
-<div class="button-end">
-<button mat-raised-button color="warn" (click)="previousStep(stepper)">Previous</button>
-<button mat-raised-button color="accent" (click)="onSubmit()"
-[disabled]="loading">
-{{ btnSave }}
-</button>
-</div>
-</form>
-</mat-step> -->
-    </mat-horizontal-stepper>
+            </mat-step>
+        </mat-horizontal-stepper>
+    </mat-card>
 </section>

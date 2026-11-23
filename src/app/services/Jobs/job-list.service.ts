@@ -86,6 +86,12 @@ export class JobListService {
     );
   }
 
+  /** The recruiter dashboard: this account's own listings, applicants, pipeline and trend. */
+  getClientDashboard(): Observable<any> {
+    const headers = this.createHeaders();
+    return this.http.get(`${_url}getClientDashboard`, { headers });
+  }
+
   getHired(): Observable<any> {
     const headers = this.createHeaders();
     return this.http.get(`${_url}getHired`, { headers }).pipe(

@@ -1364,7 +1364,6 @@ checkFollowStatus() {
   setTimeout(() => this.showReactions = false, 300);
   }
   sendReactionToServer(postId: string, reaction: any) {
-    console.log(`✅ Sent reaction '${reaction.name}' for post ID: ${postId}`);
     // TODO: Use HttpClient or service here
     // this.api.sendReaction(postId, reaction).subscribe(...)
   }
@@ -1417,7 +1416,6 @@ addReply(comment: any): void {
     comment: replyText
   };
 
-  console.log(payload);
 
   this.comment.postCommentByReply(comment.comment_uuid, payload).subscribe({
     next: () => {
@@ -1563,7 +1561,6 @@ likePost(post: any): void {
   // Call API to update like status in the backend
   this.postDataservices.likePost(post.id, post.liked).subscribe(
     (response) => {
-      console.log('✅ Like status updated successfully:', response);
     },
     (error) => {
       console.error('❌ Error updating like status:', error);
@@ -1593,7 +1590,6 @@ AddFollow(code: any, status: string, profilename: any, lname: any): void {
     confirmMessage = 'Unfollow this user?';
     successAction = 'Unfollowed successfully.';
   }
-  console.log(this.followId)
   this.alert.popupWarning(fullname, confirmMessage).then((result) => {
     if (result.value) {
       const request$ =

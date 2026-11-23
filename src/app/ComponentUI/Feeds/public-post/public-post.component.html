@@ -5,8 +5,7 @@
     </button>
 
   <div class="feed-state" *ngIf="isLoadingPosts">
-    <mat-spinner diameter="32"></mat-spinner>
-    <span>Loading your feed…</span>
+    <app-nx-loader mode="inline" text="Loading your feed…"></app-nx-loader>
   </div>
   <div class="feed-state error" *ngIf="!isLoadingPosts && loadError" role="alert">
     <mat-icon>error_outline</mat-icon>

@@ -122,7 +122,6 @@ export class NotificationService {
     const channel = this.pusher.subscribe('message.sent');
 
     channel.bind('chat', (data: any) => {
-      console.log('New message data received:', data.message);
 
       // Check if data contains sender and receiver IDs
       const userId = data.receiverId;  // Assuming receiverId is passed in the broadcasted event

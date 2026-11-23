@@ -61,12 +61,10 @@
     <div class="form-row">
         <mat-form-field appearance="standard" class="w-40">
             <mat-label>Tag</mat-label>
-            <mat-select formControlName="tag">
-                <mat-option value="STARTER">STARTER</mat-option>
-                <mat-option value="MOST POPULAR">MOST POPULAR</mat-option>
-                <mat-option value="PREMIUM">PREMIUM</mat-option>
-                <mat-option value="BUSINESS">BUSINESS</mat-option>
-            </mat-select>
+            <input matInput formControlName="tag" maxlength="50" style="text-transform: uppercase"
+                placeholder="e.g. STARTER" (blur)="planForm.get('tag')?.setValue((planForm.get('tag')?.value || '').toUpperCase().trim())">
+            <mat-hint>Must be unique. Use "Make popular" on the plan card for MOST POPULAR.</mat-hint>
+            <mat-error *ngIf="planForm.get('tag')?.hasError('required')">Tag is required</mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="standard" class="w-30">

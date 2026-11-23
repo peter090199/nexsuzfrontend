@@ -81,7 +81,6 @@ export class AddCertificateUiComponent implements OnInit {
       ...item,
       date_completed: this.datePipe.transform(item.date_completed, 'yyyy-MM-dd')
     }));
-    console.log('🚀 Sending payload:', payload);
     this.loading = true;
 
     if (this.btnSave === 'Save') {
@@ -144,7 +143,6 @@ export class AddCertificateUiComponent implements OnInit {
       date_completed: this.datePipe.transform(item.date_completed, 'yyyy-MM-dd')
     }));
 
-    console.log('🚀 Sending payload:', payload);
 
     this.cvDataServices.saveCertificates(payload).subscribe({
       next: (res) => {

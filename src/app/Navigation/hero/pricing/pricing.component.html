@@ -1,18 +1,31 @@
 <section class="pricing-section">
-    <div class="glow glow-a"></div>
-    <div class="glow glow-b"></div>
-
     <div class="container">
 
         <div class="pricing-header">
             <span class="eyebrow">Pricing</span>
             <h1 class="pricing-title">Choose the plan that <span>grows with you</span></h1>
             <p class="pricing-subtitle">Select the best plan that suits your needs.</p>
+
+            <!-- Audience tabs -->
+            <div class="audience" role="tablist" aria-label="Plans for">
+                <button type="button" role="tab" *ngFor="let a of audiences" [class.on]="audience === a.id"
+                    [attr.aria-selected]="audience === a.id" (click)="setAudience(a.id)">
+                    <mat-icon>{{ a.icon }}</mat-icon>{{ a.label }}
+                </button>
+            </div>
+
+            <!-- Billing selector: appears only when annual pricing is configured -->
+            <div class="billing" role="group" aria-label="Billing period" *ngIf="yearlyAvailable">
+                <button type="button" [class.on]="billing === 'monthly'" [attr.aria-pressed]="billing === 'monthly'"
+                    (click)="setBilling('monthly')">Monthly</button>
+                <button type="button" [class.on]="billing === 'yearly'" [attr.aria-pressed]="billing === 'yearly'"
+                    (click)="setBilling('yearly')">Yearly</button>
+            </div>
         </div>
 
         <!-- Loading -->
         <div class="plan-grid" *ngIf="isLoading">
-            <div class="plan-box skeleton-card" *ngFor="let item of [1,2,3,4]">
+            <div class="plan-box skeleton-card" *ngFor="let item of [1,2,3,4,5]">
                 <div class="skeleton skeleton-badge"></div>
                 <div class="skeleton skeleton-title"></div>
                 <div class="skeleton skeleton-desc"></div>
@@ -22,19 +35,33 @@
             </div>
         </div>
 
+        <!-- Error -->
+        <div class="notice" *ngIf="!isLoading && hasError" role="alert">
+            <mat-icon>cloud_off</mat-icon> We couldn't load our plans right now.
+            <button mat-button type="button" (click)="loadPlans()">Try again</button>
+        </div>
+
         <!-- Plans -->
-        <div class="plan-grid" *ngIf="!isLoading">
+        <div class="plan-grid" [class.few]="plans.length < 4" *ngIf="!isLoading && !hasError">
+
+            <div class="empty-audience" *ngIf="!plans.length">
+                <mat-icon>{{ audience === 'DEF-CLIENT' ? 'business_center' : 'person_search' }}</mat-icon>
+                <b>No {{ audience === 'DEF-CLIENT' ? 'recruiter' : 'job seeker' }} plans are published yet.</b>
+                <span>Contact sales and we will set one up for you.</span>
+            </div>
 
             <article class="plan-box" *ngFor="let plan of plans; trackBy: trackByPlan; let i = index"
-                [ngClass]="getPlanClass(plan)" [class.featured]="isFeatured(plan)" [class.open]="expanded[plan.planId]"
-                [style.animation-delay.ms]="i * 100">
+                [ngClass]="getPlanClass(plan)" [class.featured]="isFeatured(plan)" [class.free]="isFree(plan)"
+                [class.current]="isCurrent(plan)" [class.open]="expanded[plan.planId]">
 
-                <div class="ribbon" *ngIf="isFeatured(plan)">
-                    <mat-icon>star</mat-icon> Most Popular
+                <div class="ribbon" *ngIf="isFeatured(plan) && !isCurrent(plan)">
+                    <mat-icon>star</mat-icon> Recommended
                 </div>
-
-                <div class="current-badge" *ngIf="plan.button_name === 'Current Plan'">
-                    <mat-icon>verified</mat-icon> Current Plan
+                <div class="ribbon current-ribbon" *ngIf="isCurrent(plan)">
+                    <mat-icon>verified</mat-icon> Your plan
+                </div>
+                <div class="ribbon free-ribbon" *ngIf="isFree(plan) && !isCurrent(plan) && !isFeatured(plan)">
+                    Free forever
                 </div>
 
                 <div class="plan-top">
@@ -48,33 +75,91 @@
                 <p class="plan-desc">{{ plan.description }}</p>
 
                 <div class="price-card">
-                    <span class="currency">₱</span>
-                    <span class="amount">{{ plan.price }}</span>
-                    <span class="month">/ {{ plan.tagmonthYear }}</span>
+                    <ng-container *ngIf="isFree(plan); else paid">
+                        <span class="amount">Free</span>
+                    </ng-container>
+                    <ng-template #paid>
+                        <span class="currency">₱</span>
+                        <span class="amount">{{ displayPrice(plan) | number:'1.0-2' }}</span>
+                        <span class="month">/ {{ period(plan) }}</span>
+                    </ng-template>
                 </div>
+                <div class="save" *ngIf="savings(plan) > 0">Save ₱{{ savings(plan) | number:'1.0-0' }} a year</div>
 
-                <button class="plan-cta" mat-flat-button [class.solid]="isFeatured(plan)" (click)="goToCheckout(plan)">
-                    {{ plan.button_name }}
+                <button class="plan-cta" *ngIf="showCta" mat-flat-button type="button" [class.solid]="isFeatured(plan)"
+                    [disabled]="ctaDisabled(plan)" (click)="goToCheckout(plan)">
+                    <mat-icon *ngIf="isCurrent(plan)">verified</mat-icon>{{ ctaLabel(plan) }}
                 </button>
 
-                <div class="feature-title">{{ getFeatureTitle(plan, i) }}</div>
+                <div class="feature-title">{{ featureTitle(i) }}</div>
 
-                <ul class="feature-list" *ngIf="planFeatures[plan.planId] as features">
-                    <li class="feature" *ngFor="let feature of features; let idx = index"
-                        [hidden]="!expanded[plan.planId] && idx >= visibleCount">
-                        <mat-icon>check_circle</mat-icon>
-                        <span>{{ feature.feature_name }}</span>
+                <ul class="feature-list">
+                    <li class="feature" *ngFor="let f of ownFeatures(plan)">
+                        <mat-icon *ngIf="!isOffRow(f); else off">check_circle</mat-icon>
+                        <ng-template #off><mat-icon class="x">cancel</mat-icon></ng-template>
+                        <span>{{ f.feature_name }}<b class="detail" *ngIf="featureDetail(f)"> · {{ featureDetail(f) }}</b></span>
                     </li>
                 </ul>
-
-                <button type="button" class="more-btn" *ngIf="(planFeatures[plan.planId]?.length || 0) > visibleCount"
-                    (click)="toggleFeatures(plan.planId)">
-                    {{ expanded[plan.planId] ? 'Show fewer' : 'Show all features' }}
-                    <mat-icon>{{ expanded[plan.planId] ? 'expand_less' : 'expand_more' }}</mat-icon>
-                </button>
-
             </article>
 
+            <!-- Enterprise: quoted, not a database plan -->
+            <article class="plan-box enterprise-plan">
+                <div class="ribbon ent-ribbon">Custom</div>
+                <div class="plan-top">
+                    <span class="plan-icon"><mat-icon>domain</mat-icon></span>
+                    <div>
+                        <div class="plan-tag">{{ enterprise.tag }}</div>
+                        <h2>{{ enterprise.name }}</h2>
+                    </div>
+                </div>
+                <p class="plan-desc">{{ enterprise.description }}</p>
+                <div class="price-card"><span class="amount custom">Custom pricing</span></div>
+                <button class="plan-cta" mat-stroked-button type="button" (click)="contactSales()">
+                    <mat-icon>mail_outline</mat-icon>{{ enterprise.cta }}
+                </button>
+                <div class="feature-title">Tailored to you</div>
+                <ul class="feature-list">
+                    <li class="feature" *ngFor="let h of enterprise.highlights">
+                        <mat-icon>check_circle</mat-icon><span>{{ h }}</span>
+                    </li>
+                </ul>
+            </article>
+        </div>
+
+        <!-- Comparison -->
+        <div class="compare" id="compare-plans" *ngIf="!isLoading && !hasError && rows.length && plans.length > 1">
+            <div class="compare-head">
+                <h2>Compare plans</h2>
+                <p>Rows that differ between plans are highlighted.</p>
+            </div>
+            <p class="swipe-hint"><mat-icon>swipe</mat-icon> Swipe sideways to compare all plans</p>
+            <div class="compare-scroll" tabindex="0" role="region" aria-label="Plan comparison table">
+                <table class="compare-table">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="sticky">Features</th>
+                            <th scope="col" *ngFor="let p of plans" [class.rec]="isFeatured(p)">
+                                {{ p.plan_name }}
+                                <span class="th-price">{{ isFree(p) ? 'Free' : '₱' + (displayPrice(p) | number:'1.0-0') + ' / ' + period(p) }}</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let r of rows" [class.differs]="r.differs">
+                            <th scope="row" class="sticky">{{ r.name }}</th>
+                            <td *ngFor="let p of plans" [class.rec]="isFeatured(p)">
+                                <ng-container *ngIf="r.cells[p.planId].included; else no">
+                                    <mat-icon class="yes" aria-label="Included">check_circle</mat-icon>
+                                    <span class="cell-detail" *ngIf="r.cells[p.planId].detail">{{ r.cells[p.planId].detail }}</span>
+                                </ng-container>
+                                <ng-template #no><mat-icon class="no" aria-label="Not included">remove</mat-icon></ng-template>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="compare-note"><mat-icon>domain</mat-icon> Need more than this? Enterprise is tailored to your organization —
+                <a href="javascript:void(0)" (click)="contactSales()">contact sales</a>.</p>
         </div>
 
         <!-- Trust strip -->
@@ -85,6 +170,17 @@
                     like.</span></div>
             <div><mat-icon>support_agent</mat-icon><span><b>Human support</b>Our team replies within 24 hours on every
                     plan.</span></div>
+        </div>
+
+        <!-- FAQ -->
+        <div class="faq" *ngIf="!isLoading && plans.length">
+            <h2>Frequently asked questions</h2>
+            <mat-accordion displayMode="flat">
+                <mat-expansion-panel *ngFor="let item of faq">
+                    <mat-expansion-panel-header><mat-panel-title>{{ item.q }}</mat-panel-title></mat-expansion-panel-header>
+                    <p>{{ item.a }}</p>
+                </mat-expansion-panel>
+            </mat-accordion>
         </div>
 
     </div>

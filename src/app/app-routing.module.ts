@@ -20,6 +20,9 @@ import { ActivationUIComponent } from './ComponentSharedUI/Activation/activation
 import { LayoutComponent } from './layout/layout.component';
 import { CurriculumVitaeUIComponent } from './ComponentSharedUI/Individual/curriculum-vitae-ui/curriculum-vitae-ui.component';
 import { ProfileUIComponent } from './ComponentSharedUI/Profile/profile-ui/profile-ui.component';
+import { CvSetupGuard } from './AuthGuard/cv-setup.guard';
+import { FeatureGuard } from './AuthGuard/feature.guard';
+import { FEATURE } from './services/AccountPlan/feature-access.map';
 import { UserCVComponent } from './ComponentSharedUI/Individual/user-cv/user-cv.component';
 import { UploadProfileComponent } from './ComponentSharedUI/Individual/upload-profile/upload-profile.component';
 import { PrintCVComponent } from './ComponentSharedUI/Individual/print-cv/print-cv.component';
@@ -44,6 +47,13 @@ import { RoleGuard } from './AuthGuard/role.guard';
 import { CandidatesComponent } from './ComponentUI/Client/candidates/candidates.component';
 import { InterviewsComponent } from './ComponentUI/Client/interviews/interviews.component';
 import { AccountManagementComponent } from './ComponentUI/account-management/account-management.component';
+import { SubscriptionPlansComponent } from './ComponentUI/SubscriptionManagement/subscription-plans/subscription-plans.component';
+import { FeatureManagementComponent } from './ComponentUI/SubscriptionManagement/feature-management/feature-management.component';
+import { PlanFeatureAssignmentComponent } from './ComponentUI/SubscriptionManagement/plan-feature-assignment/plan-feature-assignment.component';
+import { UserSubscriptionMonitoringComponent } from './ComponentUI/SubscriptionManagement/user-subscription-monitoring/user-subscription-monitoring.component';
+import { SubscriptionReportsComponent } from './ComponentUI/SubscriptionManagement/subscription-reports/subscription-reports.component';
+import { EmailConfigComponent } from './ComponentUI/EmailConfig/email-config.component';
+import { DatabaseAdminComponent } from './ComponentUI/DatabaseAdmin/database-admin.component';
 import { UserPlanComponent } from './ComponentUI/AccountManagement/user-plan/user-plan.component';
 import { CategoryPlanComponent } from './ComponentUI/AccountManagement/category-plan/category-plan.component';
 import { ClientPlanComponent } from './ComponentUI/AccountManagement/client-plan/client-plan.component';
@@ -52,9 +62,11 @@ import { CheckOutUIComponent } from './ComponentUI/AccountManagement/user-plan/c
 import { UpgradeRequiredComponent } from './ComponentSharedUI/account-type-plan/upgrade-required/upgrade-required.component';
 import { LandingComponent } from './Navigation/landing/landing.component';
 import { TopheaderComponent } from './Users/userhomepage/topheader/topheader.component';
+import { JobCandidatesComponent } from './ComponentUI/Client/job-candidates/job-candidates.component';
+import { ReportsComponent } from './ComponentUI/Client/reports/reports.component';
 import { JobsectionComponent } from './Navigation/hero/jobsection/jobsection.component';
 
-const routes: Routes = [
+export const routes: Routes = [
   // Public routes
   { path: '', redirectTo: '/', pathMatch: 'full' }, // Default redirect
   // { path: 'homepage', component: UserhomepageComponent },
@@ -67,32 +79,34 @@ const routes: Routes = [
   { path: 'reset-password/:email/:token', component: ResetPasswordUIComponent },
   { path: 'activation/:email', component: ActivationUIComponent },
   { path: 'layout', component: LayoutComponent },
-  { path: 'curriculum-vitae', component: CurriculumVitaeUIComponent, canActivate: [AuthGuard] },
+  { path: 'curriculum-vitae', component: CurriculumVitaeUIComponent, canActivate: [AuthGuard, RoleGuard, FeatureGuard], data: { roles: ['DEF-USERS'], feature: FEATURE.CREATE_RESUME } },
 
-  { path: 'upload-cv', component: UploadProfileComponent, canActivate: [AuthGuard] },
+  { path: 'upload-cv', component: UploadProfileComponent, canActivate: [AuthGuard, RoleGuard, FeatureGuard], data: { roles: ['DEF-USERS'], feature: FEATURE.CREATE_RESUME } },
   { path: 'print-cv', component: PrintCVComponent, canActivate: [AuthGuard] },
   { path: 'socket', component: ChatUIComponent },
 
 
   {
     path: 'DEF-USERS',
-    component: TopNavigationComponent,
+    component: SideBarPanelComponent,
     canActivate: [AuthGuard, RoleGuard],
+    // job seekers must finish their CV first: until then every page here redirects to /DEF-USERS/user-cv
+    canActivateChild: [CvSetupGuard],
     data: { roles: ['DEF-USERS'] },
     children: [
       { path: 'profile/:code', component: ProfileUIComponent },
       { path: 'client_profile/:code', component: CompanyProfileUIComponent },
       { path: 'profile', component: ProfileUIComponent },
       { path: 'home', component: HomeUIComponent },
-      { path: 'message', component: MessagesComponent },
-      { path: 'network', component: NetworkingComponent },
+      { path: 'message', component: MessagesComponent, canActivate: [FeatureGuard], data: { feature: FEATURE.MESSAGING_ACCESS } },
+      { path: 'network', component: NetworkingComponent, canActivate: [FeatureGuard], data: { feature: FEATURE.NETWORK_FEED } },
       { path: 'settings', component: SettingsComponent },
-      { path: 'search', component: JobsectionComponent },
+      { path: 'search', component: JobsectionComponent, canActivate: [FeatureGuard], data: { feature: FEATURE.SEARCH_ACCESS } },
       // { path: 'search', component: UserListComponent },
-      { path: 'user-cv', component: UserCVComponent },
+      { path: 'user-cv', component: UserCVComponent, canActivate: [FeatureGuard], data: { feature: FEATURE.CREATE_RESUME } },
       { path: 'jobs', component: JobsComponent },
       { path: 'recommended-jobs/:transNo', component: JobsProfileComponent },
-      { path: 'apply-job/:transNo', component: ApplyJobComponent },
+      { path: 'apply-job/:transNo', component: ApplyJobComponent, canActivate: [FeatureGuard], data: { feature: FEATURE.APPLY_JOBS } },
       { path: 'applied-jobs', component: ListAppliedJobsComponent },
       { path: 'checkout/:planId', component: CheckOutUIComponent },
       { path: 'subscription', component: UpgradeRequiredComponent },
@@ -105,17 +119,22 @@ const routes: Routes = [
     canActivate: [AuthGuard, RoleGuard],
     data: { roles: ['DEF-CLIENT'] },
     children: [
+      // recruiters have their own dashboard; the admin dashboard is for DEF-ADMIN / DEF-MASTERADMIN
+      { path: 'admin-dashboard', redirectTo: 'client-dashboard', pathMatch: 'full' },
       { path: 'client-dashboard', component: ClientDashboardComponent },
       { path: 'home', component: HomeUIComponent },
       { path: 'vacancies', component: JobPostingComponent },
-      { path: 'posting-job', component: PostingJobComponent },
-      { path: 'message', component: MessagesComponent },
+      { path: 'vacancies/:transNo/candidates', component: JobCandidatesComponent, canActivate: [FeatureGuard], data: { feature: FEATURE.JOB_APPLICANTS } },
+      { path: 'posting-job', component: PostingJobComponent, canActivate: [FeatureGuard], data: { feature: FEATURE.JOB_POSTING } },
+      { path: 'message', component: MessagesComponent, canActivate: [FeatureGuard], data: { feature: FEATURE.MESSAGING_ACCESS } },
       { path: 'settings', component: SettingsComponent },
-      { path: 'network', component: NetworkingComponent },
-      { path: 'candidates', component: CandidatesComponent },
-      { path: 'interviews', component: InterviewsComponent },
-      { path: 'user-cv', component: UserCVComponent },
-      { path: 'search', component: JobsectionComponent },
+      { path: 'network', component: NetworkingComponent, canActivate: [FeatureGuard], data: { feature: FEATURE.NETWORK_FEED } },
+      { path: 'candidates', component: JobCandidatesComponent, canActivate: [FeatureGuard], data: { feature: FEATURE.JOB_APPLICANTS } },
+      { path: 'reports', component: ReportsComponent, canActivate: [FeatureGuard], data: { feature: FEATURE.JOB_APPLICANTS } },
+      { path: 'interviews', component: InterviewsComponent, canActivate: [FeatureGuard], data: { feature: FEATURE.JOB_APPLICANTS } },
+      // recruiter plans (pricing page → Recruiters tab)
+      { path: 'checkout/:planId', component: CheckOutUIComponent },
+      { path: 'search', component: JobsectionComponent, canActivate: [FeatureGuard], data: { feature: FEATURE.SEARCH_ACCESS } },
       { path: 'recommended-jobs/:transNo', component: JobsProfileComponent },
       // ✅ FIXED PROFILE ROUTE
       { path: 'profile/:code', component: ProfileUIComponent },
@@ -154,7 +173,7 @@ const routes: Routes = [
     children: [
 
       /* DASHBOARD */
-      { path: 'admin-dashboard', component: ClientDashboardComponent },
+      { path: 'admin-dashboard', component: AdminDashboardComponent },
       { path: 'client-dashboard', component: ClientDashboardComponent },
       /* CORE */
       { path: 'home', component: HomeUIComponent },
@@ -162,6 +181,8 @@ const routes: Routes = [
       { path: 'network', component: NetworkingComponent },
       { path: 'settings', component: SettingsComponent },
       { path: 'vacancies', component: JobPostingComponent },
+      { path: 'vacancies/:transNo/candidates', component: JobCandidatesComponent },
+      { path: 'posting-job', component: PostingJobComponent },
 
       /* ✅ FIXED PROFILE ROUTE */
       { path: 'profile/:code', component: ProfileUIComponent },
@@ -175,12 +196,24 @@ const routes: Routes = [
       { path: 'menu', component: MenuComponent },
       { path: 'role', component: RoleComponent },
       /* JOBS */
-      { path: 'user-cv', component: UserCVComponent },
       { path: 'recommended-jobs/:transNo', component: JobsProfileComponent },
       { path: 'apply-job/:transNo', component: ApplyJobComponent },
       { path: 'applied-jobs', component: ListAppliedJobsComponent },
-      { path: 'candidates', component: CandidatesComponent },
+      { path: 'candidates', component: JobCandidatesComponent },
+      { path: 'reports', component: ReportsComponent },
       { path: 'interviews', component: InterviewsComponent },
+
+      // DATABASE (backup, server, storage, operations)
+      { path: 'database', component: DatabaseAdminComponent },
+      // EMAIL CONFIG (dynamic SMTP)
+      { path: 'emailconfig', component: EmailConfigComponent },
+
+      // SUBSCRIPTION MANAGEMENT
+      { path: 'subscriptionplans', component: SubscriptionPlansComponent },
+      { path: 'featuremanagement', component: FeatureManagementComponent },
+      { path: 'planfeatureassignment', component: PlanFeatureAssignmentComponent },
+      { path: 'usersubscriptionmonitoring', component: UserSubscriptionMonitoringComponent },
+      { path: 'subscriptionreports', component: SubscriptionReportsComponent },
 
       // ACCOUNTPLAN
       { path: 'featuresplan', component: FeaturesPlanListComponent },

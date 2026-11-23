@@ -1,0 +1,11 @@
+<ng-container *ngIf="visible">
+  <button *ngIf="variant === 'icon'" type="button" mat-icon-button class="blk-icon" (click)="onClick($event)"
+    [disabled]="busy" [matTooltip]="'Block ' + name" [attr.aria-label]="'Block ' + name">
+    <mat-icon>block</mat-icon>
+  </button>
+
+  <button *ngIf="variant === 'button'" type="button" mat-stroked-button color="warn" class="blk-btn"
+    (click)="onClick($event)" [disabled]="busy" [attr.aria-label]="'Block ' + name">
+    <mat-icon>block</mat-icon> Block
+  </button>
+</ng-container>

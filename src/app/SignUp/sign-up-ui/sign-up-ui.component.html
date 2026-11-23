@@ -8,17 +8,25 @@
   </div>
 
   <div class="register-container">
-    <mat-card class="register-card">
+    <div class="register-card">
       <div class="left-panel">
         <app-app-logo></app-app-logo>
       </div>
       <mat-divider></mat-divider>
-      <mat-card-content>
+      <div class="register-body">
         <mat-tab-group dynamicHeight>
           <mat-tab label="Individual Sign-up">
+            <div class="role-banner" role="note" data-testid="role-individual">
+              <mat-icon aria-hidden="true">{{ accountTypes.individual.icon }}</mat-icon>
+              <div class="role-text">
+                <strong>{{ accountTypes.individual.title }}</strong>
+                <span>{{ accountTypes.individual.blurb }}</span>
+              </div>
+              <code class="role-code" title="Role assigned to this account">{{ accountTypes.individual.role }}</code>
+            </div>
             <form [formGroup]="userForm" (ngSubmit)="onSubmitIndividual()">
               <div class="row">
-                <div class="col-6">
+                <div class="col-12 col-md-6">
                   <mat-form-field appearance="standard" class="form-field">
                     <mat-label>Your Profession</mat-label>
                     <mat-icon matPrefix class="aligned-icon">work</mat-icon>
@@ -29,7 +37,7 @@
                   </mat-form-field>
                 </div>
 
-                <div class="col-6">
+                <div class="col-12 col-md-6">
                   <mat-form-field appearance="standard" class="form-field">
                     <mat-icon matPrefix class="aligned-icon">straighten</mat-icon>
                     <mat-label>Your Age:</mat-label>
@@ -44,14 +52,14 @@
 
               <!-- Firstname and Family Name Fields -->
               <div class="row">
-                <div class="col-6">
+                <div class="col-12 col-md-6">
                   <mat-form-field class="form-field" appearance="standard">
                     <mat-icon matPrefix class="aligned-icon">person</mat-icon>
                     <mat-label>First Name</mat-label>
                     <input matInput formControlName="fname" required>
                   </mat-form-field>
                 </div>
-                <div class="col-6">
+                <div class="col-12 col-md-6">
                   <mat-form-field class="form-field" appearance="standard">
                     <mat-icon matPrefix class="aligned-icon">person</mat-icon>
                     <mat-label>Family Name</mat-label>
@@ -63,34 +71,33 @@
 
               <!-- Password and Confirm Password Fields -->
               <div class="row">
-                <div class="col-6">
+                <div class="col-12 col-md-6">
                   <mat-form-field class="form-field" appearance="standard">
                     <mat-icon matPrefix class="aligned-icon">email</mat-icon>
                     <mat-label>Email:</mat-label>
                     <input matInput type="email" formControlName="email" required>
                   </mat-form-field>
                 </div>
-                <div class="col-6 contact-group">
-                  <mat-form-field appearance="standard" class="country-field">
-                    <mat-icon matPrefix class="aligned-icon">flag</mat-icon>
-                    <mat-label>Code</mat-label>
-                    <mat-select formControlName="countryCode" required>
-                      <mat-option *ngFor="let country of countryCodes" [value]="country.code">
-                        {{ country.code }} <!-- Display country name and code -->
-                      </mat-option>
-                    </mat-select>
-                  </mat-form-field>
-                  <mat-form-field class="phone-field" appearance="standard">
-                    <mat-icon matPrefix class="aligned-icon">phone</mat-icon>
-                    <mat-label>Contact Number</mat-label>
-                    <input matInput type="text" formControlName="contactno" required>
-                  </mat-form-field>
-                </div>
+                  <div class="col-12 col-md-6 contact-group">
+                    <mat-form-field appearance="standard" class="country-field">
+                      <mat-icon matPrefix class="aligned-icon">flag</mat-icon>
+                      <mat-label>Code</mat-label>
+                      <mat-select formControlName="countryCode" required>
+                        <mat-option *ngFor="let country of countryCodes" [value]="country.code">
+                          {{ country.code }} <!-- Display country name and code -->
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                    <mat-form-field class="phone-field" appearance="standard">
+                      <mat-icon matPrefix class="aligned-icon">phone</mat-icon>
+                      <mat-label>Contact Number</mat-label>
+                      <input matInput type="text" formControlName="contactno" required>
+                    </mat-form-field>
+                  </div>
               </div>
 
-
               <div class="row">
-                <div class="col-6">
+                <div class="col-12 col-md-6">
                   <mat-form-field appearance="standard" class="form-field">
                     <mat-label>Password</mat-label>
                     <mat-icon class="aligned-icon" matPrefix>lock</mat-icon>
@@ -111,12 +118,13 @@
                     </mat-error>
                   </mat-form-field>
                 </div>
-                <div class="col-6">
+                <div class="col-12 col-md-6">
                   <mat-form-field class="form-field" appearance="standard">
                     <mat-icon matPrefix class="aligned-icon">lock</mat-icon>
                     <mat-label>Confirm Password</mat-label>
-                    <input matInput [type]="passwordVisible ? 'text' : 'password'" formControlName="password_confirmation"
-                      required pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$">
+                    <input matInput [type]="passwordVisible ? 'text' : 'password'"
+                      formControlName="password_confirmation" required
+                      pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$">
 
                     <mat-icon matSuffix (click)="togglePasswordVisibility()" style="cursor: pointer;">
                       {{ passwordVisible ? 'visibility_off' : 'visibility' }}
@@ -160,18 +168,26 @@
           <!-- COMPANY SIGN-UP -->
 
           <mat-tab label="Company Sign-up">
+            <div class="role-banner" role="note" data-testid="role-company">
+              <mat-icon aria-hidden="true">{{ accountTypes.company.icon }}</mat-icon>
+              <div class="role-text">
+                <strong>{{ accountTypes.company.title }}</strong>
+                <span>{{ accountTypes.company.blurb }}</span>
+              </div>
+              <code class="role-code" title="Role assigned to this account">{{ accountTypes.company.role }}</code>
+            </div>
             <div class="example-large-box mat-elevation-z4">
               <form [formGroup]="companyForm" (ngSubmit)="onSubmitCompany()">
 
                 <div class="row">
-                  <div class="col-6">
+                  <div class="col-12 col-md-6">
                     <mat-form-field class="form-field" appearance="standard">
                       <mat-icon matPrefix class="aligned-icon">business</mat-icon>
                       <mat-label>Company Name</mat-label>
                       <input matInput formControlName="company" required>
                     </mat-form-field>
                   </div>
-                  <div class="col-6">
+                  <div class="col-12 col-md-6">
                     <mat-form-field class="form-field" appearance="standard">
                       <mat-icon matPrefix class="aligned-icon">language</mat-icon>
                       <mat-label>Company's Website:</mat-label>
@@ -187,7 +203,7 @@
                 </div>
 
                 <div class="row">
-                  <div class="col-6">
+                  <div class="col-12 col-md-6">
                     <mat-form-field class="form-field" appearance="standard">
                       <mat-icon matPrefix class="aligned-icon">business</mat-icon>
                       <mat-label>Company Industry:</mat-label>
@@ -198,7 +214,7 @@
                       </mat-select>
                     </mat-form-field>
                   </div>
-                  <div class="col-6">
+                  <div class="col-12 col-md-6">
                     <mat-form-field class="form-field" appearance="standard">
                       <mat-icon matPrefix class="aligned-icon">work</mat-icon>
                       <mat-label>Your Designation</mat-label>
@@ -209,14 +225,14 @@
 
                 <!-- Firstname and Family Name Fields -->
                 <div class="row">
-                  <div class="col-6">
+                  <div class="col-12 col-md-6">
                     <mat-form-field class="form-field" appearance="standard">
                       <mat-icon matPrefix class="aligned-icon">person</mat-icon>
                       <mat-label>First Name</mat-label>
                       <input matInput formControlName="fname" required>
                     </mat-form-field>
                   </div>
-                  <div class="col-6">
+                  <div class="col-12 col-md-6">
                     <mat-form-field class="form-field" appearance="standard">
                       <mat-icon matPrefix class="aligned-icon">person</mat-icon>
                       <mat-label>Family Name</mat-label>
@@ -227,14 +243,14 @@
 
 
                 <div class="row">
-                  <div class="col-6">
+                  <div class="col-12 col-md-6">
                     <mat-form-field class="form-field" appearance="standard">
                       <mat-icon matPrefix class="aligned-icon">email</mat-icon>
                       <mat-label>Email:</mat-label>
                       <input matInput type="email" formControlName="email" required>
                     </mat-form-field>
                   </div>
-                  <div class="col-6 contact-group">
+                  <div class="col-12 col-md-6 contact-group">
                     <mat-form-field appearance="standard" class="country-field">
                       <mat-icon matPrefix class="aligned-icon">flag</mat-icon>
                       <mat-label>Code</mat-label>
@@ -252,7 +268,7 @@
                   </div>
                 </div>
                 <div class="row">
-                  <div class="col-6">
+                  <div class="col-12 col-md-6">
                     <mat-form-field appearance="standard" class="form-field">
                       <mat-label>Password</mat-label>
                       <mat-icon class="aligned-icon" matPrefix>lock</mat-icon>
@@ -268,12 +284,13 @@
                         Password is required.
                       </mat-error>
                       <mat-error *ngIf="userForm.get('password')?.hasError('pattern')">
-                        Password must be at least 8 characters long, include uppercase, lowercase, a number, and a special
+                        Password must be at least 8 characters long, include uppercase, lowercase, a number, and a
+                        special
                         character.
                       </mat-error>
                     </mat-form-field>
                   </div>
-                  <div class="col-6">
+                  <div class="col-12 col-md-6">
                     <mat-form-field class="form-field" appearance="standard">
                       <mat-icon matPrefix class="aligned-icon">lock</mat-icon>
                       <mat-label>Confirm Password</mat-label>
@@ -289,7 +306,8 @@
                         Confirm Password is required.
                       </mat-error>
                       <mat-error *ngIf="userForm.get('password_confirmation')?.hasError('pattern')">
-                        Confirm Password must be at least 8 characters long, include uppercase, lowercase, a number, and a
+                        Confirm Password must be at least 8 characters long, include uppercase, lowercase, a number, and
+                        a
                         special character.
                       </mat-error>
 
@@ -323,7 +341,7 @@
         </mat-tab-group>
 
 
-      </mat-card-content>
+      </div>
       <div class="links">
         <a routerLink="/signin">Already have an account? Sign in</a><br>
         <a routerLink="/">Back to home</a>
@@ -332,6 +350,6 @@
             <span class="material-symbols-outlined" style="color:  #007bff;">keyboard_return</span>
             Back to home
           </button> -->
-    </mat-card>
+    </div>
   </div>
 </div>

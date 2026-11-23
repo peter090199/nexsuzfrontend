@@ -460,6 +460,12 @@ export class PeopleandCompanyComponent implements OnInit {
   people: any[] = [];
   peopleRecentActivity: any[] = [];
   currentUserCode: string = '';
+
+  /** after blocking someone, take them out of the lists on this screen at once */
+  removeBlocked(code: any): void {
+    this.people = (this.people || []).filter((p: any) => String(p.code) !== String(code));
+    this.peopleRecentActivity = (this.peopleRecentActivity || []).filter((p: any) => String(p.code) !== String(code));
+  }
   cnt: number = 0;
   isLoading = false;
   page = 1;

@@ -1,0 +1,13 @@
+<div class="nx" [ngClass]="'m-' + mode" role="status" aria-live="polite" [attr.aria-label]="text || 'Loading'">
+  <div class="nx-glow" *ngIf="mode === 'overlay'" aria-hidden="true"></div>
+  <div class="nx-box">
+    <span class="nx-badge" aria-hidden="true">
+      <span class="nx-ring"></span>
+      <img src="assets/images/logo.png" alt="">
+    </span>
+    <span class="nx-word" *ngIf="mode === 'overlay'" aria-hidden="true">NEXSUZ</span>
+    <span class="nx-text" *ngIf="text">{{ text }}</span>
+    <span class="nx-hint" *ngIf="hint">{{ hint }}</span>
+    <span class="nx-bar" *ngIf="mode === 'overlay'" aria-hidden="true"><i></i></span>
+  </div>
+</div>

@@ -1,3 +1,4 @@
+import { FEATURE } from 'src/app/services/AccountPlan/feature-access.map';
 import {
   Component,
   EventEmitter,
@@ -22,6 +23,8 @@ import { AllSuggestionsModalComponent } from './all-suggestions-modal/all-sugges
   styleUrls: ['./networking.component.css']
 })
 export class NetworkingComponent implements OnInit, OnChanges {
+  /** feature codes for the template */
+  readonly FEATURE = FEATURE;
    people = [
     { name: 'Ana Santos', title: 'Frontend Developer', mutuals: 5, following: false },
     { name: 'Mark Reyes', title: 'Project Manager', mutuals: 3, following: true },

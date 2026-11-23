@@ -1,21 +1,61 @@
-<mat-toolbar class="profile-toolbar">
-  <!-- <button mat-button *ngIf="profiles" (click)="clickToBack()">
-    <mat-icon>arrow_back</mat-icon>
-  </button> -->
-  <span class="profile-title slide-left">{{ profileTitle }}</span>
+<!-- The master admin chose "upload a CV / resume only" (Settings): only the upload is shown, no CV form -->
+<section class="cvu" *ngIf="cvModeLoaded && cvUploadOnly" data-testid="cv-upload-only">
+  <header class="cvu-head">
+    <span class="cv-eyebrow">Your CV</span>
+    <h1>Upload your CV or resume</h1>
+    <p>Add a PDF of your CV or resume. Your default one is sent automatically when you apply for a job.</p>
+  </header>
+
+  <section class="setup-banner" *ngIf="setup && setup.applies && !setup.complete" role="status" aria-live="polite">
+    <mat-icon class="setup-icon" aria-hidden="true">assignment_ind</mat-icon>
+    <div class="setup-text">
+      <strong>Upload your CV or resume first</strong>
+      <p>Upload one PDF to unlock jobs, messages, your network and the rest of Nexsuz. Until then this is the only page you can open.</p>
+    </div>
+  </section>
+
+  <section class="cvu-done" *ngIf="setup && setup.complete" role="status" aria-live="polite">
+    <mat-icon aria-hidden="true">check_circle</mat-icon>
+    <div><strong>You're all set</strong><span>You have a CV on your account.</span></div>
+    <button mat-flat-button color="primary" type="button" (click)="goHome()">Continue to Nexsuz</button>
+  </section>
+
+  <app-resume-manager (changed)="onResumesChanged()"></app-resume-manager>
+</section>
+
+<header class="cv-hero" [style.display]="builderHidden ? 'none' : null">
+  <div class="cv-hero-text">
+    <span class="cv-eyebrow">Your CV &middot; Step {{ currentStep + 1 }} of {{ stepShort.length }}</span>
+    <h1 class="cv-title slide-left">{{ profileTitle }}</h1>
+  </div>
   <button mat-stroked-button type="button" class="toolbar-btn" (click)="previewAndFinish()" aria-label="Preview, print or download my CV">
     <mat-icon>description</mat-icon><span class="toolbar-btn-label">View CV</span>
   </button>
-</mat-toolbar>
+  <div class="cv-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="progressPct"
+    [attr.aria-label]="'CV step ' + (currentStep + 1) + ' of ' + stepShort.length"><span [style.width.%]="progressPct"></span></div>
+</header>
 
-<div class="stepper-container">
+<!-- Job seekers must finish their CV before the rest of Nexsuz opens (the route guard enforces it) -->
+<section class="setup-banner" *ngIf="setup && setup.applies && !setup.complete && !builderHidden" role="status" aria-live="polite" data-testid="cv-setup-banner">
+  <mat-icon class="setup-icon" aria-hidden="true">assignment_ind</mat-icon>
+  <div class="setup-text">
+    <strong>Set up your CV first</strong>
+    <p>Welcome to Nexsuz! Finish your CV to unlock jobs, messages, your network and the rest of the app. Until then this is the only page you can open.</p>
+    <p class="setup-missing">
+      Still needed:
+      <span class="chip" *ngFor="let m of setup.missing">{{ m }}</span>
+    </p>
+  </div>
+</section>
+
+<div class="stepper-container" [style.display]="builderHidden ? 'none' : null">
 
   <mat-horizontal-stepper [linear]="true" #stepper (selectionChange)="onStepChange($event)">
 
     <!-- Step 1: Basic Information -->
     <mat-step [stepControl]="firstFormGroup">
       <form [formGroup]="firstFormGroup" (ngSubmit)="saveStep(1)" novalidate>
-        <ng-template matStepLabel>{{ stepLabels[0] }}</ng-template>
+        <ng-template matStepLabel>{{ stepShort[0] }}</ng-template>
 
         <div class="profile-container">
 
@@ -123,7 +163,7 @@
     <!-- Step 2: Location Details -->
     <mat-step [stepControl]="secondFormGroup">
       <form [formGroup]="secondFormGroup" (ngSubmit)="saveStep(2)" novalidate>
-        <ng-template matStepLabel>{{ stepLabels[1] }}</ng-template>
+        <ng-template matStepLabel>{{ stepShort[1] }}</ng-template>
         <div class="profile-container">
           <mat-divider></mat-divider>
 
@@ -180,7 +220,7 @@
     <!-- Summary -->
     <mat-step [stepControl]="summaryFormGroup">
       <form [formGroup]="summaryFormGroup" (ngSubmit)="saveStep(3)" novalidate>
-        <ng-template matStepLabel>{{ stepLabels[2] }}</ng-template>
+        <ng-template matStepLabel>{{ stepShort[2] }}</ng-template>
         <div class="profile-container">
           <mat-divider></mat-divider>
 
@@ -207,7 +247,7 @@
     <!-- Step 3: ARRAY-->
     <mat-step [stepControl]="thirdFormGroup">
       <form [formGroup]="thirdFormGroup">
-        <ng-template matStepLabel>{{ stepLabels[3] }}</ng-template>
+        <ng-template matStepLabel>{{ stepShort[3] }}</ng-template>
         <div class="profile-container">
           <mat-divider></mat-divider>
 
@@ -461,14 +501,6 @@
       <!-- <a routerLink="/home">Back to home</a> -->
       <div class="footer-right">
         <span>Terms & Conditions | Privacy Policy</span>
-      </div>
-    </div>
-
-    <!-- Progress Bar with Number Display -->
-    <div class="progress-bar-container">
-      <mat-progress-bar mode="determinate" [value]="progressValue"></mat-progress-bar>
-      <div class="progress-number">
-        <span>{{ progressValue === 100 ? 'Completed' : progressValue + '%' }}</span>
       </div>
     </div>
   </footer>

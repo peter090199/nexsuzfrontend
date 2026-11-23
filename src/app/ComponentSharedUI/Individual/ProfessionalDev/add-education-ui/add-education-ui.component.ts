@@ -96,7 +96,6 @@ submitForm(): void {
   }
    const payload = { educations: this.educationForm.value.education };
 
-  console.log(payload)
   this.educationService.saveEducations(payload).subscribe({
     next: (res) => {
       if(res.success == true)

@@ -19,7 +19,7 @@
                 Feature ID
             </mat-header-cell>
 
-            <mat-cell *matCellDef="let row">
+            <mat-cell *matCellDef="let row" data-label="Feature ID">
                 {{ row.fid }}
             </mat-cell>
         </ng-container>
@@ -29,7 +29,7 @@
                 Feature Name
             </mat-header-cell>
 
-            <mat-cell *matCellDef="let row">
+            <mat-cell *matCellDef="let row" data-label="Feature Name">
                 {{ row.feature_name }}
             </mat-cell>
         </ng-container>
@@ -39,7 +39,7 @@
                 Status
             </mat-header-cell>
 
-            <mat-cell *matCellDef="let row">
+            <mat-cell *matCellDef="let row" data-label="Status">
                 {{ row.recordStatus }}
             </mat-cell>
         </ng-container>

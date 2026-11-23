@@ -13,6 +13,7 @@ import { MatMenuTrigger } from '@angular/material/menu';
 import { UserResumeUIComponent } from 'src/app/ComponentSharedUI/Resume/user-resume-ui/user-resume-ui.component';
 import { ProfileService } from 'src/app/services/Profile/profile.service';
 import { SharedRoutinesService } from 'src/app/services/Function/shared-routines.service';
+import { CandidateReviewDialogComponent } from '../../Client/job-candidates/candidate-review-dialog.component';
 
 @Component({
   selector: 'app-list-applied-jobs',
@@ -74,7 +75,6 @@ export class ListAppliedJobsComponent implements OnInit, AfterViewInit {
     @Optional() private dialogRef: MatDialogRef<ListAppliedJobsComponent>
   ) {
     this.transNo = data.transNo;
-    console.log(this.transNo)
   }
 
   columnDefs = [
@@ -205,7 +205,6 @@ export class ListAppliedJobsComponent implements OnInit, AfterViewInit {
 
 
   deleteJob(job: any) {
-    console.log(job.transNo)
   }
 
   // markStatus(job: any, status: string) {
@@ -286,7 +285,6 @@ export class ListAppliedJobsComponent implements OnInit, AfterViewInit {
   }
 
   markFinished(job: any) {
-    console.log(job.transNo)
   }
 
   selectedJob: any = null;
@@ -308,14 +306,13 @@ export class ListAppliedJobsComponent implements OnInit, AfterViewInit {
 
   /** VIEW RESUME FUNCTION */
   openResumeDialog(resume: any): void {
-    const dialogRef = this.dialog.open(UserResumeUIComponent, {
-      width: '2000px',
-      data: resume
+    // the CV is opened through the secure review viewer (the old public file address no longer exists)
+    const dialogRef = this.dialog.open(CandidateReviewDialogComponent, {
+      width: '1040px', maxWidth: '100vw', height: '90vh', panelClass: 'cand-dialog', autoFocus: false,
+      data: { appliedId: resume?.applied_id, tab: 'cv' }
     });
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) this.getJobPosting();
-    });
+    dialogRef.afterClosed().subscribe(() => this.getJobPosting());
   }
 
 }

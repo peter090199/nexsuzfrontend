@@ -1,3 +1,46 @@
 .w-20 {
   width: 60px;
 }
+
+/* ---- Users table ---- */
+:host { display: block; font-family: Verdana, Geneva, Tahoma, sans-serif; }
+
+.search-div { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; }
+.w-role { width: 190px; }
+.w-status { width: 120px; }
+
+/* wide table scrolls sideways inside its own box instead of breaking the page on small screens */
+.table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; }
+.table-wrap mat-table { min-width: 1040px; }
+
+/* photo: a round button that opens the profile */
+.avatar-btn {
+  position: relative; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%;
+  background: transparent; cursor: pointer; flex: none;
+  transition: transform .15s ease, box-shadow .2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.avatar-btn:hover { transform: scale(1.06); box-shadow: 0 2px 10px rgba(0, 65, 130, .3); }
+.avatar-btn:focus-visible { outline: 3px solid rgba(10, 102, 194, .5); outline-offset: 2px; }
+
+.avatar-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .2); background: #eaf3fc; }
+.avatar-fallback {
+  width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #2d8cf0, #0a66c2); color: #fff; font-weight: 700; font-size: 15px; text-transform: uppercase;
+  border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .2); box-sizing: border-box;
+}
+.avatar-dot { position: absolute; right: 0; bottom: 0; width: 11px; height: 11px; border-radius: 50%; background: #b8c0cf; border: 2px solid #fff; }
+.avatar-dot.online { background: #1b8a4b; }
+
+/* status */
+.status-chip { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #e7f6ee; color: #1b8a4b; }
+.status-chip.inactive { background: #fdecea; color: #c62828; }
+.row-inactive { background: #fafbfd; }
+.row-inactive .mat-cell { color: #7a8599; }
+
+.act-btn { transition: background-color .2s ease; }
+
+@media (max-width: 600px) {
+  .w-role, .w-status { width: calc(50% - 8px); }
+  .avatar-btn { width: 48px; height: 48px; }
+}

@@ -1,5 +1,45 @@
-<h1 class="title">Choose Your Plan</h1>
-<p class="subtitle">Select the best plan that suits your needs.</p>
+<!-- Master admin toolbar (UI only: the API re-checks the role on every change) -->
+<div class="admin-bar" *ngIf="isMasterAdmin">
+  <div class="admin-bar-text">
+    <mat-icon>admin_panel_settings</mat-icon>
+    <div>
+      <strong>Plan management</strong>
+      <span>Edit plans, prices and features, enable or disable plans, set the Most Popular badge and change a user's plan.</span>
+    </div>
+  </div>
+  <div class="admin-links">
+    <a mat-stroked-button [routerLink]="['/' + sharedService.getRole(), 'subscriptionplans']"><mat-icon>workspace_premium</mat-icon> Plans</a>
+    <a mat-stroked-button [routerLink]="['/' + sharedService.getRole(), 'featuremanagement']"><mat-icon>extension</mat-icon> Features</a>
+    <a mat-stroked-button [routerLink]="['/' + sharedService.getRole(), 'planfeatureassignment']"><mat-icon>checklist</mat-icon> Assignment</a>
+    <a mat-stroked-button [routerLink]="['/' + sharedService.getRole(), 'usersubscriptionmonitoring']"><mat-icon>monitoring</mat-icon> Subscribers</a>
+    <a mat-stroked-button [routerLink]="['/' + sharedService.getRole(), 'subscriptionreports']"><mat-icon>insights</mat-icon> Reports</a>
+    <button mat-flat-button color="primary" type="button" (click)="openNewPlan()" [disabled]="isLoading">
+      <mat-icon>add</mat-icon> New plan
+    </button>
+  </div>
+</div>
+
+<!-- DEF-USERS / DEF-CLIENT: this account's current plan -->
+<section class="my-plan" *ngIf="!isMasterAdmin && canSubscribe && !isLoading && !loadFailed" aria-label="Your current plan">
+  <div class="my-plan-icon"><mat-icon>{{ sharedService.getRole() === 'DEF-CLIENT' ? 'business_center' : 'person' }}</mat-icon></div>
+  <div class="my-plan-text" *ngIf="currentPlan as cur; else noCurrent">
+    <small>Your current {{ audienceLabel | lowercase }} plan</small>
+    <strong>{{ cur.plan_name }}</strong>
+    <span>
+      {{ cur.price === 0 ? 'Free' : '₱' + (cur.price | number:'1.0-2') + ' / ' + (cur.billing === 'yearly' ? 'year' : 'month') }}
+      <ng-container *ngIf="cur.current_end"> · until {{ cur.current_end | date:'mediumDate' }}</ng-container>
+      · {{ includedCount(cur) }} features included
+    </span>
+  </div>
+  <ng-template #noCurrent>
+    <div class="my-plan-text">
+      <small>Your current {{ audienceLabel | lowercase }} plan</small>
+      <strong>No active plan yet</strong>
+      <span>Choose one of the {{ audienceLabel | lowercase }} plans below.</span>
+    </div>
+  </ng-template>
+  <span class="my-plan-chip"><mat-icon>verified</mat-icon> {{ audienceLabel }} plans</span>
+</section>
 
 <!-- Skeleton Loading -->
 <div class="plan-card" *ngIf="isLoading">
@@ -8,7 +48,7 @@
     <div class="skeleton skeleton-title"></div>
     <div class="skeleton skeleton-desc"></div>
     <div class="skeleton skeleton-price"></div>
-a
+
     <ul>
       <li *ngFor="let f of [1,2,3,4]">
         <div class="skeleton skeleton-feature"></div>
@@ -19,17 +59,47 @@ a
   </div>
 </div>
 
-<!-- Actual Content -->
-<div class="plan-card" *ngIf="!isLoading">
-  <div class="plan-box" *ngFor="let plan of plans" [ngClass]="plan.plan_name?.toLowerCase() + '-plan'">
+<!-- Could not load -->
+<div class="plans-state error" *ngIf="!isLoading && loadFailed" role="alert">
+  <mat-icon>error_outline</mat-icon>
+  <span>We couldn't load the plans. Please try again.</span>
+  <button mat-button type="button" (click)="loadPlans()">Retry</button>
+</div>
 
-    <div class="current-badge" *ngIf="plan.button_name === 'Current Plan'">
+<!-- Nothing published for this account type -->
+<div class="plans-state" *ngIf="!isLoading && !loadFailed && !plans.length" data-testid="no-plans">
+  <mat-icon>workspace_premium</mat-icon>
+  <div>
+    <strong>No plans are available for your account yet.</strong>
+    <span>{{ sharedService.getRole() === 'DEF-CLIENT' ? 'Recruiter plans have not been published.' : 'Plans have not been published.' }} Please check back soon.</span>
+  </div>
+</div>
+
+<!-- Actual Content -->
+<div class="plan-card" *ngIf="!isLoading && !loadFailed">
+  <div class="plan-box" *ngFor="let plan of plans; trackBy: trackByPlan"
+    [ngClass]="plan.plan_name?.toLowerCase() + '-plan'"
+    [class.is-popular]="plan.is_popular"
+    [class.is-current]="isCurrent(plan)"
+    [class.is-disabled]="!isEnabled(plan)">
+
+    <!-- Highlights -->
+    <div class="ribbon popular" *ngIf="plan.is_popular">
+      <mat-icon>star</mat-icon> Most Popular
+    </div>
+
+    <div class="current-badge" *ngIf="isCurrent(plan)">
       <mat-icon>verified</mat-icon>
       Current Plan
+      <small class="ends" *ngIf="plan.current_end">until {{ plan.current_end | date:'mediumDate' }}</small>
     </div>
-    
+
+    <div class="disabled-badge" *ngIf="isMasterAdmin && !isEnabled(plan)">
+      <mat-icon>visibility_off</mat-icon> Disabled
+    </div>
+
     <div class="plan-header">
-      <span class="plan-badge" [ngClass]="plan.button_color">
+      <span class="plan-badge" [ngClass]="plan.button_color" *ngIf="!plan.is_popular">
         {{ plan.tag }}
       </span>
 
@@ -38,28 +108,71 @@ a
     </div>
     <div class="price-card">
       <span class="currency">₱</span>
-      <span class="amount">{{ plan.price }}</span>
-      <span class="month">/{{ plan.tagmonthYear }}</span>
+      <span class="amount">{{ plan.price | number:'1.0-2' }}</span>
+      <span class="month">/{{ (plan.tagmonthYear || 'Monthly') === 'Yearly' ? 'year' : 'month' }}</span>
     </div>
 
     <mat-divider></mat-divider>
+    <p class="included-count" *ngIf="!isMasterAdmin && includedCount(plan)">{{ includedCount(plan) }} features included</p>
     <div class="feature-list">
-      <div class="feature" *ngFor="let f of planFeatures?.[plan.planId]">
-        <mat-icon color="primary">check_circle</mat-icon>
-        <span>{{ f.feature_name }}</span>
+      <div class="feature" *ngFor="let f of featureRows(plan)" [class.na]="!f.included">
+        <mat-icon [color]="f.included ? 'primary' : null">{{ f.included ? 'check_circle' : 'remove_circle_outline' }}</mat-icon>
+        <span>{{ f.name }}<b class="detail" *ngIf="f.detail"> · {{ f.detail }}</b></span>
       </div>
+      <p class="no-features" *ngIf="!featureRows(plan).length">No features added yet.</p>
     </div>
+    <button type="button" class="more-btn" *ngIf="hasMissing(plan)" (click)="toggleMissing(plan.planId)">
+      {{ showMissing[plan.planId] ? 'Hide features not included' : 'Show features not included' }}
+      <mat-icon>{{ showMissing[plan.planId] ? 'expand_less' : 'expand_more' }}</mat-icon>
+    </button>
 
-    <button mat-raised-button [color]="plan.button_color || 'primary'" [disabled]="plan.disabled"
+    <!-- Regular users: checkout -->
+    <button mat-raised-button *ngIf="!isMasterAdmin && canSubscribe" [color]="plan.button_color || 'primary'" [disabled]="plan.disabled || plan.is_current"
       (click)="goToCheckout(plan)">
-      <mat-icon [ngSwitch]="plan.button_name">
+      <mat-icon [ngSwitch]="buttonLabel(plan)">
         <ng-container *ngSwitchCase="'Current Plan'">verified</ng-container>
         <ng-container *ngSwitchCase="'Downgrade'">lock</ng-container>
         <ng-container *ngSwitchDefault>workspace_premium</ng-container>
       </mat-icon>
 
-      {{ plan.button_name }}
+      {{ buttonLabel(plan) }}
     </button>
+
+    <!-- DEF-MASTERADMIN: manage this plan -->
+    <div class="admin-actions" *ngIf="isMasterAdmin">
+      <div class="admin-meta">
+        <span class="status-chip" [class.off]="!isEnabled(plan)">
+          <mat-icon>{{ isEnabled(plan) ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+          {{ isEnabled(plan) ? 'Enabled' : 'Disabled' }}
+        </span>
+        <span class="sub-chip" matTooltip="Active subscribers on this plan">
+          <mat-icon>group</mat-icon> {{ plan.subscribers || 0 }} active
+        </span>
+      </div>
+
+      <div class="admin-buttons">
+        <button mat-stroked-button color="primary" type="button" (click)="editPlan(plan)" [disabled]="busyId === plan.planId">
+          <mat-icon>edit</mat-icon> Edit plan
+        </button>
+        <button mat-stroked-button type="button" (click)="editFeatures(plan)" [disabled]="busyId === plan.planId">
+          <mat-icon>checklist</mat-icon> Features
+        </button>
+        <button mat-stroked-button type="button" (click)="makePopular(plan)"
+          [disabled]="plan.is_popular || busyId === plan.planId">
+          <mat-icon>star</mat-icon> {{ plan.is_popular ? 'Most Popular' : 'Make popular' }}
+        </button>
+        <button mat-stroked-button type="button" (click)="assignToUser(plan)"
+          [disabled]="!isEnabled(plan) || busyId === plan.planId">
+          <mat-icon>swap_horiz</mat-icon> Assign to user
+        </button>
+        <button mat-stroked-button [color]="isEnabled(plan) ? 'warn' : 'primary'" type="button"
+          class="span-2" (click)="toggleStatus(plan)" [disabled]="busyId === plan.planId">
+          <mat-spinner *ngIf="busyId === plan.planId" diameter="18"></mat-spinner>
+          <mat-icon *ngIf="busyId !== plan.planId">{{ isEnabled(plan) ? 'block' : 'check_circle' }}</mat-icon>
+          {{ isEnabled(plan) ? 'Disable plan' : 'Enable plan' }}
+        </button>
+      </div>
+    </div>
 
   </div>
 </div>

@@ -1,138 +1,114 @@
-<div class="section">
+<div class="cp-page">
 
-  <!-- Cover Photo -->
-  <div class="cover-photo-container">
-    <img [src]="profiles?.coverphoto" alt="Cover Photo" class="cover-photo-img" />
-  </div>
+  <!-- ============ HERO ============ -->
+  <section class="cp-hero">
+    <div class="cp-cover" [class.no-image]="!profiles?.coverphoto">
+      <img *ngIf="profiles?.coverphoto" [src]="profiles.coverphoto" alt="Company cover photo" />
+    </div>
 
-  <!-- Profile Info -->
-  <div *ngIf="!isloading; else profileSkeleton" class="profile-details">
-    <div class="profile-info" *ngIf="profiles">
-      <div class="profile-picture">
-        <div class="avatar-container">
-          <img class="profile-img" [src]="profiles?.photo_pic || 'assets/images/default.png'" alt="Profile" />
-          <mat-icon class="status-icon online">circle</mat-icon>
-        </div>
+    <div class="cp-hero-body" *ngIf="!profileLoading && profiles; else heroSkeleton">
+      <div class="cp-logo-wrap">
+        <img class="cp-logo" [src]="profiles.photo_pic || 'assets/images/default.png'" [alt]="profiles.fullname + ' logo'" />
       </div>
 
-      <h1>
-        {{ profiles.fullname }}
-        <small>{{ profiles.current_location }}</small>
-      </h1>
+      <div class="cp-identity">
+        <h1 class="cp-name">{{ profiles.company || profiles.fullname }}</h1>
+        <p class="cp-tagline" *ngIf="profiles.profession">{{ profiles.profession }}</p>
 
-      <p>{{ profiles.followers }} followers · {{ profiles.following }} following</p>
+        <div class="cp-chips">
+          <span class="cp-chip" *ngIf="profiles.industry"><mat-icon>category</mat-icon>{{ profiles.industry }}</span>
+          <span class="cp-chip" *ngIf="profiles.companysize"><mat-icon>groups</mat-icon>{{ profiles.companysize }} employees</span>
+          <span class="cp-chip" *ngIf="profiles.current_location"><mat-icon>place</mat-icon>{{ profiles.current_location }}</span>
+          <span class="cp-chip role" *ngIf="isAdminViewer"><mat-icon>badge</mat-icon>Recruiter account · #{{ currentUserCode }}</span>
+        </div>
 
-      <div class="button-gap">
-        <button mat-flat-button *ngIf="currentUserCode !== ownCode" [color]="
-      followStatus === 'accepted'
-        ? 'accent'
-        : followStatus === 'pending'
-        ? 'warn'
-        : 'primary'
-        " [disabled]="followStatus === 'pending'" (click)="
-         feature.can('NETWORK_FEED')
-        ? AddFollow(currentUserCode, followStatus, profiles.fname, profiles.lname)
-        : sharedRoutines.openUpgradeModal()
-          ">
-          <mat-icon *ngIf="followStatus === 'none' || followStatus === 'cancelled'">
-            person_add
-          </mat-icon>
+        <p class="cp-follow-line">
+          <b>{{ profiles.followers || 0 }}</b> followers <span aria-hidden="true">·</span> <b>{{ profiles.following || 0 }}</b> following
+        </p>
+      </div>
 
-          <mat-icon *ngIf="followStatus === 'pending'" class="hourglass-animated">
-            hourglass_top
-          </mat-icon>
-
-          <mat-icon *ngIf="followStatus === 'accepted'">
-            check_circle
-          </mat-icon>
-
+      <div class="cp-actions" *ngIf="ownCodeKnown && currentUserCode != ownCode">
+        <button mat-flat-button class="cp-connect" *ngIf="!isAdminViewer"
+          [color]="followStatus === 'accepted' ? 'accent' : followStatus === 'pending' ? 'warn' : 'primary'"
+          [disabled]="followStatus === 'pending'"
+          (click)="feature.can('NETWORK_FEED') ? AddFollow(currentUserCode, followStatus, profiles.fname, profiles.lname) : sharedRoutines.openUpgradeModal()">
+          <mat-icon *ngIf="followStatus === 'none' || followStatus === 'cancelled'">person_add</mat-icon>
+          <mat-icon *ngIf="followStatus === 'pending'" class="hourglass-animated">hourglass_top</mat-icon>
+          <mat-icon *ngIf="followStatus === 'accepted'">check_circle</mat-icon>
           <ng-container [ngSwitch]="followStatus">
-            <span *ngSwitchCase="'none'">Connect</span>
             <span *ngSwitchCase="'pending'">Pending</span>
             <span *ngSwitchCase="'accepted'">Connected</span>
-            <span *ngSwitchCase="'cancelled'">Connect</span>
+            <span *ngSwitchDefault>Connect</span>
           </ng-container>
         </button>
+        <a mat-stroked-button class="cp-visit" *ngIf="websiteUrl" [href]="websiteUrl" target="_blank" rel="noopener noreferrer">
+          <mat-icon>open_in_new</mat-icon> Website
+        </a>
+        <app-block-button *ngIf="!isAdminViewer" [role]="profiles?.role_code" [code]="currentUserCode"
+          [name]="(profiles?.fname || '') + ' ' + (profiles?.lname || '')" variant="button" (blocked)="onBlocked()"></app-block-button>
       </div>
-
     </div>
+
+    <ng-template #heroSkeleton>
+      <div class="cp-hero-body">
+        <div class="cp-logo-wrap"><div class="skeleton cp-logo"></div></div>
+        <div class="cp-identity">
+          <div class="skeleton sk-line" style="width:45%;height:26px"></div>
+          <div class="skeleton sk-line" style="width:30%"></div>
+          <div class="skeleton sk-line" style="width:60%"></div>
+        </div>
+      </div>
+    </ng-template>
+  </section>
+
+  <!-- ============ NOT FOUND ============ -->
+  <div class="cp-empty" *ngIf="!profileLoading && !profiles && loaded">
+    <mat-icon>business_center</mat-icon>
+    <strong>This company profile isn't available.</strong>
+    <span>It may have been removed, or you don't have access to it.</span>
   </div>
 
-  <!-- Skeleton Loader -->
-  <ng-template #profileSkeleton>
-    <div class="profile-skeleton">
-      <div class="skeleton skeleton-avatar"></div>
-      <div class="skeleton skeleton-text" style="width:40%"></div>
-      <div class="skeleton skeleton-text" style="width:20%"></div>
-    </div>
-  </ng-template>
+  <!-- ============ TABS ============ -->
+  <mat-tab-group class="cp-tabs" animationDuration="150ms" *ngIf="profiles || profileLoading">
 
-  <!-- Tabs -->
-  <mat-tab-group>
+    <mat-tab label="Overview">
+      <div class="cp-overview">
 
-    <!-- HOME TAB -->
-    <mat-tab label="Home">
+        <article class="cp-card cp-about">
+          <h2><mat-icon>info</mat-icon> About</h2>
+          <p *ngIf="profiles?.about; else noAbout">{{ profiles.about }}</p>
+          <ng-template #noAbout><p class="muted">No company description available.</p></ng-template>
+        </article>
 
-      <!-- Home Skeleton Posts -->
-      <div *ngIf="isloading">
-        <mat-card class="post-box-container" *ngFor="let s of skeletonPosts">
-          <mat-card-header>
-            <div class="skeleton skeleton-avatar"></div>
-            <div class="skeleton skeleton-text" style="width: 50%"></div>
-          </mat-card-header>
-          <div class="skeleton skeleton-img"></div>
-          <div class="skeleton skeleton-text"></div>
-          <div class="skeleton skeleton-text" style="width: 70%"></div>
-        </mat-card>
+        <aside class="cp-card cp-facts">
+          <h2><mat-icon>apartment</mat-icon> Company details</h2>
+          <dl>
+            <div *ngIf="profiles?.industry"><dt>Industry</dt><dd>{{ profiles.industry }}</dd></div>
+            <div *ngIf="profiles?.companysize"><dt>Company size</dt><dd>{{ profiles.companysize }} employees</dd></div>
+            <div><dt>Headquarters</dt><dd>{{ profiles?.current_location || 'Not provided' }}</dd></div>
+            <div *ngIf="websiteUrl"><dt>Website</dt><dd><a [href]="websiteUrl" target="_blank" rel="noopener noreferrer">{{ profiles.companywebsite }}</a></dd></div>
+            <ng-container *ngIf="isAdminViewer">
+              <div *ngIf="profiles?.email"><dt>Email</dt><dd>{{ profiles.email }}</dd></div>
+              <div *ngIf="profiles?.contact_no"><dt>Contact</dt><dd>{{ profiles.contact_no }}</dd></div>
+            </ng-container>
+          </dl>
+        </aside>
+
       </div>
-      <section *ngIf="profiles" class="post-box-container">
-
-        <!-- Company Header -->
-        <div class="company-header">
-          <img class="company-logo" [src]="profiles.photo_pic || 'assets/images/default.png'" alt="Company Logo">
-
-          <div class="company-info">
-            <h1>{{ profiles.fullname }}</h1>
-            <small>{{ profiles.profession }}</small>
-            <p class="company-meta">
-              {{ profiles.industry }} · {{ profiles.companysize }} employees
-            </p>
-            <a class="company-website" [href]="profiles.companywebsite" target="_blank">
-              {{ profiles.companywebsite }}
-            </a>
-          </div>
-        </div>
-
-        <!-- About Section -->
-        <div class="about-section">
-          <h3>About</h3>
-          <p>{{ profiles.about || 'No company description available.' }}</p>
-        </div>
-
-        <mat-divider></mat-divider>
-
-        <!-- Location Section -->
-        <div class="location-section">
-          <h3>Headquarters</h3>
-          <p>{{ profiles.current_location || 'Location not provided' }}</p>
-        </div>
-
-      </section>
     </mat-tab>
 
-    <!-- POSTS TAB -->
-    <mat-tab label="Post">
-      <app-private-post></app-private-post>
+    <mat-tab label="Posts">
+      <div class="cp-tab-body"><app-private-post></app-private-post></div>
     </mat-tab>
 
-    <!-- JOBS TAB -->
     <mat-tab label="Jobs">
-      <app-jobs-client></app-jobs-client>
+      <div class="cp-tab-body"><app-jobs-client></app-jobs-client></div>
     </mat-tab>
 
-    <!-- PEOPLE TAB -->
     <mat-tab label="People">
-      <app-people></app-people>
+      <ng-template matTabContent>
+        <div class="cp-tab-body"><app-people [code]="currentUserCode"></app-people></div>
+      </ng-template>
     </mat-tab>
 
   </mat-tab-group>

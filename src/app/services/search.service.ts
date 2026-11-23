@@ -38,7 +38,6 @@ export class SearchService {
   setLoggedInUser(user: any) {
     if (user) {
       localStorage.setItem('loggedInUser', JSON.stringify(user));
-      console.log('User saved:', user);
     } else {
       console.error('Invalid user data.');
     }

@@ -1,0 +1,62 @@
+:host { display: grid; gap: 16px; min-width: 0; font-family: Verdana, Geneva, Tahoma, sans-serif; }
+
+.rm-card { border-radius: 14px !important; box-shadow: 0 4px 18px rgba(0, 65, 130, .07) !important; padding: clamp(16px, 2vw, 24px) !important; min-width: 0; }
+.rm-title { margin: 0 0 12px; font-size: 15px; color: #004182; }
+
+.rm-hero {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  background: linear-gradient(135deg, #0a66c2 0%, #4facfe 100%) !important; color: #fff;
+}
+.rm-hero-icon { width: 52px; height: 52px; flex: none; border-radius: 14px; background: rgba(255,255,255,.2); display: grid; place-items: center; }
+.rm-hero-icon mat-icon { font-size: 28px; width: 28px; height: 28px; }
+.rm-hero-text { flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.rm-hero-text strong { font-size: 18px; }
+.rm-hero-text span { font-size: 13px; opacity: .95; }
+.rm-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px 4px 8px; border-radius: 999px; background: rgba(255,255,255,.22); font-size: 12px; font-weight: 600; }
+.rm-chip mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+.rm-drop {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center;
+  padding: 28px 16px; border: 2px dashed #b9d3ee; border-radius: 14px; background: #f6faff; cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+.rm-drop:hover, .rm-drop.over { background: #eaf3fc; border-color: #0a66c2; }
+.rm-drop.disabled { opacity: .6; cursor: not-allowed; }
+.rm-drop mat-icon { font-size: 36px; width: 36px; height: 36px; color: #0a66c2; }
+.rm-drop strong { font-size: 14px; color: #004182; }
+.rm-drop span { font-size: 12px; color: #6b7a90; }
+
+.rm-state { display: flex; align-items: center; gap: 10px; color: #6b7a90; font-size: 13px; padding: 12px 0; }
+.rm-state.empty { flex-direction: column; text-align: center; padding: 24px 0; }
+.rm-state.empty mat-icon { font-size: 40px; width: 40px; height: 40px; opacity: .5; }
+.rm-state.empty strong { color: #1b2a4a; }
+
+.rm-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.rm-item { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 14px; border: 1px solid #e3eaf4; border-radius: 12px; background: #fff; }
+.rm-item.is-default { border-color: #0a66c2; background: #f6faff; }
+.rm-pdf { color: #c62828; flex: none; }
+.rm-meta { flex: 1 1 200px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.rm-meta strong { font-size: 14px; overflow-wrap: anywhere; }
+.rm-meta span { font-size: 12px; color: #6b7a90; }
+.rm-default { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px 3px 6px; border-radius: 999px; background: #fff4e0; color: #a86400; font-size: 12px; font-weight: 600; }
+.rm-default mat-icon { font-size: 16px; width: 16px; height: 16px; }
+.rm-actions { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-left: auto; }
+
+.rm-builder { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: #f6f9fd !important; box-shadow: none !important; border: 1px solid #e3eaf4; }
+.rm-builder-icon { font-size: 32px; width: 32px; height: 32px; color: #0a66c2; flex: none; }
+.rm-builder-text { flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.rm-builder-text span { color: #6b7a90; font-size: 12px; }
+
+@media (max-width: 600px) {
+  .rm-hero { padding: 16px !important; }
+  .rm-hero-text strong { font-size: 16px; }
+  .rm-chip { align-self: flex-start; }
+  .rm-drop { padding: 22px 12px; }
+  .rm-actions { width: 100%; margin-left: 0; justify-content: flex-end; }
+  .rm-builder button { width: 100%; }
+}
+
+.rm-pdf.word { color: #1565c0; }
+.rm-note { display: flex !important; align-items: center; gap: 4px; color: #a86400 !important; }
+.rm-note mat-icon { font-size: 14px; width: 14px; height: 14px; }
+.rm-import { display: inline-flex; align-items: center; gap: 4px; }

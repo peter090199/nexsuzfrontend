@@ -15,7 +15,16 @@ import { AuthService } from 'src/app/services/auth.service';
 export class ForgotPasswordUIComponent implements OnInit {
 
   isLoading: boolean = false;
+  emailSent = false;
+  sentTo = '';
   loginForm!: FormGroup;
+
+  get emailCtrl() { return this.loginForm.get('email'); }
+
+  sendAnother(): void {
+    this.emailSent = false;
+    this.progressValue = 0;
+  }
 
   constructor(
     private fb: FormBuilder,
@@ -49,7 +58,6 @@ export class ForgotPasswordUIComponent implements OnInit {
   // }
 
   requestCode() {
-    console.log(this.phone, this.code)
     this.auth.verifyCode(this.phone, this.code).subscribe({
       next: () => this.step = 'enter-code',
       error: (e: { error: { message: any; }; }) => alert(e.error.message)
@@ -82,7 +90,7 @@ export class ForgotPasswordUIComponent implements OnInit {
   intervalId: any;
 
   onSubmit() {
-    if (this.loginForm.valid) {
+    if (this.loginForm.valid && !this.isLoading) {
       this.isLoading = true;
       this.progressValue = 0;
 
@@ -99,6 +107,8 @@ export class ForgotPasswordUIComponent implements OnInit {
           clearInterval(this.intervalId);
           this.progressValue = 100;
           this.notificationsService.toastrSuccess(res.message);
+          this.sentTo = email;
+          this.emailSent = true;
           this.loginForm.reset();
           setTimeout(() => this.isLoading = false, 500); // short delay to complete bar
         },

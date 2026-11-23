@@ -1,0 +1,394 @@
+<div class="rv">
+
+  <!-- ============ header ============ -->
+  <header class="rv-head" *ngIf="a">
+    <span class="rv-avatar" aria-hidden="true">{{ initials(a.fullname) }}</span>
+    <div class="rv-who">
+      <h2>{{ a.fullname }}</h2>
+      <p>{{ a.job_name }} · applied {{ a.applied_at | date:'mediumDate' }}</p>
+    </div>
+    <span class="rv-pill" [ngClass]="'st-' + status"><mat-icon>{{ icon(status) }}</mat-icon>{{ label(status) }}</span>
+    <button mat-icon-button type="button" (click)="close()" aria-label="Close"><mat-icon>close</mat-icon></button>
+  </header>
+  <header class="rv-head" *ngIf="!a">
+    <h2>Candidate</h2><span class="spacer"></span>
+    <button mat-icon-button type="button" (click)="close()" aria-label="Close"><mat-icon>close</mat-icon></button>
+  </header>
+
+  <mat-progress-bar *ngIf="loading" mode="indeterminate"></mat-progress-bar>
+
+  <div class="rv-state" *ngIf="loadError" role="alert">
+    <mat-icon>error_outline</mat-icon><p>{{ loadError }}</p>
+    <button mat-stroked-button type="button" (click)="load(true)">Try again</button>
+  </div>
+
+  <mat-tab-group *ngIf="d" class="rv-tabs" [selectedIndex]="index" (selectedIndexChange)="onTabChange($event)" animationDuration="0ms" mat-stretch-tabs="false">
+
+    <!-- ===================== APPLICATION ===================== -->
+    <mat-tab label="Application">
+      <div class="pane">
+        <div class="grid2">
+          <section class="card">
+            <h3>Applicant</h3>
+            <dl class="kv">
+              <div><dt>Name</dt><dd>{{ a.fullname }}</dd></div>
+              <div><dt>Email</dt><dd><a [href]="'mailto:' + a.email">{{ a.email }}</a></dd></div>
+              <div><dt>Phone</dt><dd>{{ a.phone }}</dd></div>
+              <div *ngIf="cv?.personal?.location"><dt>Location</dt><dd>{{ cv.personal.location }}</dd></div>
+              <div *ngIf="cv?.personal?.profession"><dt>Profession</dt><dd>{{ cv.personal.profession }}</dd></div>
+              <div><dt>Applied</dt><dd>{{ a.applied_at | date:'medium' }}</dd></div>
+              <div><dt>Application no.</dt><dd>#{{ a.applied_id }} · {{ a.transNo }}</dd></div>
+            </dl>
+          </section>
+
+          <section class="card ai-mini">
+            <h3>AI evaluation</h3>
+            <ng-container *ngIf="d.evaluation as e; else noEval">
+              <div class="mini-score"><span class="ring" [ngClass]="scoreClass(e.score)" [style.--p]="e.score"><b>{{ e.score }}</b></span>
+                <div><strong>{{ e.recommendation_label }}</strong><small>{{ e.provider === 'anthropic' ? 'AI model: ' + e.model : 'Built-in rules engine' }} · {{ e.created_at | date:'short' }}</small></div></div>
+              <button mat-stroked-button type="button" (click)="index = 2">See the full evaluation</button>
+            </ng-container>
+            <ng-template #noEval>
+              <p class="muted">Not evaluated yet. The AI compares the CV and screening answers with the job and gives a recommendation. You always make the decision.</p>
+              <button mat-flat-button color="primary" type="button" (click)="runEvaluation()" [disabled]="evaluating"><mat-icon>auto_awesome</mat-icon> Evaluate with AI</button>
+            </ng-template>
+          </section>
+        </div>
+
+        <section class="card">
+          <h3>Screening answers <small>({{ d.answers.length }})</small></h3>
+          <p class="muted" *ngIf="!d.answers.length">This job has no screening questions.</p>
+          <ol class="qa" *ngIf="d.answers.length">
+            <li *ngFor="let q of d.answers; trackBy: trackIdx">
+              <div class="q">{{ q.question }}<span class="req" *ngIf="q.required"> *</span></div>
+              <div class="ans" [class.empty]="!q.answer">{{ q.answer || 'No answer' }}</div>
+            </li>
+          </ol>
+        </section>
+
+        <section class="card">
+          <h3>Move this candidate</h3>
+          <p class="muted">Every move is recorded. Approving or rejecting is always your decision and asks you to confirm.</p>
+          <div class="actions">
+            <button mat-stroked-button type="button" *ngIf="allowed.includes('review')" (click)="decide('review')"><mat-icon>hourglass_top</mat-icon> Under review</button>
+            <button mat-stroked-button type="button" *ngIf="allowed.includes('interview')" (click)="decide('interview')"><mat-icon>record_voice_over</mat-icon> Move to Interview</button>
+            <button mat-stroked-button type="button" *ngIf="status !== 'approved' && status !== 'reject'" (click)="index = 4; openSchedule()"><mat-icon>event</mat-icon> Schedule interview</button>
+            <button mat-flat-button color="primary" type="button" *ngIf="allowed.includes('approved')" (click)="decide('approved')"><mat-icon>check_circle</mat-icon> Approve</button>
+            <button mat-flat-button color="warn" type="button" *ngIf="allowed.includes('reject')" (click)="decide('reject')"><mat-icon>cancel</mat-icon> Reject</button>
+            <button mat-stroked-button type="button" *ngIf="allowed.includes('applied_active')" (click)="decide('applied_active')"><mat-icon>undo</mat-icon> Back to applied</button>
+          </div>
+        </section>
+      </div>
+    </mat-tab>
+
+    <!-- ===================== CV ===================== -->
+    <mat-tab label="CV">
+      <div class="pane cv">
+        <div class="cv-bar">
+          <div class="seg" role="tablist" aria-label="CV view">
+            <button type="button" role="tab" [class.on]="cvView === 'document'" (click)="cvView = 'document'"><mat-icon>picture_as_pdf</mat-icon> Document</button>
+            <button type="button" role="tab" [class.on]="cvView === 'details'" (click)="cvView = 'details'"><mat-icon>badge</mat-icon> Details</button>
+          </div>
+          <span class="spacer"></span>
+          <button mat-stroked-button type="button" (click)="downloadCv()" [disabled]="cvState !== 'ready'"><mat-icon>download</mat-icon><span class="lbl">Download</span></button>
+          <button mat-stroked-button type="button" (click)="printCv()" [disabled]="cvState !== 'ready'"><mat-icon>print</mat-icon><span class="lbl">Print</span></button>
+          <button mat-stroked-button type="button" (click)="shareCv()"><mat-icon>share</mat-icon><span class="lbl">Share</span></button>
+          <button mat-icon-button type="button" (click)="openCvTab()" [disabled]="cvState !== 'ready'" matTooltip="Open in a new tab" aria-label="Open in a new tab"><mat-icon>open_in_new</mat-icon></button>
+        </div>
+
+        <div class="cv-grid" [class.show-doc]="cvView === 'document'" [class.show-det]="cvView === 'details'">
+          <!-- the uploaded file -->
+          <div class="cv-doc">
+            <div class="rv-state" *ngIf="cvState === 'loading'"><mat-spinner diameter="30"></mat-spinner><p>Opening the CV…</p></div>
+            <div class="rv-state" *ngIf="cvState === 'none' || cvState === 'missing' || cvState === 'unsupported' || cvState === 'error'" role="status">
+              <mat-icon>{{ cvState === 'none' ? 'description' : 'report_problem' }}</mat-icon>
+              <p>{{ cvMessage }}</p>
+              <button mat-stroked-button type="button" *ngIf="cvState === 'error'" (click)="loadCv()">Try again</button>
+              <button mat-stroked-button type="button" *ngIf="cvState === 'unsupported'" (click)="downloadCv()">Download instead</button>
+              <button mat-stroked-button type="button" (click)="cvView = 'details'">See profile details</button>
+            </div>
+            <iframe id="cv-frame" *ngIf="cvState === 'ready' && cvUrl" [src]="cvUrl" title="Candidate CV"></iframe>
+          </div>
+
+          <!-- the profile behind it -->
+          <div class="cv-det">
+            <section class="card">
+              <h3>Personal information</h3>
+              <dl class="kv">
+                <div><dt>Name</dt><dd>{{ cv.personal.name }}</dd></div>
+                <div><dt>Email</dt><dd>{{ cv.personal.email }}</dd></div>
+                <div><dt>Phone</dt><dd>{{ cv.personal.phone }}</dd></div>
+                <div *ngIf="cv.personal.location"><dt>Location</dt><dd>{{ cv.personal.location }}</dd></div>
+                <div *ngIf="cv.personal.profession"><dt>Profession</dt><dd>{{ cv.personal.profession }}</dd></div>
+              </dl>
+            </section>
+            <section class="card">
+              <h3>Education</h3>
+              <p class="muted" *ngIf="!cv.education.length">No education listed.</p>
+              <ul class="tl"><li *ngFor="let e of cv.education; trackBy: trackIdx"><strong>{{ e.highest_education }}</strong><span>{{ e.school_name }}</span><small>{{ e.start_year }}<ng-container *ngIf="e.end_year"> – {{ e.end_year }}</ng-container></small></li></ul>
+            </section>
+            <section class="card">
+              <h3>Work experience</h3>
+              <p class="muted" *ngIf="!cv.experience.length">No work history listed.</p>
+              <ul class="tl"><li *ngFor="let e of cv.experience; trackBy: trackIdx"><strong>{{ e.position }}</strong><span>{{ e.company_name }}</span><small *ngIf="e.date_completed">until {{ e.date_completed | date:'MMM y' }}</small><p *ngIf="e.job_description">{{ e.job_description }}</p></li></ul>
+            </section>
+            <section class="card">
+              <h3>Skills</h3>
+              <p class="muted" *ngIf="!cv.skills.length">No skills listed.</p>
+              <div class="chips"><span *ngFor="let s of cv.skills; trackBy: trackIdx">{{ s }}</span></div>
+            </section>
+            <section class="card">
+              <h3>Certifications and training</h3>
+              <p class="muted" *ngIf="!cv.certifications.length && !cv.trainings.length">None listed.</p>
+              <ul class="tl">
+                <li *ngFor="let c of cv.certifications; trackBy: trackIdx"><strong>{{ c.certificate_title }}</strong><span>{{ c.certificate_provider }}</span><small *ngIf="c.date_completed">{{ c.date_completed | date:'MMM y' }}</small></li>
+                <li *ngFor="let t of cv.trainings; trackBy: trackIdx"><strong>{{ t.training_title }}</strong><span>{{ t.training_provider }} (training)</span><small *ngIf="t.date_completed">{{ t.date_completed | date:'MMM y' }}</small></li>
+              </ul>
+            </section>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- ===================== AI EVALUATION ===================== -->
+    <mat-tab label="AI evaluation">
+      <div class="pane">
+        <div class="ai-bar">
+          <button mat-flat-button color="primary" type="button" (click)="runEvaluation()" [disabled]="evaluating">
+            <mat-spinner *ngIf="evaluating" diameter="18"></mat-spinner><mat-icon *ngIf="!evaluating">auto_awesome</mat-icon>
+            {{ evals.length || d.evaluation ? 'Evaluate again' : 'Evaluate with AI' }}
+          </button>
+          <button mat-stroked-button type="button" (click)="openSettings()"><mat-icon>tune</mat-icon> Weights and criteria</button>
+          <mat-form-field appearance="outline" class="runs" *ngIf="evals.length > 1">
+            <mat-label>Evaluation run</mat-label>
+            <mat-select [value]="evalIndex" (selectionChange)="selectEval($event.value)">
+              <mat-option *ngFor="let e of evals; let i = index" [value]="i">{{ i === 0 ? 'Latest' : 'Earlier' }} · {{ e.score }}/100 · {{ e.created_at | date:'short' }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="advice" role="note"><mat-icon>verified_user</mat-icon>
+          <span>AI recommends, a person decides. It only looks at education, work history, skills and answers: never name, age, gender or any personal trait. It never accepts or rejects anyone.</span></div>
+
+        <ng-container *ngIf="evalNow as e; else noEval2">
+          <div class="score-row">
+            <span class="ring big" [ngClass]="scoreClass(e.score)" [style.--p]="e.score"><b>{{ e.score }}</b><small>/100</small></span>
+            <div class="score-text">
+              <span class="rec" [ngClass]="'rc-' + e.recommendation">{{ e.recommendation_label }}</span>
+              <p *ngIf="e.final_score !== null && e.final_score !== e.overall_score">AI score {{ e.overall_score }} · adjusted by a recruiter to {{ e.final_score }}</p>
+              <p class="muted">{{ e.provider === 'anthropic' ? 'Model ' + e.model : 'Built-in rules engine (' + e.model + ')' }} · v{{ e.version }} · {{ e.created_at | date:'medium' }}<ng-container *ngIf="e.status === 'reviewed'"> · reviewed by a recruiter</ng-container></p>
+              <p class="muted" *ngIf="!isLatest">This is an earlier run.</p>
+            </div>
+          </div>
+
+          <section class="card">
+            <h3>Category scores</h3>
+            <div class="cat" *ngFor="let c of catEntries(); trackBy: trackKey">
+              <div class="cat-top"><strong>{{ c.label }}</strong><span class="muted">weight {{ c.weight }}</span><b>{{ c.score === null ? 'n/a' : c.score }}</b></div>
+              <div class="bar" *ngIf="c.score !== null"><i [ngClass]="scoreClass(c.score)" [style.width.%]="c.score"></i></div>
+              <small class="muted">{{ c.evidence }}</small>
+            </div>
+          </section>
+
+          <div class="grid2">
+            <section class="card"><h3>Strengths</h3><p class="muted" *ngIf="!e.strengths.length">None identified.</p><ul class="bul good"><li *ngFor="let s of e.strengths; trackBy: trackIdx">{{ s }}</li></ul></section>
+            <section class="card"><h3>Weaknesses</h3><p class="muted" *ngIf="!e.weaknesses.length">None identified.</p><ul class="bul bad"><li *ngFor="let s of e.weaknesses; trackBy: trackIdx">{{ s }}</li></ul></section>
+            <section class="card"><h3>Matched qualifications</h3><p class="muted" *ngIf="!e.matched.length">None matched.</p><div class="chips ok"><span *ngFor="let s of e.matched; trackBy: trackIdx">{{ s }}</span></div></section>
+            <section class="card"><h3>Missing qualifications</h3><p class="muted" *ngIf="!e.missing.length">Nothing missing.</p><div class="chips no"><span *ngFor="let s of e.missing; trackBy: trackIdx">{{ s }}</span></div></section>
+          </div>
+
+          <section class="card"><h3>Explanation</h3><p class="pre">{{ e.explanation }}</p></section>
+
+          <section class="card" *ngIf="e.interview_questions.length">
+            <h3>Suggested interview questions</h3>
+            <ol class="iq"><li *ngFor="let q of e.interview_questions; trackBy: trackIdx">{{ q }}</li></ol>
+          </section>
+
+          <section class="card" *ngIf="e.answers.length">
+            <h3>Answer-by-answer</h3>
+            <div class="ae" *ngFor="let x of e.answers; trackBy: trackIdx">
+              <div class="ae-q">{{ x.question }}</div>
+              <div class="ae-a">{{ x.answer || 'No answer' }}</div>
+              <div class="ae-s"><span class="mini" [ngClass]="scoreClass(x.final_score ?? x.score)">{{ x.final_score ?? x.score }}</span>
+                <span class="flag" *ngIf="x.status !== 'complete'" [ngClass]="'f-' + x.status">{{ x.status === 'not_answered' ? 'not answered' : x.status }}</span>
+                <span class="flag f-over" *ngIf="x.overridden">recruiter score</span>
+                <small>{{ x.explanation }}</small></div>
+            </div>
+            <p class="muted">Change a score on the Answers tab.</p>
+          </section>
+        </ng-container>
+
+        <ng-template #noEval2>
+          <div class="rv-state" *ngIf="evalsLoaded && !evaluating"><mat-icon>auto_awesome</mat-icon><p>No evaluation yet. Press “Evaluate with AI” to compare this candidate with the job.</p></div>
+        </ng-template>
+      </div>
+    </mat-tab>
+
+    <!-- ===================== ANSWERS (review / override) ===================== -->
+    <mat-tab label="Review answers">
+      <div class="pane">
+        <p class="muted" *ngIf="!d.answers.length">This job has no screening questions.</p>
+        <div class="advice" *ngIf="d.answers.length && !evalNow" role="note"><mat-icon>info</mat-icon><span>Run the AI evaluation to get a suggested score and explanation for each answer. You can then confirm or change them.</span></div>
+
+        <article class="ans" *ngFor="let q of d.answers; trackBy: trackIdx">
+          <div class="q">{{ q.question }}<span class="req" *ngIf="q.required"> *</span> <small class="muted">{{ q.type.replace('_', ' ') }}</small></div>
+          <div class="ans-box" [class.empty]="!q.answer">{{ q.answer || 'No answer given' }}</div>
+          <div class="muted" *ngIf="q.expected_answer">Expected answer: <strong>{{ q.expected_answer }}</strong></div>
+
+          <ng-container *ngIf="answerFor(q.question_id) as x">
+            <div class="ae-s">
+              <span class="mini" [ngClass]="scoreClass(x.final_score ?? x.score)">{{ x.final_score ?? x.score }}</span>
+              <span class="muted">AI score {{ x.score }}</span>
+              <span class="flag" *ngIf="x.status !== 'complete'" [ngClass]="'f-' + x.status">{{ x.status === 'not_answered' ? 'not answered' : x.status }}</span>
+              <span class="flag f-over" *ngIf="x.overridden">recruiter score</span>
+            </div>
+            <p class="why">{{ x.explanation }}</p>
+            <p class="why follow" *ngIf="x.follow_up"><mat-icon>chat</mat-icon> Follow-up: {{ x.follow_up }}</p>
+
+            <div class="ov" *ngIf="isLatest">
+              <mat-form-field appearance="outline" class="ov-score"><mat-label>Your score</mat-label>
+                <input matInput type="number" min="0" max="100" [(ngModel)]="edits[q.question_id].score" [ngModelOptions]="{standalone: true}" placeholder="{{ x.final_score ?? x.score }}"></mat-form-field>
+              <mat-form-field appearance="outline" class="ov-why"><mat-label>Why change it?</mat-label>
+                <input matInput maxlength="500" [(ngModel)]="edits[q.question_id].reason" [ngModelOptions]="{standalone: true}" placeholder="Required when you change a score"></mat-form-field>
+            </div>
+          </ng-container>
+        </article>
+
+        <section class="card ov-overall" *ngIf="evalNow && isLatest">
+          <h3>Overall score</h3>
+          <p class="muted">AI overall {{ evalNow.overall_score }}<ng-container *ngIf="evalNow.final_score !== null"> · current {{ evalNow.final_score }}</ng-container>. Override it only if you have a good reason: it is logged.</p>
+          <div class="ov">
+            <mat-form-field appearance="outline" class="ov-score"><mat-label>Overall score</mat-label><input matInput type="number" min="0" max="100" [(ngModel)]="overall.score" [ngModelOptions]="{standalone: true}"></mat-form-field>
+            <mat-form-field appearance="outline" class="ov-why"><mat-label>Reason</mat-label><input matInput maxlength="500" [(ngModel)]="overall.reason" [ngModelOptions]="{standalone: true}"></mat-form-field>
+          </div>
+        </section>
+
+        <p class="err" *ngIf="overrideError" role="alert"><mat-icon>error_outline</mat-icon> {{ overrideError }}</p>
+        <div class="actions" *ngIf="evalNow && isLatest">
+          <button mat-flat-button color="primary" type="button" (click)="saveOverrides()" [disabled]="!pendingChanges.length || savingOverrides">
+            <mat-spinner *ngIf="savingOverrides" diameter="18"></mat-spinner> Save my scores ({{ pendingChanges.length }})
+          </button>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- ===================== INTERVIEW ===================== -->
+    <mat-tab label="Interview">
+      <div class="pane">
+        <div class="actions">
+          <button mat-flat-button color="primary" type="button" (click)="openSchedule()" *ngIf="!showSchedule && status !== 'approved' && status !== 'reject'"><mat-icon>event</mat-icon> Schedule an interview</button>
+          <span class="muted" *ngIf="status === 'approved' || status === 'reject'">Reopen the application to schedule another interview.</span>
+        </div>
+
+        <section class="card" *ngIf="showSchedule">
+          <h3>Schedule interview</h3>
+          <div class="grid2 form">
+            <mat-form-field appearance="outline"><mat-label>Date</mat-label><input matInput type="date" [(ngModel)]="sched.date"></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>Time</mat-label><input matInput type="time" [(ngModel)]="sched.time"></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>Duration (minutes)</mat-label><input matInput type="number" min="5" max="480" [(ngModel)]="sched.duration_min"></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>Interviewer</mat-label><input matInput maxlength="120" [(ngModel)]="sched.interviewer_name" placeholder="Who will interview?"></mat-form-field>
+          </div>
+          <mat-button-toggle-group [(ngModel)]="sched.type" class="tg" aria-label="Interview type">
+            <mat-button-toggle value="online"><mat-icon>videocam</mat-icon> Online</mat-button-toggle>
+            <mat-button-toggle value="onsite"><mat-icon>apartment</mat-icon> On-site</mat-button-toggle>
+          </mat-button-toggle-group>
+          <mat-form-field appearance="outline" class="full" *ngIf="sched.type === 'online'"><mat-label>Meeting link</mat-label><input matInput type="url" [(ngModel)]="sched.meeting_link" placeholder="https://meet.example.com/..."></mat-form-field>
+          <mat-form-field appearance="outline" class="full" *ngIf="sched.type === 'onsite'"><mat-label>Location</mat-label><input matInput maxlength="255" [(ngModel)]="sched.location" placeholder="Address or room"></mat-form-field>
+
+          <mat-slide-toggle [(ngModel)]="sched.notify" color="primary" (change)="previewSchedule()">Send an interview invitation to the applicant</mat-slide-toggle>
+          <mat-form-field appearance="outline" class="full" *ngIf="sched.notify"><mat-label>Invitation message (preview, you can edit it)</mat-label>
+            <textarea matInput rows="6" [(ngModel)]="sched.message" maxlength="3000"></textarea>
+            <mat-hint>The date, format and interviewer are added from the form when it is sent.</mat-hint></mat-form-field>
+
+          <p class="err" *ngIf="schedError" role="alert"><mat-icon>error_outline</mat-icon> {{ schedError }}</p>
+          <div class="actions">
+            <button mat-button type="button" (click)="showSchedule = false">Cancel</button>
+            <button mat-flat-button color="primary" type="button" (click)="submitSchedule()" [disabled]="scheduling"><mat-spinner *ngIf="scheduling" diameter="18"></mat-spinner> Schedule</button>
+          </div>
+        </section>
+
+        <p class="muted" *ngIf="!d.interviews.length && !showSchedule">No interviews scheduled yet.</p>
+
+        <section class="card iv" *ngFor="let i of d.interviews; trackBy: trackId" [class.done]="i.status !== 'scheduled'">
+          <div class="iv-head">
+            <strong>{{ i.scheduled_at | date:'EEE, MMM d, y · h:mm a' }}</strong>
+            <span class="flag" [ngClass]="'iv-' + i.status">{{ i.status }}</span>
+          </div>
+          <p class="muted">{{ i.type === 'online' ? 'Online' : 'On-site' }} · {{ i.duration_min }} min · with {{ i.interviewer_name }}
+            <ng-container *ngIf="i.meeting_link"> · <a [href]="i.meeting_link" target="_blank" rel="noopener">Meeting link</a></ng-container>
+            <ng-container *ngIf="i.location"> · {{ i.location }}</ng-container></p>
+
+          <ng-container *ngIf="i.status !== 'cancelled'">
+            <h4>Interview feedback</h4>
+            <ng-container *ngIf="fb(i) as f">
+              <mat-form-field appearance="outline" class="full"><mat-label>Feedback</mat-label><textarea matInput rows="3" maxlength="5000" [(ngModel)]="f.feedback"></textarea></mat-form-field>
+              <div class="grid2 form">
+                <mat-form-field appearance="outline"><mat-label>Score (0–100)</mat-label><input matInput type="number" min="0" max="100" [(ngModel)]="f.score"></mat-form-field>
+                <mat-form-field appearance="outline"><mat-label>Result</mat-label>
+                  <mat-select [(ngModel)]="f.result"><mat-option value="">Not set</mat-option><mat-option value="pass">Pass</mat-option><mat-option value="hold">Hold</mat-option><mat-option value="fail">Fail</mat-option></mat-select></mat-form-field>
+              </div>
+              <mat-form-field appearance="outline" class="full"><mat-label>Interview notes</mat-label><textarea matInput rows="2" maxlength="5000" [(ngModel)]="f.notes"></textarea></mat-form-field>
+              <p class="err" *ngIf="f.error" role="alert"><mat-icon>error_outline</mat-icon> {{ f.error }}</p>
+              <div class="actions">
+                <button mat-stroked-button type="button" (click)="saveFeedback(i)" [disabled]="f.saving">Save feedback</button>
+                <button mat-flat-button color="primary" type="button" *ngIf="i.status === 'scheduled'" (click)="saveFeedback(i, 'completed')" [disabled]="f.saving">Mark completed</button>
+                <button mat-button color="warn" type="button" *ngIf="i.status === 'scheduled'" (click)="saveFeedback(i, 'cancelled')" [disabled]="f.saving">Cancel interview</button>
+              </div>
+            </ng-container>
+            <p class="muted">After the interview, approve or reject from the Application tab. Feedback never changes the status by itself.</p>
+          </ng-container>
+        </section>
+      </div>
+    </mat-tab>
+
+    <!-- ===================== NOTES ===================== -->
+    <mat-tab label="Notes">
+      <div class="pane">
+        <section class="card">
+          <h3>Add an internal note</h3>
+          <p class="muted">Only people who manage this job can see notes. The applicant never sees them.</p>
+          <mat-form-field appearance="outline" class="full"><mat-label>Note</mat-label><textarea matInput rows="3" maxlength="3000" [(ngModel)]="note"></textarea></mat-form-field>
+          <div class="actions"><button mat-flat-button color="primary" type="button" (click)="addNote()" [disabled]="note.trim().length < 2 || savingNote"><mat-spinner *ngIf="savingNote" diameter="18"></mat-spinner> Add note</button></div>
+        </section>
+        <p class="muted" *ngIf="!d.notes.length">No notes yet.</p>
+        <article class="note" *ngFor="let n of d.notes; trackBy: trackId"><p>{{ n.note }}</p><small>{{ n.author_name || 'Recruiter' }} · {{ n.created_at | date:'medium' }}</small></article>
+      </div>
+    </mat-tab>
+
+    <!-- ===================== HISTORY ===================== -->
+    <mat-tab label="History">
+      <div class="pane">
+        <section class="card">
+          <h3>Status history</h3>
+          <ol class="timeline">
+            <li *ngFor="let h of d.history; trackBy: trackId">
+              <span class="dot" [ngClass]="'st-' + h.to_status"></span>
+              <div>
+                <strong>{{ h.from_status ? label(h.from_status) + ' → ' : '' }}{{ label(h.to_status) }}</strong>
+                <small>{{ h.changed_by_name || sourceLabel(h.source) }} · {{ sourceLabel(h.source) }} · {{ h.created_at | date:'medium' }}<ng-container *ngIf="h.notified"> · applicant notified</ng-container></small>
+                <p *ngIf="h.reason">{{ h.reason }}</p>
+                <small class="muted" *ngIf="h.ai_snapshot">AI advice at that time: {{ h.ai_snapshot.score }}/100, {{ labels[h.ai_snapshot.recommendation] }}</small>
+              </div>
+            </li>
+          </ol>
+        </section>
+
+        <section class="card">
+          <h3>Evaluation history</h3>
+          <p class="muted" *ngIf="evalsLoaded && !evals.length">No evaluations yet.</p>
+          <div class="eh" *ngFor="let e of evals; trackBy: trackId">
+            <span class="mini" [ngClass]="scoreClass(e.score)">{{ e.score }}</span>
+            <div><strong>{{ e.recommendation_label }}</strong>
+              <small>{{ e.created_at | date:'medium' }} · {{ e.provider === 'anthropic' ? e.model : 'rules engine' }}<ng-container *ngIf="e.final_score !== null"> · adjusted from {{ e.overall_score }}</ng-container></small></div>
+          </div>
+        </section>
+
+        <section class="card" *ngIf="overrides.length">
+          <h3>Score changes by recruiters</h3>
+          <div class="eh" *ngFor="let o of overrides; trackBy: trackId"><span class="mini over">{{ o.ai_score }}→{{ o.new_score }}</span>
+            <div><strong>{{ o.question_id ? 'Answer score' : 'Overall score' }}</strong><small>{{ o.changed_by_name }} · {{ o.created_at | date:'medium' }}</small><p>{{ o.reason }}</p></div></div>
+        </section>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

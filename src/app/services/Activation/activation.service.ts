@@ -13,4 +13,9 @@ export class ActivationService {
     return this.http.post<any>(`${_url}accountactivation`, payload);
   }
 
+  /** Ask for a fresh activation email. The API answers the same way for every address (it never reveals which have accounts). */
+  resend(email: string): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(`${_url}resend-activation`, { email });
+  }
+
 }

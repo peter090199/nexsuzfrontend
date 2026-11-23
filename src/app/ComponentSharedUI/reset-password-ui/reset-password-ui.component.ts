@@ -75,11 +75,9 @@ export class ResetPasswordUIComponent implements OnInit {
       password_confirmation
     };
 
-    console.log(payload)
     // Call the reset password service
     this.authService.resetPassword(payload).subscribe(
       (res) => {
-        console.log(res.value)
         if (res.success)
         {
           this.isLoading = true;

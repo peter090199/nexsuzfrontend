@@ -102,7 +102,6 @@ export class SharedRoutinesService {
 
       request$.subscribe({
         next: (res: any) => {
-          console.log('Follow/Unfollow response:', res);
           return;
           // Show warning if connection limit is reached
           if (!res.status) {
@@ -501,22 +500,25 @@ export class SharedRoutinesService {
     return this.currencies[0]; // PHP
   }
 
-  onLogout(): void {
+  /** sign out; `redirectTo` is where the browser lands afterwards ('/' by default, '/signin' to switch account) */
+  onLogout(redirectTo: string = '/'): void {
     this.logoutService.logout().subscribe({
-      next: () => this.resetLocalState(),
+      next: () => this.resetLocalState(redirectTo),
       error: (err) => {
         console.error('Logout failed:', err);
-        this.resetLocalState(); // still clear client state even if the API call fails
+        this.resetLocalState(redirectTo); // still clear client state even if the API call fails
       }
     });
   }
 
-  private resetLocalState(): void {
+  private resetLocalState(redirectTo: string = '/'): void {
     sessionStorage.clear();
+    const remembered = localStorage.getItem('nexsuz_remembered_email'); // "Remember me" email survives logout
     localStorage.clear();
+    if (remembered) localStorage.setItem('nexsuz_remembered_email', remembered);
     localStorage.setItem('showWebsiteChat', 'false');
     localStorage.setItem('cookiesAccepted', 'true');
-    window.location.href = '/'; // full reload, re-fetches all assets
+    window.location.href = redirectTo; // full reload, re-fetches all assets
   }
 
 

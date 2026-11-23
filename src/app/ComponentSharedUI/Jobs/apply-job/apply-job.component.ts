@@ -360,6 +360,9 @@ import { JobPostingService } from 'src/app/services/Jobs/job-posting.service';
 import { ProfileService } from 'src/app/services/Profile/profile.service';
 import { AppliedQuestionsService } from 'src/app/services/Jobs/applied-questions.service';
 import { SharedRoutinesService } from 'src/app/services/Function/shared-routines.service';
+import { UserResumeService, UserResume } from 'src/app/services/user-resume.service';
+import { FeatureService } from 'src/app/services/AccountPlan/feature.service';
+import { FEATURE } from 'src/app/services/AccountPlan/feature-access.map';
 
 @Component({
   selector: 'app-apply-job',
@@ -392,6 +395,9 @@ export class ApplyJobComponent implements OnInit, OnDestroy {
   job: any = null;
   questions: any[] = [];
   transNo: any;
+  loadError: string | null = null;      // the job could not be opened at all
+  closedReason: string | null = null;   // set when the job no longer accepts applications
+  allowCv = true;
 
   isMobile = false;
 
@@ -404,7 +410,9 @@ export class ApplyJobComponent implements OnInit, OnDestroy {
     private profileService: ProfileService,
     private appliedService: AppliedQuestionsService,
     private countrycodeServices: CountryCodesService,
-    private route: ActivatedRoute, public sharedRoutines: SharedRoutinesService
+    private route: ActivatedRoute, public sharedRoutines: SharedRoutinesService,
+    private resumeSvc: UserResumeService,
+    private planFeatures: FeatureService
   ) { }
 
   // =========================
@@ -419,6 +427,7 @@ export class ApplyJobComponent implements OnInit, OnDestroy {
 
     this.loadCountryCodes();
     this.loadProfile();
+    this.loadDefaultResume();
 
     if (this.transNo) {
       this.fetchJobPosting(this.transNo);
@@ -457,6 +466,7 @@ export class ApplyJobComponent implements OnInit, OnDestroy {
   // =========================
   fetchJobPosting(transNo: string): void {
     this.loading = true;
+    this.loadError = null;
     this.appliedService.getJobPostingByTransNo(transNo).subscribe({
       next: (res: any) => {
         this.loading = false;
@@ -466,25 +476,26 @@ export class ApplyJobComponent implements OnInit, OnDestroy {
         }
         if (res.success) {
           this.job = res.job ?? {};
+          this.closedReason = res.meta?.is_owner
+            ? "This is your own job, so you can't apply to it."
+            : (res.meta?.closed ? (res.meta.closed_reason || 'This job is no longer accepting applications.') : null);
+          this.allowCv = this.job.allow_cv === null || this.job.allow_cv === undefined ? true : !!Number(this.job.allow_cv);
+          if (!this.allowCv) { this.imageForm.get('resume')?.clearValidators(); this.imageForm.get('resume')?.updateValueAndValidity(); }
           this.questions = (res.questions ?? []).map((q: any) => ({
             ...q,
             answer: '',
+            question_type: q.question_type || (q.answer_type === 'yes' || q.answer_type === 'no' ? 'yes_no' : 'long_text'),
+            is_required: q.is_required === undefined ? true : !!Number(q.is_required),
             answer_type: q.answer_type ?? 'general'
           }));
         } else {
-          this.notificationService.toastrWarning(
-            res.message || 'Job not found.'
-          );
+          this.loadError = res.message || 'Job not found.';
         }
       },
 
       error: (err: any) => {
         this.loading = false;
-        this.notificationService.toastrError(
-          err?.error?.message ||
-          err?.message ||
-          'Unable to load job.'
-        );
+        this.loadError = err?.error?.message || err?.message || 'Unable to load this job.';
 
       }
     });
@@ -493,8 +504,10 @@ export class ApplyJobComponent implements OnInit, OnDestroy {
   // =========================
   // VALIDATION
   // =========================
+  retryLoad(): void { if (this.transNo) { this.fetchJobPosting(this.transNo); } }
+
   areAllQuestionsAnswered(): boolean {
-    return this.questions.every(q => q.answer !== null && q.answer !== '');
+    return this.questions.every(q => !q.is_required || (q.answer !== null && q.answer !== undefined && String(q.answer).trim() !== ''));
   }
 
   // =========================
@@ -568,6 +581,42 @@ export class ApplyJobComponent implements OnInit, OnDestroy {
   // =========================
   // FILE UPLOAD
   // =========================
+  // ---- the resume saved in Settings > Resume / CV (the default one is used unless a different file is chosen) ----
+  defaultResume: UserResume | null = null;
+  useDefaultResume = false;
+  /** the default resume is a Word file: it cannot go with an application, so a PDF is asked for */
+  defaultResumeIsWord = false;
+
+  private loadDefaultResume(): void {
+    // saved resumes are a plan feature: without it there is nothing to load (and the API would refuse), so the applicant uploads a PDF
+    if (!this.planFeatures.allows(FEATURE.CREATE_RESUME)) { return; }
+    this.resumeSvc.list().subscribe({
+      next: (res) => {
+        const d = (res?.data || []).find(r => r.is_default) || null;
+        // only a PDF can be sent to a recruiter: a Word default is not used (the server refuses it too)
+        this.defaultResumeIsWord = !!d && d.type !== 'pdf';
+        this.defaultResume = d && d.type === 'pdf' ? d : null;
+        if (this.defaultResume && !this.selectedFile) { this.applyDefaultResume(); }
+      },
+      error: () => { /* no saved resume (or offline): the applicant simply uploads one */ }
+    });
+  }
+
+  private applyDefaultResume(): void {
+    if (!this.defaultResume) { return; }
+    this.useDefaultResume = true;
+    this.selectedFile = null;
+    this.resumeName = this.defaultResume.name;
+    this.fileError = null;
+    const c = this.imageForm.get('resume');
+    c?.clearValidators();
+    c?.setValue(null);
+    c?.updateValueAndValidity();
+  }
+
+  /** go back to the saved default after choosing a different file */
+  switchToDefaultResume(): void { this.applyDefaultResume(); }
+
   onUploadResume(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
@@ -580,15 +629,18 @@ export class ApplyJobComponent implements OnInit, OnDestroy {
     this.fileError = null;
     this.selectedFile = file;
     this.resumeName = file.name;
+    this.useDefaultResume = false;
+    if (this.allowCv) { this.imageForm.get('resume')?.setValidators(Validators.required); }
 
     this.imageForm.patchValue({ resume: file });
+    this.imageForm.get('resume')?.updateValueAndValidity();
   }
 
   // =========================
   // STEPPER
   // =========================
   getProgressValue(stepIndex: number): number {
-    return ((stepIndex + 1) / 3) * 100;
+    return ((stepIndex + 1) / 4) * 100;
   }
 
   nextStep(stepper?: MatStepper) {
@@ -686,7 +738,12 @@ export class ApplyJobComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (!this.selectedFile) {
+    if (this.closedReason) {
+      this.notificationService.toastrWarning(this.closedReason);
+      return;
+    }
+
+    if (this.allowCv && !this.selectedFile && !this.useDefaultResume) {
       this.notificationService.toastrError('Please upload your resume.');
       return;
     }
@@ -696,7 +753,8 @@ export class ApplyJobComponent implements OnInit, OnDestroy {
     }
     this.loading = true;
     const formData = new FormData();
-    formData.append('resume_pdf', this.selectedFile);
+    if (this.selectedFile) { formData.append('resume_pdf', this.selectedFile); }
+    else if (this.useDefaultResume && this.allowCv) { formData.append('use_default_resume', '1'); }
     formData.append('job_name', this.job?.job_name || '');
     formData.append('email', this.personalForm.get('email')?.value || '');
     formData.append('country_code', this.personalForm.get('country_code')?.value || '');
@@ -709,7 +767,7 @@ export class ApplyJobComponent implements OnInit, OnDestroy {
       );
       formData.append(
         `answers[${index}][answer_text]`,
-        question.answer ?? ''
+        question.answer === null || question.answer === undefined ? '' : String(question.answer)
       );
       formData.append(
         `answers[${index}][answer_type]`,

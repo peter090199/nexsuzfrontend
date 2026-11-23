@@ -61,7 +61,6 @@ export class SearchModalComponent {
   }
 
   selectUser(user: any) {
-    console.log(user);
   }
 
 }

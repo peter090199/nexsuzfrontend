@@ -2553,3 +2553,31 @@ button[mat-stroked-button] {
         font-size: 14px;
     }
 }
+
+
+/* ---------- Dialogs: close button always pinned top-right ---------- */
+.mat-dialog-container,
+.mat-mdc-dialog-container .mdc-dialog__surface,
+.mat-mdc-dialog-surface {
+    position: relative;
+}
+
+.mat-dialog-container .close-button,
+.mat-mdc-dialog-container .close-button {
+    position: absolute !important;
+    top: 8px !important;
+    right: 8px !important;
+    left: auto !important;
+    bottom: auto !important;
+    float: none !important;
+    margin: 0 !important;
+    z-index: 10;
+}
+
+/* keep dialog titles from running under the close button */
+.mat-dialog-container .close-button ~ h2.mat-dialog-title,
+.mat-mdc-dialog-container .close-button ~ h2.mat-mdc-dialog-title,
+.mat-dialog-container .close-button ~ h2[mat-dialog-title],
+.mat-mdc-dialog-container .close-button ~ h2[mat-dialog-title] {
+    padding-right: 48px;
+}

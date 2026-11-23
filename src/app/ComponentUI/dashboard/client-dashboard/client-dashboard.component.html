@@ -1,174 +1,186 @@
 <div class="dashboard">
 
-  <!-- HEADER -->
-  <section class="header">
+  <!-- ===== HEADER ===== -->
+  <mat-card class="hero">
+    <div class="hero-text">
+      <h1>Welcome back, {{ firstName }}</h1>
+      <p>
+        <ng-container *ngIf="data?.user?.company">{{ data.user.company }} · </ng-container>
+        Track your vacancies and manage candidates.
+      </p>
+    </div>
+
+    <div class="hero-actions">
+      <small class="updated" *ngIf="lastUpdated">Updated {{ lastUpdated | date:'h:mm a' }}</small>
+      <button mat-flat-button color="primary" type="button" *appFeature="FEATURE.JOB_POSTING" (click)="go('posting-job')">
+        <mat-icon>add</mat-icon> New vacancy
+      </button>
+      <button mat-stroked-button type="button" (click)="load()" [disabled]="loading || refreshing" aria-label="Refresh dashboard">
+        <mat-icon [class.spin]="refreshing">refresh</mat-icon> Refresh
+      </button>
+    </div>
+  </mat-card>
+
+  <mat-progress-bar *ngIf="refreshing" mode="indeterminate" class="top-bar"></mat-progress-bar>
+
+  <!-- ===== ERROR ===== -->
+  <mat-card class="state error" *ngIf="error" role="alert">
+    <mat-icon>error_outline</mat-icon>
     <div>
-      <h1>Welcome, Recruiter 👋</h1>
-      <p>Track vacancies and manage candidates efficiently</p>
+      <strong>{{ data ? "We couldn't refresh the dashboard." : "We couldn't load the dashboard." }}</strong>
+      <span>{{ data ? 'Showing the last data that loaded.' : 'Check your connection and try again.' }}</span>
     </div>
+    <button mat-stroked-button color="primary" type="button" (click)="load()">Try again</button>
+  </mat-card>
 
-    <button mat-raised-button color="primary">
-      <mat-icon>add</mat-icon>
-      New Vacancy
-    </button>
-  </section>
+  <!-- ===== LOADING ===== -->
+  <ng-container *ngIf="loading">
+    <section class="stats">
+      <mat-card class="stat sk-card" *ngFor="let i of [1,2,3,4,5]"><span class="sk sk-ico"></span><span class="sk sk-line"></span><span class="sk sk-num"></span></mat-card>
+    </section>
+    <section class="grid">
+      <mat-card class="span-7"><span class="sk sk-line w30"></span><span class="sk sk-block"></span></mat-card>
+      <mat-card class="span-5"><span class="sk sk-line w30"></span><span class="sk sk-block"></span></mat-card>
+    </section>
+  </ng-container>
 
-  <!-- SUMMARY STATS -->
-  <section class="stats-grid">
-    <mat-card class="stat-card">
-      <mat-icon>work</mat-icon>
-      <div>
-        <h2>{{ totalVacancies }}</h2>
-        <p>Active Vacancies</p>
-      </div>
-    </mat-card>
+  <!-- ===== CONTENT ===== -->
+  <ng-container *ngIf="data && !loading">
 
-    <mat-card class="stat-card">
-      <mat-icon>group</mat-icon>
-      <div>
-        <h2>{{ totalApplicants }}</h2>
-        <p>Total Applicants</p>
-      </div>
-    </mat-card>
+    <!-- summary -->
+    <section class="stats">
+      <mat-card class="stat" *ngFor="let c of cards; trackBy: trackIdx" matRipple tabindex="0" role="link"
+        [attr.aria-label]="c.label + ': ' + c.value" (click)="go(c.route)" (keydown.enter)="go(c.route)">
+        <div class="stat-top">
+          <span class="stat-ico"><mat-icon>{{ c.icon }}</mat-icon></span>
+          <mat-icon class="stat-go" aria-hidden="true">arrow_forward</mat-icon>
+        </div>
+        <span class="stat-label">{{ c.label }}</span>
+        <strong class="stat-value">{{ c.value | number }}</strong>
+        <small class="stat-sub">{{ c.sub }}</small>
+      </mat-card>
+    </section>
 
-    <mat-card class="stat-card">
-      <mat-icon color="primary">pending_actions</mat-icon>
-      <div>
-        <h2>{{ totalPendingReviews }}</h2>
-        <p>Pending Reviews</p>
-      </div>
-    </mat-card>
+    <section class="grid">
 
-    <mat-card class="stat-card">
-      <mat-icon>check_circle</mat-icon>
-      <div>
-        <h2>{{ totalhired }}</h2>
-        <p>Hired</p>
-      </div>
-    </mat-card>
-  </section>
+      <!-- recruitment pipeline -->
+      <mat-card class="span-7">
+        <mat-card-header>
+          <mat-card-title>Recruitment pipeline</mat-card-title>
+          <mat-card-subtitle>{{ totalPipeline }} application{{ totalPipeline === 1 ? '' : 's' }} by stage</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <ul class="stages" *ngIf="totalPipeline; else noPipeline">
+            <li *ngFor="let s of data.pipeline; trackBy: trackIdx">
+              <div class="stage-head">
+                <span>{{ s.label }}</span>
+                <span class="stage-count"><strong>{{ s.count }}</strong> <small>{{ pct(s.count) }}%</small></span>
+              </div>
+              <mat-progress-bar mode="determinate" [value]="pct(s.count)" [class]="'bar-' + s.key"
+                [attr.aria-label]="s.label + ' ' + pct(s.count) + ' percent'"></mat-progress-bar>
+            </li>
+          </ul>
+          <ng-template #noPipeline>
+            <div class="empty"><mat-icon>inbox</mat-icon><strong>No applications yet</strong><span>Applications to your vacancies will show up here by stage.</span></div>
+          </ng-template>
+        </mat-card-content>
+      </mat-card>
 
-  <!-- PIPELINE -->
-  <section class="pipeline">
-    <h3>Recruitment Pipeline</h3>
+      <!-- applications trend -->
+      <mat-card class="span-5">
+        <mat-card-header>
+          <mat-card-title>Applications</mat-card-title>
+          <mat-card-subtitle>Last 6 months</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <app-mini-chart type="bar" [series]="trendSeries" ariaLabel="Applications to your vacancies over the last 6 months"
+            emptyText="No applications in the last 6 months"></app-mini-chart>
+        </mat-card-content>
+      </mat-card>
 
-    <div class="kanban">
-      <div class="column">
-        <h4>Applied</h4>
-        <span class="pill blue">124</span>
-      </div>
+      <!-- vacancies -->
+      <mat-card class="span-7">
+        <mat-card-header class="with-action">
+          <div>
+            <mat-card-title>Your vacancies</mat-card-title>
+            <mat-card-subtitle>Newest first</mat-card-subtitle>
+          </div>
+          <button mat-button color="primary" type="button" (click)="go('vacancies')">View all</button>
+        </mat-card-header>
 
-      <div class="column">
-        <h4>Interview</h4>
-        <span class="pill orange">48</span>
-      </div>
+        <mat-card-content>
+          <div class="table-wrap" *ngIf="vacancies.data.length; else noVacancies">
+            <table mat-table [dataSource]="vacancies" class="vac-table">
+              <ng-container matColumnDef="job">
+                <th mat-header-cell *matHeaderCellDef>Job title</th>
+                <td mat-cell *matCellDef="let v" data-label="Job title"><strong>{{ v.job_name }}</strong><small *ngIf="v.job_position">{{ v.job_position }}</small></td>
+              </ng-container>
+              <ng-container matColumnDef="location">
+                <th mat-header-cell *matHeaderCellDef>Location</th>
+                <td mat-cell *matCellDef="let v" data-label="Location">{{ v.location || '-' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="applicants">
+                <th mat-header-cell *matHeaderCellDef>Applicants</th>
+                <td mat-cell *matCellDef="let v" data-label="Applicants">{{ v.applicants }}</td>
+              </ng-container>
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef>Status</th>
+                <td mat-cell *matCellDef="let v" data-label="Status">
+                  <mat-chip-list aria-label="Vacancy status"><mat-chip [class.chip-on]="v.status === 'active'" disableRipple>{{ v.status === 'active' ? 'Active' : 'Closed' }}</mat-chip></mat-chip-list>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef></th>
+                <td mat-cell *matCellDef="let v" data-label="">
+                  <button mat-button color="primary" type="button" (click)="go('vacancies')">View</button>
+                </td>
+              </ng-container>
 
-      <div class="column">
-        <h4>Offer</h4>
-        <span class="pill purple">18</span>
-      </div>
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+            </table>
+          </div>
+          <ng-template #noVacancies>
+            <div class="empty"><mat-icon>work_outline</mat-icon><strong>No vacancies yet</strong>
+              <span>Post your first job to start receiving applications.</span>
+              <button mat-flat-button color="primary" type="button" *appFeature="FEATURE.JOB_POSTING" (click)="go('posting-job')">Post a job</button></div>
+          </ng-template>
+        </mat-card-content>
+      </mat-card>
 
-      <div class="column">
-        <h4>Hired</h4>
-        <span class="pill green">14</span>
-      </div>
-    </div>
-  </section>
+      <!-- recent applicants -->
+      <mat-card class="span-5">
+        <mat-card-header class="with-action">
+          <div>
+            <mat-card-title>Recent applicants</mat-card-title>
+            <mat-card-subtitle>Latest applications</mat-card-subtitle>
+          </div>
+          <button mat-button color="primary" type="button" (click)="go('candidates')">View all</button>
+        </mat-card-header>
 
-  <div class="vacancy-cards-container">
-    <mat-card class="vacancy-card">
-      <h3>Active Vacancies</h3>
+        <mat-card-content>
+          <mat-list *ngIf="data.recent_applicants.length; else noApplicants" class="applicants">
+            <ng-container *ngFor="let a of data.recent_applicants; let last = last; trackBy: trackIdx">
+              <mat-list-item>
+                <button type="button" class="avatar" (click)="openProfile(a.code)" [attr.aria-label]="'View profile of ' + a.fullname">
+                  <img *ngIf="a.photo_pic && !broken[a.applied_id]; else ini" [src]="a.photo_pic" alt="" (error)="broken[a.applied_id] = true">
+                  <ng-template #ini><span>{{ initials(a.fullname) }}</span></ng-template>
+                </button>
+                <div class="who">
+                  <strong>{{ a.fullname }}</strong>
+                  <small>{{ a.job_name }} · {{ a.created_at | date:'MMM d, y' }}</small>
+                </div>
+                <span class="status-pill" [ngClass]="statusClass(a.status)">{{ statusLabel(a.status) }}</span>
+              </mat-list-item>
+              <mat-divider *ngIf="!last"></mat-divider>
+            </ng-container>
+          </mat-list>
+          <ng-template #noApplicants>
+            <div class="empty"><mat-icon>person_search</mat-icon><strong>No applicants yet</strong><span>People who apply to your vacancies appear here.</span></div>
+          </ng-template>
+        </mat-card-content>
+      </mat-card>
 
-      <table mat-table [dataSource]="vacancies">
-
-        <ng-container matColumnDef="job">
-          <th mat-header-cell *matHeaderCellDef>Job Title</th>
-          <td mat-cell *matCellDef="let v">{{ v.title }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="applicants">
-          <th mat-header-cell *matHeaderCellDef>Applicants</th>
-          <td mat-cell *matCellDef="let v">{{ v.applicants }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef>Status</th>
-          <td mat-cell *matCellDef="let v">
-            <span class="status" [class.active]="v.status === 'Active'">
-              {{ v.status }}
-            </span>
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef>Actions</th>
-          <td mat-cell *matCellDef="let v">
-            <button mat-button color="primary">View</button>
-          </td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-      </table>
-    </mat-card>
-
-    <mat-card class="vacancy-card">
-      <h3>Active Vacancies</h3>
-
-      <table mat-table [dataSource]="vacancies">
-
-        <ng-container matColumnDef="job">
-          <th mat-header-cell *matHeaderCellDef>Job Title</th>
-          <td mat-cell *matCellDef="let v">{{ v.title }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="applicants">
-          <th mat-header-cell *matHeaderCellDef>Applicants</th>
-          <td mat-cell *matCellDef="let v">{{ v.applicants }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef>Status</th>
-          <td mat-cell *matCellDef="let v">
-            <span class="status" [class.active]="v.status === 'Active'">
-              {{ v.status }}
-            </span>
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef>Actions</th>
-          <td mat-cell *matCellDef="let v">
-            <button mat-button color="primary">View</button>
-          </td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-      </table>
-    </mat-card>
-  </div>
-  <!-- RECENT APPLICANTS -->
-  <section class="recent">
-    <h3>Recent Applicants</h3>
-
-    <mat-card class="applicant">
-      <div class="avatar">JD</div>
-      <div>
-        <strong>John Doe</strong>
-        <p>Frontend Developer</p>
-      </div>
-      <span class="pill blue">Applied</span>
-    </mat-card>
-
-    <mat-card class="applicant">
-      <div class="avatar">MS</div>
-      <div>
-        <strong>Maria Santos</strong>
-        <p>Backend Developer</p>
-      </div>
-      <span class="pill orange">Interview</span>
-    </mat-card>
-  </section>
-
+    </section>
+  </ng-container>
 </div>

@@ -23,7 +23,9 @@ export class NotificationsService {
         showConfirmButton: false,
         timer: 1500,
         timerProgressBar: true,
-        toast: true
+        toast: true,
+        width: 'auto',
+        padding: '0.5em 0.75em'
       });
   }
 
@@ -37,16 +39,19 @@ export class NotificationsService {
   //       timer: 1500
   //     });
   // }
+  // Compact toasts: shorter on screen, small text (sizes in _nexsuz-vendor-overrides.scss)
+  private readonly toastOpts = { timeOut: 3000, extendedTimeOut: 1000 };
+
   toastrError(msg:any){
-    this.toastr.error(msg);
+    this.toastr.error(msg, undefined, this.toastOpts);
   }
 
   toastrWarning(msg:any){
-    this.toastr.warning(msg);
+    this.toastr.warning(msg, undefined, this.toastOpts);
   }
 
   toastrInfo(msg:any){
-    this.toastr.info(msg);
+    this.toastr.info(msg, undefined, this.toastOpts);
   }
   popupWarning(title:string, text:string){
     return Swal.fire({

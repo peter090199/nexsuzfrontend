@@ -1,0 +1,111 @@
+<app-sub-page-header title="Subscription Plans" subtitle="Create and manage the plans users can subscribe to.">
+    <button mat-flat-button color="primary" (click)="open()"><mat-icon>add</mat-icon> Add plan</button>
+</app-sub-page-header>
+
+<mat-progress-bar *ngIf="loading" mode="indeterminate"></mat-progress-bar>
+<div class="state error" *ngIf="error" role="alert">
+    <mat-icon>error_outline</mat-icon> {{ error }}
+    <button mat-button (click)="load()">Retry</button>
+</div>
+
+<ng-container *ngIf="!error">
+
+<!-- summary -->
+<div class="stats">
+    <mat-card class="stat"><div class="ico"><mat-icon>workspace_premium</mat-icon></div>
+        <div><div class="val">{{ all.length }}</div><div class="lbl">Total plans</div></div></mat-card>
+    <mat-card class="stat ok"><div class="ico"><mat-icon>check_circle</mat-icon></div>
+        <div><div class="val">{{ activeCount }}</div><div class="lbl">Active plans</div></div></mat-card>
+    <mat-card class="stat warn"><div class="ico"><mat-icon>pause_circle</mat-icon></div>
+        <div><div class="val">{{ all.length - activeCount }}</div><div class="lbl">Inactive plans</div></div></mat-card>
+    <mat-card class="stat"><div class="ico"><mat-icon>group</mat-icon></div>
+        <div><div class="val">{{ subscriberTotal }}</div><div class="lbl">Active subscribers</div></div></mat-card>
+</div>
+
+<mat-card class="panel">
+    <!-- audience tabs -->
+    <mat-tab-group class="aud-tabs" [(selectedIndex)]="tabIndex" mat-stretch-tabs animationDuration="150ms" aria-label="Plan audience">
+        <mat-tab>
+            <ng-template mat-tab-label><mat-icon>apps</mat-icon><span>All</span><span class="tab-count">{{ audienceCount('all') }}</span></ng-template>
+        </mat-tab>
+        <mat-tab>
+            <ng-template mat-tab-label><mat-icon>person</mat-icon><span>Job seekers</span><span class="tab-count">{{ audienceCount('DEF-USERS') }}</span></ng-template>
+        </mat-tab>
+        <mat-tab>
+            <ng-template mat-tab-label><mat-icon>business_center</mat-icon><span>Recruiters</span><span class="tab-count">{{ audienceCount('DEF-CLIENT') }}</span></ng-template>
+        </mat-tab>
+    </mat-tab-group>
+
+    <!-- search + status -->
+    <div class="toolbar">
+        <mat-form-field appearance="outline" class="search" floatLabel="never">
+            <mat-icon matPrefix>search</mat-icon>
+            <input matInput [(ngModel)]="search" placeholder="Search plans">
+            <button mat-icon-button matSuffix *ngIf="search" (click)="search = ''" aria-label="Clear search"><mat-icon>close</mat-icon></button>
+        </mat-form-field>
+        <mat-chip-list class="status-chips" aria-label="Status filter">
+            <mat-chip [selected]="status === 'all'" (click)="status = 'all'">All</mat-chip>
+            <mat-chip [selected]="status === 'active'" (click)="status = 'active'">Active</mat-chip>
+            <mat-chip [selected]="status === 'inactive'" (click)="status = 'inactive'">Inactive</mat-chip>
+        </mat-chip-list>
+    </div>
+
+    <!-- plans -->
+    <div class="plan-grid">
+        <mat-card class="plan" *ngFor="let p of plans; trackBy: trackById" [class.off]="p.recordStatus !== 'active'">
+            <mat-card-header>
+                <div mat-card-avatar class="plan-avatar" [ngClass]="p.audience === 'DEF-CLIENT' ? 'rec' : 'seek'">
+                    <mat-icon>{{ p.audience === 'DEF-CLIENT' ? 'business_center' : 'person' }}</mat-icon>
+                </div>
+                <mat-card-title>{{ p.plan_name }}</mat-card-title>
+                <mat-card-subtitle>{{ p.planId }} · {{ p.audience === 'DEF-CLIENT' ? 'Recruiters' : 'Job seekers' }}</mat-card-subtitle>
+                <button mat-icon-button class="more" [matMenuTriggerFor]="menu" [attr.aria-label]="'Actions for ' + p.plan_name" [disabled]="busyId === p.planId">
+                    <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #menu="matMenu" xPosition="before">
+                    <button mat-menu-item (click)="open(p, true)"><mat-icon>visibility</mat-icon> View</button>
+                    <button mat-menu-item (click)="open(p)"><mat-icon>edit</mat-icon> Edit</button>
+                    <button mat-menu-item (click)="viewUsers(p)"><mat-icon>group</mat-icon> Users</button>
+                    <button mat-menu-item (click)="editFeatures(p)"><mat-icon>checklist</mat-icon> Features</button>
+                    <button mat-menu-item (click)="assignToUser(p)" [disabled]="p.recordStatus !== 'active'"><mat-icon>swap_horiz</mat-icon> Assign to user</button>
+                    <button mat-menu-item (click)="makePopular(p)" [disabled]="p.is_popular"><mat-icon>star</mat-icon> {{ p.is_popular ? 'Most popular' : 'Make popular' }}</button>
+                    <mat-divider></mat-divider>
+                    <button mat-menu-item (click)="toggle(p)">
+                        <mat-icon [color]="p.recordStatus === 'active' ? 'warn' : 'primary'">{{ p.recordStatus === 'active' ? 'toggle_off' : 'toggle_on' }}</mat-icon>
+                        {{ p.recordStatus === 'active' ? 'Deactivate' : 'Activate' }}
+                    </button>
+                </mat-menu>
+            </mat-card-header>
+
+            <mat-card-content>
+                <div class="price">
+                    <span class="amt">{{ p.price === 0 ? 'Free' : '₱' + (p.price | number:'1.0-0') }}</span>
+                    <span class="per" *ngIf="p.price > 0">/ {{ p.tagmonthYear === 'Yearly' ? 'year' : 'month' }}</span>
+                </div>
+                <mat-chip-list class="plan-chips" aria-label="Plan labels">
+                    <mat-chip class="chip-status" [ngClass]="p.recordStatus === 'active' ? 'on' : 'off'" disableRipple>{{ p.recordStatus === 'active' ? 'Active' : 'Inactive' }}</mat-chip>
+                    <mat-chip *ngIf="p.is_popular" class="chip-popular" disableRipple><mat-icon>star</mat-icon> Most popular</mat-chip>
+                    <mat-chip *ngIf="p.tag && !p.is_popular" class="chip-tag" disableRipple>{{ p.tag }}</mat-chip>
+                </mat-chip-list>
+                <p class="desc">{{ p.description || 'No description.' }}</p>
+                <mat-divider></mat-divider>
+                <ul class="limits">
+                    <li><mat-icon>check</mat-icon> {{ enabledCount(p.planId) }} features enabled</li>
+                    <li *ngFor="let l of limits(p.planId)"><mat-icon>tune</mat-icon> {{ l.name }}: <strong>{{ l.value }}</strong></li>
+                    <li><mat-icon>group</mat-icon> <a class="users-link" href="javascript:void(0)" (click)="viewUsers(p)" [attr.aria-label]="'View active users on ' + p.plan_name">{{ p.subscribers }} active {{ p.subscribers === 1 ? 'user' : 'users' }}</a></li>
+                </ul>
+            </mat-card-content>
+
+            <mat-card-actions align="end">
+                <button mat-button (click)="open(p, true)"><mat-icon>visibility</mat-icon> View</button>
+                <button mat-flat-button color="primary" (click)="open(p)"><mat-icon>edit</mat-icon> Edit</button>
+            </mat-card-actions>
+        </mat-card>
+
+        <div class="none" *ngIf="!loading && !plans.length">
+            <mat-icon>search_off</mat-icon>
+            <p>No plans match your filters.</p>
+        </div>
+    </div>
+</mat-card>
+</ng-container>

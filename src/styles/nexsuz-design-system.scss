@@ -29,7 +29,7 @@
 @keyframes nx-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 
 // ---------- Base (applies to every module) ----------
-html, body { background: $nx-bg; color: $nx-text; font-family: $nx-font; }
+html, body { background: var(--nx-bg, #{$nx-bg}); color: $nx-text; font-family: var(--nx-user-font, #{$nx-font}); }
 // One typeface everywhere: Verdana. Form controls and Material text inherit it (icon fonts are untouched).
 button, input, select, textarea, optgroup { font-family: inherit; }
 .mat-typography, .mat-body, .mat-body-1, .mat-body-2, .mat-h1, .mat-h2, .mat-h3, .mat-h4, .mat-h5, .mat-h6,
@@ -37,6 +37,28 @@ button, input, select, textarea, optgroup { font-family: inherit; }
 .mat-card, .mat-card-title, .mat-card-subtitle, .mat-expansion-panel, .mat-step-label, .mat-checkbox, .mat-radio-button,
 .mat-slide-toggle, .mat-toolbar, .mat-list-base, .mat-paginator, .mat-datepicker-content, .mat-calendar,
 .mat-snack-bar-container, .mat-dialog-title, .mat-tab-label, .mat-button-toggle { font-family: $nx-font; }
+// Catch-all: every element (Material, Bootstrap, ng-select, toastr, SweetAlert, dialogs/overlays)
+// renders in Verdana. Icon fonts (Material Icons/Symbols, Font Awesome) and elements that set an
+// explicit inline font-family (e.g. the CV font picker previews) are excluded.
+:root { --bs-font-sans-serif: #{$nx-font}; --bs-body-font-family: #{$nx-font}; }
+body, body *:not(mat-icon):not(.mat-icon):not(.material-icons):not(.material-symbols-outlined):not(.fa):not(.fas):not(.far):not(.fab):not(.fa-solid):not(.fa-regular):not(.fa-brands):not([class*="fa-"]):not([style*="font-family"]),
+.cdk-overlay-container, .cdk-overlay-container *:not(mat-icon):not(.mat-icon):not(.material-icons):not([style*="font-family"]),
+.swal2-container, .swal2-container *, .toast-container, .toast-container * {
+  font-family: var(--nx-user-font, #{$nx-font}) !important;   // Settings > Appearance can change this (AppearanceService)
+}
+mat-icon, .mat-icon, .material-icons { font-family: 'Material Icons' !important; }
+.material-symbols-outlined { font-family: 'Material Symbols Outlined' !important; }
+
+// ---------- User appearance (Settings > Appearance, AppearanceService) ----------
+// Page background colour: the page canvas behind the cards (cards keep their own surface colour).
+html.nx-custom-bg .layout-container,
+html.nx-custom-bg .mat-drawer-container,
+html.nx-custom-bg .mat-drawer-content,
+html.nx-custom-bg .mat-sidenav-content,
+html.nx-custom-bg .page-content { background: var(--nx-user-bg) !important; }
+// Text size: scales the page content (px-based text included) in both app layouts.
+html.nx-custom-size .page-content > :not(router-outlet) { zoom: var(--nx-user-zoom, 1); }
+
 *, *::before, *::after { box-sizing: border-box; }
 img { max-width: 100%; }
 
@@ -211,3 +233,100 @@ input, textarea, select { max-width: 100%; font-family: inherit; }
   &.nx-nav-hidden { transform: translateY(-100%); box-shadow: none; }
 }
 .nx-sticky, .home-left { transition: top 250ms ease-in-out; }
+
+// ---------- Full-width pages ----------
+// The shell caps .page-inner at ~1200px. Pages that need the whole content area
+// (currently Settings) opt out by being the routed component inside it.
+.page-inner:has(> app-settings) { max-width: none !important; }
+
+/* =====================================================================
+   RESPONSIVE SAFETY NET (all roles: DEF-USERS, DEF-CLIENT, DEF-ADMIN, DEF-MASTERADMIN)
+   Catches what individual pages miss. Desktop is untouched except the media-safe basics.
+   ===================================================================== */
+html, body { max-width: 100%; overflow-x: hidden; }
+img, video, canvas, svg, iframe { max-width: 100%; }
+img, video { height: auto; }
+.mat-mdc-form-field, .mat-form-field { max-width: 100%; }
+.mat-mdc-card, .mat-card { max-width: 100%; box-sizing: border-box; }
+pre, code { max-width: 100%; overflow-x: auto; }
+
+/* dialogs / overlays never wider than the screen */
+.cdk-overlay-pane { max-width: 96vw !important; }
+.mat-mdc-dialog-container .mdc-dialog__surface { max-height: 90vh; }
+
+/* tablets + phones */
+@media screen and (max-width: 900px) {
+  /* wide data tables scroll sideways inside their box instead of breaking the page */
+  .mat-mdc-table, table.mat-table, mat-table, .mat-table,
+  table:not(.no-scroll) { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .mat-mdc-table .mat-mdc-header-row, .mat-mdc-table .mat-mdc-row { min-width: max-content; }
+
+  /* tabs scroll rather than wrap/overflow */
+  .mat-mdc-tab-header { max-width: 100%; }
+
+  /* toolbars, button rows and filter bars wrap */
+  .mat-toolbar { flex-wrap: wrap; height: auto; min-height: 56px; }
+  .mat-mdc-dialog-actions { flex-wrap: wrap; gap: 8px; }
+
+  /* inline fixed-width form controls fill the row */
+  .mat-mdc-form-field { width: 100%; }
+}
+
+/* phones */
+@media screen and (max-width: 600px) {
+  .mat-mdc-dialog-container .mdc-dialog__surface { border-radius: 14px; }
+  .mat-mdc-dialog-content { max-height: 70vh; padding-left: 14px !important; padding-right: 14px !important; }
+  .mat-mdc-dialog-title { padding-left: 14px !important; padding-right: 14px !important; }
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.25rem; }
+  .mat-mdc-button, .mat-mdc-unelevated-button, .mat-mdc-outlined-button { min-height: 40px; }
+}
+
+@media print {
+  table { display: table !important; overflow: visible !important; }
+}
+
+
+/* =====================================================================
+   PERSON CARD GRID: one grid for every list of people (Search, People you may know, Based on recent activity)
+   ===================================================================== */
+.pc-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; padding: 4px 0 0;
+  align-items: stretch;
+}
+@media (max-width: 599.98px) { .pc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
+@media (max-width: 359.98px) { .pc-grid { grid-template-columns: 1fr; } }
+@media (min-width: 1600px)   { .pc-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); } }
+
+// ---------- Candidate review dialog (recruiter): full screen on phones ----------
+.cand-dialog .mat-dialog-container, .cand-dialog .mat-mdc-dialog-container { padding: 0; overflow: hidden; border-radius: 16px; }
+@media (max-width: 767.98px) {
+  .cdk-overlay-pane.cand-dialog { width: 100vw !important; max-width: 100vw !important; height: 100vh !important; height: 100dvh !important; max-height: 100dvh !important; }
+  .cand-dialog .mat-dialog-container, .cand-dialog .mat-mdc-dialog-container { border-radius: 0; }
+}
+
+
+// ---------- Dialogs: close button always pinned top-right ----------
+.mat-dialog-container,
+.mat-mdc-dialog-surface { position: relative; }
+
+.mat-dialog-container .close-button,
+.mat-mdc-dialog-container .close-button {
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+  left: auto !important;
+  bottom: auto !important;
+  float: none !important;
+  margin: 0 !important;
+  z-index: 10;
+}
+
+.mat-dialog-container .close-button ~ h2.mat-dialog-title,
+.mat-dialog-container .close-button ~ h2[mat-dialog-title],
+.mat-mdc-dialog-container .close-button ~ h2[mat-dialog-title] { padding-right: 48px; }
+
+.close-button mat-icon { color: #e53935; }
+
+/* CV import preview dialog: it draws its own header and footer, so the dialog frame has no padding of its own */
+.cvi-panel .mat-dialog-container { padding: 0 !important; overflow: hidden; border-radius: 16px; }

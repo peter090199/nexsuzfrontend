@@ -43,24 +43,11 @@
         </div>
       </div>
 
-      <!-- Shortcuts -->
-      <nav class="nx-card shortcuts" *ngIf="!isLoading" aria-label="Shortcuts">
+      <!-- Shortcuts (always shown: they need no data) -->
+      <nav class="nx-card shortcuts" aria-label="Shortcuts">
         <h4 class="nx-card-title">Shortcuts</h4>
-        <a class="shortcut" [routerLink]="['/' + sharedRoutines.getRole() + '/network']">
-          <mat-icon>groups</mat-icon> My Network
-        </a>
-        <a class="shortcut" [routerLink]="['/' + sharedRoutines.getRole() + '/message']">
-          <mat-icon>chat</mat-icon> Messaging
-        </a>
-        <a class="shortcut" [routerLink]="['/' + sharedRoutines.getRole() + '/jobs']" *ngIf="showDefUserButtons">
-          <mat-icon>work</mat-icon> Jobs
-        </a>
-        <a class="shortcut" [routerLink]="['/' + sharedRoutines.getRole() + '/applied-jobs']"
-          *ngIf="showDefUserButtons">
-          <mat-icon>assignment_turned_in</mat-icon> Applied jobs
-        </a>
-        <a class="shortcut" [routerLink]="['/' + sharedRoutines.getRole() + '/settings']">
-          <mat-icon>settings</mat-icon> Settings
+        <a class="shortcut" *ngFor="let s of shortcuts; trackBy: trackShortcut" [routerLink]="[s.link]">
+          <mat-icon>{{ s.icon }}</mat-icon> {{ s.label }}
         </a>
       </nav>
     </aside>
@@ -68,6 +55,14 @@
     <!-- CENTER: create post + feed -->
     <main class="home-center">
 
+      <!-- phones: the left column is not shown, so the shortcuts sit at the top of the feed -->
+      <nav class="shortcuts-chips" *ngIf="isMobile" aria-label="Shortcuts">
+        <a class="chip" *ngFor="let s of shortcuts; trackBy: trackShortcut" [routerLink]="[s.link]">
+          <mat-icon>{{ s.icon }}</mat-icon><span>{{ s.label }}</span>
+        </a>
+      </nav>
+
+      <ng-container *appFeature="FEATURE.NETWORK_FEED">
       <section class="nx-card post-top-container" *ngIf="!isLoading">
         <div class="input-section">
           <img class="composer-avatar" [src]="profile_pic?.photo_pic || 'assets/images/default.png'" nxFallback alt="" />
@@ -87,6 +82,7 @@
           </button>
         </div>
       </section>
+      </ng-container>
 
       <app-public-post></app-public-post>
     </main>
@@ -111,7 +107,8 @@
               </a>
             </div>
 
-            <div class="client-action" *ngIf="currentUserCode !== user.code">
+            <div class="client-action" *ngIf="currentUserCode != user.code">
+              <app-block-button [role]="user.role_code" [code]="user.code" [name]="user.fullname" (blocked)="removeBlocked(user.code)"></app-block-button>
               <button mat-stroked-button [color]="user.follow_status === 'accepted' ? 'accent' : 'primary'"
                 class="connect-btn" (click)="AddConnect(user.code, user.fullname, user.follow_status, user.id)">
                 {{ user.follow_status === 'not_following' ? 'Connect' : 'Connected' }}

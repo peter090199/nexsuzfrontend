@@ -1,3 +1,4 @@
+import { FEATURE } from 'src/app/services/AccountPlan/feature-access.map';
 import { Component, OnInit } from '@angular/core';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -24,6 +25,8 @@ import { finalize } from 'rxjs/operators';
   styleUrls: ['./profile-ui.component.css'],
 })
 export class ProfileUIComponent implements OnInit {
+  /** feature codes for the template */
+  readonly FEATURE = FEATURE;
 
   // =========================
   // STATE
@@ -78,13 +81,27 @@ export class ProfileUIComponent implements OnInit {
   // =========================
   ngOnInit(): void {
     this.currentUserCode = this.authService.getAuthCode?.();
+    this.ownCodeKnown = !!this.currentUserCode;
+    if (!this.ownCodeKnown) {
+      // the code is only stored after Home / the feed has loaded (or at sign-in): ask the server who is signed in,
+      // so opening your own profile directly never offers "Connect" to yourself (admins, master admins, recruiters too)
+      this.authService.getProfilecode().subscribe({
+        next: (res: any) => {
+          const c = res?.message?.code;
+          if (c !== undefined && c !== null) {
+            this.currentUserCode = String(c);
+            sessionStorage.setItem('code', String(c));
+          }
+          this.ownCodeKnown = true;
+        },
+        error: () => { this.ownCodeKnown = true; }
+      });
+    }
 
     this.route.paramMap.subscribe(params => {
       this.code = params.get('code');
       const role = params.get('role');
 
-      console.log('ROLE:', role);
-      console.log('CODE:', this.code);
 
       if (this.code) {
         this.initData();
@@ -94,6 +111,11 @@ export class ProfileUIComponent implements OnInit {
 
   UserCV() {
     this.router.navigateByUrl("/DEF-USERS/user-cv")
+  }
+
+  /** after blocking this person their profile is no longer available: go back to Home */
+  onBlocked(): void {
+    this.router.navigate(['/' + this.sharedRoutines.getRole() + '/home']);
   }
   // =========================
   // INIT LOAD
@@ -381,7 +403,7 @@ export class ProfileUIComponent implements OnInit {
 
 
   AddFollow(code: any, data: any, followStatus: string): void {
-    if (!code) {
+    if (!code || this.isOwner) {      // you cannot connect to your own account (any role)
       return;
     }
     const fullname = `${data.fname} ${data.lname}`;
@@ -501,7 +523,6 @@ export class ProfileUIComponent implements OnInit {
       }
       this.followServices.AddFollow(code).subscribe({
         next: (res: any) => {
-          console.log('Follow response:', res);
           return;
           if (!res) {
             this.alert.toastrError('No response from server.');
@@ -652,7 +673,15 @@ export class ProfileUIComponent implements OnInit {
   coverFailed = false;
 
   get isOwner(): boolean {
-    return !!this.code && String(this.currentUserCode) === String(this.code);
+    return !!this.code && !!this.currentUserCode && String(this.currentUserCode) === String(this.code);
+  }
+
+  /** false until we know whose account is signed in (so Connect / Block never flash on your own profile) */
+  ownCodeKnown = false;
+
+  /** Connect and Block are for other people's profiles only: never your own, for any role */
+  get canActOnProfile(): boolean {
+    return this.ownCodeKnown && !this.isOwner;
   }
   get hasPhoto(): boolean { return !!this.profiles?.photo_pic; }
   get hasCover(): boolean { return !!this.coverphoto?.coverphoto; }

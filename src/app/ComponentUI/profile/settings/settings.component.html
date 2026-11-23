@@ -5,7 +5,7 @@
     <nav class="st-nav" aria-label="Settings sections">
       <h2 class="st-nav-title">Settings</h2>
       <ul>
-        <li *ngFor="let s of sections">
+        <li *ngFor="let s of navSections">
           <button type="button" class="st-nav-item" [class.active]="s.id === activeSection"
             [attr.aria-current]="s.id === activeSection ? 'page' : null" (click)="select(s.id)">
             <mat-icon>{{ s.icon }}</mat-icon>
@@ -18,7 +18,7 @@
 
     <!-- RIGHT: content -->
     <main class="st-content" [ngSwitch]="activeSection">
-      <div class="st-panel-head">
+      <div class="st-panel-head" *ngIf="activeSection !== 'plan'">
         <mat-icon>{{ current.icon }}</mat-icon>
         <div>
           <h2>{{ current.label }}</h2>
@@ -33,7 +33,7 @@
       </div>
 
       <!-- Needs-profile notice for sections that save to the profile -->
-      <div class="st-notice" *ngIf="!isLoading && !loadError && !profileExists && (activeSection === 'account' || activeSection === 'privacy')">
+      <div class="st-notice" *ngIf="!isLoading && !loadError && !hasProfileToEdit && (activeSection === 'account' || activeSection === 'privacy')">
         <mat-icon>info_outline</mat-icon>
         <div>
           <strong>Complete your profile first.</strong>
@@ -42,9 +42,98 @@
         <button mat-flat-button color="primary" (click)="goToCV()">Complete profile</button>
       </div>
 
+      <div class="st-notice" *ngIf="!isLoading && !loadError && hasProfileToEdit && !features.allows(FEATURE.CREATE_PROFILE) && (activeSection === 'account' || activeSection === 'privacy')" role="status">
+        <mat-icon>lock</mat-icon>
+        <div>
+          <strong>Editing your profile is not in your plan.</strong>
+          <span>{{ features.message(FEATURE.CREATE_PROFILE) }}</span>
+        </div>
+        <button mat-flat-button color="primary" type="button" (click)="select('plan')">View plans</button>
+      </div>
+
+      <!-- Administrators: no CV is needed, the first save creates the basic profile -->
+      <div class="st-notice" *ngIf="!isLoading && !loadError && isAdminRole && !profileExists && (activeSection === 'account' || activeSection === 'privacy')">
+        <mat-icon>info_outline</mat-icon>
+        <div>
+          <strong>No CV needed.</strong>
+          <span>Fill in your details and save. Your basic profile is created the first time you save.</span>
+        </div>
+      </div>
+
       <!-- ACCOUNT -->
       <ng-container *ngSwitchCase="'account'">
-        <mat-card class="st-card">
+        <!-- DEF-ADMIN / DEF-MASTERADMIN: everything except the role can be edited -->
+        <form *ngIf="isAdminRole" [formGroup]="detailsForm" (ngSubmit)="saveDetails()" novalidate>
+          <mat-card class="st-card">
+            <h3 class="st-card-title">Account details</h3>
+            <div class="st-grid">
+              <mat-form-field appearance="outline">
+                <mat-label>First name</mat-label>
+                <mat-icon matPrefix>badge</mat-icon>
+                <input matInput formControlName="fname" autocomplete="given-name" />
+                <mat-error>First name is required</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Middle name</mat-label>
+                <input matInput formControlName="mname" autocomplete="additional-name" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Last name</mat-label>
+                <input matInput formControlName="lname" autocomplete="family-name" />
+                <mat-error>Last name is required</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Email (sign-in)</mat-label>
+                <mat-icon matPrefix>email</mat-icon>
+                <input matInput type="email" formControlName="email" autocomplete="email" (input)="detailsError = ''" />
+                <mat-error *ngIf="detailsForm.get('email')?.hasError('required')">Email is required</mat-error>
+                <mat-error *ngIf="detailsForm.get('email')?.hasError('email')">Enter a valid email address</mat-error>
+                <mat-error *ngIf="detailsForm.get('email')?.hasError('server')">{{ detailsError }}</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Profession</mat-label>
+                <mat-icon matPrefix>work_outline</mat-icon>
+                <input matInput formControlName="profession" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Company</mat-label>
+                <mat-icon matPrefix>business</mat-icon>
+                <input matInput formControlName="company" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Website</mat-label>
+                <mat-icon matPrefix>link</mat-icon>
+                <input matInput formControlName="companywebsite" placeholder="example.com" />
+              </mat-form-field>
+              <div class="st-fact">
+                <mat-icon>verified_user</mat-icon>
+                <div><small>Role (cannot be changed)</small><span>{{ users?.role_code || 'Not set' }}</span></div>
+              </div>
+            </div>
+
+            <!-- the sign-in email is sensitive: changing it needs the current password -->
+            <mat-form-field appearance="outline" class="st-span2" *ngIf="emailChanged">
+              <mat-label>Current password (needed to change your email)</mat-label>
+              <mat-icon matPrefix>lock</mat-icon>
+              <input matInput [type]="hideDetailsPw ? 'password' : 'text'" formControlName="current_password" autocomplete="current-password" (input)="detailsError = ''" />
+              <button mat-icon-button matSuffix type="button" (click)="hideDetailsPw = !hideDetailsPw" [attr.aria-label]="hideDetailsPw ? 'Show password' : 'Hide password'">
+                <mat-icon>{{ hideDetailsPw ? 'visibility' : 'visibility_off' }}</mat-icon>
+              </button>
+              <mat-error *ngIf="detailsForm.get('current_password')?.hasError('required')">Enter your current password to change your email</mat-error>
+              <mat-error *ngIf="detailsForm.get('current_password')?.hasError('server')">{{ detailsError }}</mat-error>
+            </mat-form-field>
+
+            <div class="st-actions">
+              <button mat-stroked-button type="button" (click)="cancelDetails()" [disabled]="!detailsDirty || savingDetails">Cancel</button>
+              <button mat-flat-button color="primary" type="submit" [disabled]="!detailsDirty || savingDetails">
+                <mat-spinner *ngIf="savingDetails" diameter="18"></mat-spinner>
+                <span>{{ savingDetails ? 'Saving…' : 'Save changes' }}</span>
+              </button>
+            </div>
+          </mat-card>
+        </form>
+
+        <mat-card class="st-card" *ngIf="!isAdminRole">
           <h3 class="st-card-title">Account details</h3>
           <div class="st-facts">
             <div class="st-fact" *ngFor="let f of accountFields">
@@ -101,7 +190,7 @@
             <div class="st-actions">
               <button mat-stroked-button type="button" (click)="cancelAccount()" [disabled]="!accountDirty || savingAccount">Cancel</button>
               <button mat-flat-button color="primary" type="submit"
-                [disabled]="!profileExists || !accountDirty || savingAccount">
+                [disabled]="!canEditProfile || !accountDirty || savingAccount">
                 <mat-spinner *ngIf="savingAccount" diameter="18"></mat-spinner>
                 <span>{{ savingAccount ? 'Saving…' : 'Save changes' }}</span>
               </button>
@@ -135,7 +224,7 @@
             <div class="st-actions">
               <button mat-stroked-button type="button" (click)="cancelPrivacy()" [disabled]="!privacyDirty || savingPrivacy">Cancel</button>
               <button mat-flat-button color="primary" type="submit"
-                [disabled]="!profileExists || !privacyDirty || savingPrivacy">
+                [disabled]="!canEditProfile || !privacyDirty || savingPrivacy">
                 <mat-spinner *ngIf="savingPrivacy" diameter="18"></mat-spinner>
                 <span>{{ savingPrivacy ? 'Saving…' : 'Save changes' }}</span>
               </button>
@@ -307,12 +396,15 @@
               <div class="st-toggle-text"><strong>Job applications</strong><span>When someone applies to your job posting.</span></div>
               <mat-slide-toggle color="primary" [checked]="np.job_applications" (change)="setPref('job_applications', $event.checked)" aria-label="Job applications"></mat-slide-toggle>
             </div>
-            <mat-divider></mat-divider>
-            <div class="st-toggle">
-              <mat-icon>event</mat-icon>
-              <div class="st-toggle-text"><strong>Interview invites</strong><span>When you are invited to an interview.</span></div>
-              <mat-slide-toggle color="primary" [checked]="np.job_interviews" (change)="setPref('job_interviews', $event.checked)" aria-label="Interview invites"></mat-slide-toggle>
-            </div>
+            <!-- Interview invites go to candidates, not to recruiters (DEF-CLIENT) who send them -->
+            <ng-container *ngIf="showInterviewInvites">
+              <mat-divider></mat-divider>
+              <div class="st-toggle">
+                <mat-icon>event</mat-icon>
+                <div class="st-toggle-text"><strong>Interview invites</strong><span>When you are invited to an interview.</span></div>
+                <mat-slide-toggle color="primary" [checked]="np.job_interviews" (change)="setPref('job_interviews', $event.checked)" aria-label="Interview invites"></mat-slide-toggle>
+              </div>
+            </ng-container>
             <mat-divider></mat-divider>
             <div class="st-toggle">
               <mat-icon>verified</mat-icon>
@@ -351,6 +443,89 @@
 
       <!-- APPEARANCE: reaction sounds -->
       <ng-container *ngSwitchCase="'appearance'">
+        <!-- Page colour, font and text size: preview here, Save applies it to every page -->
+        <mat-card class="st-card st-wide ap-card">
+          <h3 class="st-card-title">Page colour, font &amp; text size</h3>
+          <div class="ap-grid">
+
+            <div class="ap-controls">
+              <div class="ap-field">
+                <span class="ap-label">Background colour</span>
+                <div class="ap-swatches" role="radiogroup" aria-label="Background colour">
+                  <button type="button" class="ap-swatch" *ngFor="let sw of appearance.swatches"
+                    role="radio" [attr.aria-checked]="draft.bgColor === sw.color" [attr.aria-label]="sw.name"
+                    [title]="sw.name" [class.on]="draft.bgColor === sw.color"
+                    [style.background]="sw.color || '#f5f7fb'" (click)="pickSwatch(sw.color)">
+                    <mat-icon *ngIf="draft.bgColor === sw.color">check</mat-icon>
+                    <span class="ap-std" *ngIf="!sw.color">Std</span>
+                  </button>
+                </div>
+                <div class="ap-custom">
+                  <input type="color" class="ap-picker" [value]="draft.bgColor || '#f5f7fb'"
+                    (input)="setCustomColor($any($event.target).value)" aria-label="Pick a custom colour">
+                  <mat-form-field appearance="outline" class="ap-hex">
+                    <mat-label>Custom colour</mat-label>
+                    <input matInput maxlength="7" [value]="customHex" (input)="setCustomColor($any($event.target).value)" placeholder="#e8f1fb">
+                    <mat-hint *ngIf="!colorError">Light colours only, so text stays readable.</mat-hint>
+                    <mat-hint *ngIf="colorError" class="ap-err">{{ colorError }}</mat-hint>
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <div class="ap-field">
+                <mat-form-field appearance="outline" class="ap-full">
+                  <mat-label>Font family</mat-label>
+                  <mat-icon matPrefix>text_fields</mat-icon>
+                  <mat-select [value]="draft.fontKey" (selectionChange)="setFont($event.value)">
+                    <mat-option *ngFor="let f of appearance.fonts" [value]="f.key" [style.font-family]="f.stack">{{ f.label }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <div class="ap-field">
+                <span class="ap-label">Text size <strong>{{ draft.fontSize }}px</strong>
+                  <small *ngIf="draft.fontSize === 14"> (standard)</small></span>
+                <div class="ap-size">
+                  <span class="ap-a small" aria-hidden="true">A</span>
+                  <mat-slider class="ap-slider" [min]="fontSizeMin" [max]="fontSizeMax" step="1" [value]="draft.fontSize"
+                    (input)="setFontSize($event.value || 14)" (change)="setFontSize($event.value || 14)" aria-label="Text size"></mat-slider>
+                  <span class="ap-a big" aria-hidden="true">A</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Live preview of the page -->
+            <div class="ap-preview-wrap">
+              <span class="ap-label">Preview</span>
+              <div class="ap-preview" [style.background]="previewBg" [style.--nx-user-font]="previewFont" [style.font-family]="previewFont" [style.font-size.px]="draft.fontSize">
+                <div class="ap-pv-bar"><span class="ap-pv-dot"></span><strong>NEXSUZ</strong><span class="ap-pv-nav">Home &nbsp; Jobs &nbsp; Network</span></div>
+                <div class="ap-pv-card">
+                  <h4>Welcome back</h4>
+                  <p>This is how headings, text and buttons will look on every page of the app.</p>
+                  <div class="ap-pv-row">
+                    <span class="ap-pv-btn">Apply now</span>
+                    <span class="ap-pv-btn ghost">Save job</span>
+                  </div>
+                </div>
+                <div class="ap-pv-card">
+                  <strong>Senior Designer</strong>
+                  <small>ABC Company · Manila</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="st-actions">
+            <button mat-stroked-button type="button" (click)="resetDraft()" [disabled]="draftIsDefault">
+              <mat-icon>restart_alt</mat-icon> Reset to standard</button>
+            <button mat-stroked-button type="button" (click)="discardDraft()" [disabled]="!draftDirty">Cancel</button>
+            <button mat-flat-button color="primary" type="button" (click)="saveAppearance()" [disabled]="!draftDirty || !!colorError">
+              <mat-icon>check</mat-icon> Save &amp; apply to all pages</button>
+          </div>
+          <p class="st-hint">Saved on this device. The font applies everywhere, the background to the page area behind the cards,
+            and the text size to the page content.</p>
+        </mat-card>
+
         <mat-card class="st-card">
           <h3 class="st-card-title">Reaction sounds</h3>
           <div class="st-toggle">
@@ -376,9 +551,236 @@
         </mat-card>
       </ng-container>
 
+      <!-- BLOCKED USERS -->
+      <ng-container *ngSwitchCase="'blocked'">
+        <mat-card class="st-card st-wide bl-card">
+          <h3 class="st-card-title">Blocked accounts</h3>
+          <p class="st-hint">Blocked accounts can't message you, connect with you or see your profile and posts, and you can't do those things with them.
+            Your connection is removed, but messages and posts are not deleted.</p>
+
+          <mat-form-field appearance="outline" class="bl-search">
+            <mat-label>Search blocked accounts</mat-label>
+            <mat-icon matPrefix>search</mat-icon>
+            <input matInput [(ngModel)]="blockedSearch" (ngModelChange)="onBlockedSearch()" autocomplete="off">
+            <button mat-icon-button matSuffix type="button" *ngIf="blockedSearch" (click)="clearBlockedSearch()" aria-label="Clear search">
+              <mat-icon>close</mat-icon>
+            </button>
+          </mat-form-field>
+
+          <mat-progress-bar *ngIf="blockedLoading" mode="indeterminate"></mat-progress-bar>
+
+          <div class="st-error" *ngIf="blockedError">
+            <mat-icon>error_outline</mat-icon>
+            <span>We couldn't load your blocked accounts.</span>
+            <button mat-stroked-button color="primary" type="button" (click)="loadBlocked()">Retry</button>
+          </div>
+
+          <ul class="bl-list" *ngIf="blockedUsers.length">
+            <li class="bl-item" *ngFor="let u of blockedUsers; trackBy: trackBlocked">
+              <img class="bl-avatar" [src]="u.photo_pic || 'assets/images/default.png'" nxFallback alt="">
+              <div class="bl-info">
+                <strong>{{ u.fullname }}</strong>
+                <span class="bl-type">{{ accountTypeLabel(u.role_code) }}<ng-container *ngIf="u.company"> · {{ u.company }}</ng-container></span>
+                <small>Blocked {{ u.blocked_at | date:'mediumDate' }}</small>
+              </div>
+              <button mat-stroked-button color="primary" type="button" (click)="unblockUser(u)" [disabled]="unblockingCode === u.code">
+                <mat-spinner *ngIf="unblockingCode === u.code" diameter="18"></mat-spinner>
+                <span>Unblock</span>
+              </button>
+            </li>
+          </ul>
+
+          <div class="bl-empty" *ngIf="!blockedLoading && !blockedError && !blockedUsers.length">
+            <mat-icon>{{ blockedSearch ? 'search_off' : 'block' }}</mat-icon>
+            <strong>{{ blockedSearch ? 'No blocked accounts match your search' : 'No blocked accounts' }}</strong>
+            <span>{{ blockedSearch ? 'Try a different name.' : 'When you block someone from their profile, search results or suggestions, they will appear here.' }}</span>
+          </div>
+        </mat-card>
+      </ng-container>
+
       <!-- PLAN -->
       <ng-container *ngSwitchCase="'plan'">
-        <app-account-type-plan></app-account-type-plan>
+        <!-- master admin: the same plan manager as /subscriptionplans (audience tabs, filters, all plan actions) -->
+        <app-subscription-plans *ngIf="role === 'DEF-MASTERADMIN'; else ownPlan"></app-subscription-plans>
+        <ng-template #ownPlan><app-account-type-plan></app-account-type-plan></ng-template>
+      </ng-container>
+
+      <!-- JOB POSTING TEMPLATES & THEMES (DEF-MASTERADMIN) -->
+      <ng-container *ngSwitchCase="'jobtemplates'">
+        <app-job-templates-settings *ngIf="role === 'DEF-MASTERADMIN'"></app-job-templates-settings>
+      </ng-container>
+
+      <!-- EMAIL PREFERENCES -->
+      <ng-container *ngSwitchCase="'email'">
+        <ng-container *ngIf="{ s: prefsSvc.status$ | async } as v">
+
+          <!-- where emails go -->
+          <mat-card class="st-card em-hero">
+            <div class="em-hero-icon"><mat-icon>mark_email_read</mat-icon></div>
+            <div class="em-hero-text">
+              <small>We send emails to</small>
+              <strong>{{ users?.email || 'No email on your account' }}</strong>
+              <span class="em-chip" *ngIf="users?.email"><mat-icon>verified</mat-icon> Sign-in email</span>
+            </div>
+            <div class="np-status em-status" role="status" aria-live="polite" [ngClass]="v.s?.state">
+              <ng-container [ngSwitch]="v.s?.state">
+                <span *ngSwitchCase="'saving'"><mat-spinner diameter="16"></mat-spinner> Saving…</span>
+                <span *ngSwitchCase="'saved'"><mat-icon>check_circle</mat-icon> Saved</span>
+                <span *ngSwitchCase="'error'"><mat-icon>error_outline</mat-icon> {{ v.s?.message }}</span>
+                <span *ngSwitchDefault class="muted"><mat-icon>cloud_done</mat-icon> Applies immediately</span>
+              </ng-container>
+            </div>
+          </mat-card>
+
+          <!-- emails you can turn off -->
+          <mat-card class="st-card">
+            <h3 class="st-card-title">Emails you can control</h3>
+            <div class="st-toggle">
+              <mat-icon>work_history</mat-icon>
+              <div class="st-toggle-text">
+                <strong>Job application updates</strong>
+                <span>Email me when an application changes: received, under review, interview, approved or rejected.</span>
+              </div>
+              <mat-slide-toggle color="primary" [checked]="np.email_application_updates"
+                (change)="setPref('email_application_updates', $event.checked)" aria-label="Job application update emails"></mat-slide-toggle>
+            </div>
+            <p class="st-hint">Turning this off only stops the emails. You still get the update inside NEXSUZ (messages and notifications).</p>
+          </mat-card>
+
+          <!-- emails that are always sent -->
+          <mat-card class="st-card">
+            <h3 class="st-card-title">Always sent for your security</h3>
+            <ul class="em-fixed">
+              <li><mat-icon>lock_reset</mat-icon><div><strong>Password reset</strong><span>The link you request from Password Management or the sign-in page.</span></div><mat-icon class="em-lock" matTooltip="Required for your account's safety">lock</mat-icon></li>
+              <li><mat-icon>how_to_reg</mat-icon><div><strong>Account activation</strong><span>The message that confirms your email when you sign up.</span></div><mat-icon class="em-lock" matTooltip="Required for your account's safety">lock</mat-icon></li>
+            </ul>
+          </mat-card>
+
+        </ng-container>
+      </ng-container>
+
+      <!-- RESUME / CV (job seekers): the same component the CV page uses in "upload only" mode -->
+      <ng-container *ngSwitchCase="'resume'">
+        <app-resume-manager *ngIf="role === 'DEF-USERS' && features.allows(FEATURE.CREATE_RESUME); else resumeLocked" class="st-wide"></app-resume-manager>
+        <ng-template #resumeLocked>
+          <mat-card class="st-card st-empty">
+            <mat-icon>lock</mat-icon>
+            <h3>Resume / CV is not in your plan</h3>
+            <p>{{ features.message(FEATURE.CREATE_RESUME) }}</p>
+            <button mat-flat-button color="primary" type="button" (click)="select('plan')">View plans</button>
+          </mat-card>
+        </ng-template>
+      </ng-container>
+
+      <!-- CV & RESUME MODE (DEF-MASTERADMIN): what job seekers see on their CV page -->
+      <ng-container *ngSwitchCase="'cvmode'">
+        <ng-container *ngIf="role === 'DEF-MASTERADMIN'">
+
+          <mat-card class="st-card cm-hero">
+            <div class="cm-hero-icon"><mat-icon>tune</mat-icon></div>
+            <div class="cm-hero-text">
+              <strong>CV &amp; Resume Mode</strong>
+              <span>Decide how job seekers provide their CV on their <em>CV</em> page.</span>
+            </div>
+            <span class="cm-state" role="status" aria-live="polite">
+              <mat-spinner *ngIf="cvModeSaving || cvModeLoading" diameter="16"></mat-spinner>
+              <ng-container *ngIf="!cvModeSaving && !cvModeLoading"><mat-icon>{{ cvUploadOnly ? 'upload_file' : 'edit_note' }}</mat-icon> {{ cvUploadOnly ? 'Upload only' : 'CV builder' }}</ng-container>
+            </span>
+          </mat-card>
+
+          <mat-card class="st-card cm-wide">
+            <mat-checkbox color="primary" class="cm-check" [checked]="cvUploadOnly" [disabled]="cvModeSaving || cvModeLoading"
+              (change)="setCvUploadOnly($event.checked)">
+              <strong>Set as default: job seekers upload a CV or resume only</strong>
+            </mat-checkbox>
+            <p class="st-hint">Saved straight away and applied to every job seeker.</p>
+            <p class="cm-error" *ngIf="cvModeError" role="alert"><mat-icon>error_outline</mat-icon> {{ cvModeError }}</p>
+
+            <div class="cm-compare">
+              <div class="cm-option" [class.active]="cvUploadOnly">
+                <mat-icon>upload_file</mat-icon>
+                <strong>Checked: upload only</strong>
+                <span>The CV page shows only <b>Upload your CV or resume</b>. One uploaded PDF is enough to finish the "set up your CV" step.</span>
+              </div>
+              <div class="cm-option" [class.active]="!cvUploadOnly">
+                <mat-icon>edit_note</mat-icon>
+                <strong>Unchecked: fill up the CV</strong>
+                <span>Job seekers fill up the CV form step by step, as before. They can still keep uploaded resumes in Settings.</span>
+              </div>
+            </div>
+            <p class="st-hint">This changes what job seekers see. It does not delete anything: CVs they already built and resumes they already uploaded are kept.</p>
+          </mat-card>
+
+        </ng-container>
+      </ng-container>
+
+      <!-- ACCOUNT DEACTIVATION (job seekers and recruiters) -->
+      <ng-container *ngSwitchCase="'danger'">
+        <ng-container *ngIf="current.available; else dangerSoon">
+
+          <mat-card class="st-card dz-hero">
+            <div class="dz-hero-icon"><mat-icon>person_off</mat-icon></div>
+            <div class="dz-hero-text">
+              <strong>Deactivate your account</strong>
+              <span>Take a break without losing anything. You can come back whenever you like.</span>
+            </div>
+            <span class="dz-chip"><mat-icon>undo</mat-icon> Reversible</span>
+          </mat-card>
+
+          <mat-card class="st-card">
+            <h3 class="st-card-title">What happens when you deactivate</h3>
+            <mat-list class="dz-list">
+              <mat-list-item><mat-icon mat-list-icon>visibility_off</mat-icon><div mat-line>You are hidden</div><div mat-line class="dz-sub">Your account no longer shows up in people search or chat.</div></mat-list-item>
+              <mat-list-item><mat-icon mat-list-icon>devices</mat-icon><div mat-line>You are signed out everywhere</div><div mat-line class="dz-sub">Every device and browser you are signed in on is signed out.</div></mat-list-item>
+              <mat-list-item><mat-icon mat-list-icon>inventory_2</mat-icon><div mat-line>Nothing is deleted</div><div mat-line class="dz-sub">Your profile, CV, posts, connections and plan are kept exactly as they are.</div></mat-list-item>
+              <mat-list-item><mat-icon mat-list-icon>login</mat-icon><div mat-line>Sign in to come back</div><div mat-line class="dz-sub">Signing in again reactivates your account straight away.</div></mat-list-item>
+            </mat-list>
+          </mat-card>
+
+          <mat-card class="st-card dz-confirm">
+            <h3 class="st-card-title">Confirm it is you</h3>
+            <form [formGroup]="deactivateForm" (ngSubmit)="confirmDeactivate()" novalidate>
+              <mat-form-field appearance="outline" class="dz-field">
+                <mat-label>Your password</mat-label>
+                <mat-icon matPrefix>lock</mat-icon>
+                <input matInput [type]="hideDeactivatePw ? 'password' : 'text'" formControlName="password" autocomplete="current-password" (input)="deactivateError = ''">
+                <button mat-icon-button matSuffix type="button" (click)="hideDeactivatePw = !hideDeactivatePw" [attr.aria-label]="hideDeactivatePw ? 'Show password' : 'Hide password'">
+                  <mat-icon>{{ hideDeactivatePw ? 'visibility' : 'visibility_off' }}</mat-icon>
+                </button>
+                <mat-error *ngIf="deactivateForm.get('password')?.hasError('required')">Enter your password to continue</mat-error>
+                <mat-error *ngIf="deactivateForm.get('password')?.hasError('wrong')">{{ deactivateError }}</mat-error>
+              </mat-form-field>
+
+              <mat-checkbox color="warn" formControlName="understand" class="dz-check">
+                I understand my account will be hidden and I will be signed out everywhere.
+              </mat-checkbox>
+
+              <p class="dz-error" *ngIf="deactivateError && !deactivateForm.get('password')?.hasError('wrong')" role="alert"><mat-icon>error_outline</mat-icon> {{ deactivateError }}</p>
+
+              <div class="dz-actions">
+                <button mat-flat-button color="warn" type="submit" [disabled]="deactivateForm.invalid || deactivating">
+                  <mat-spinner *ngIf="deactivating" diameter="18"></mat-spinner>
+                  <mat-icon *ngIf="!deactivating">person_off</mat-icon>
+                  {{ deactivating ? 'Deactivating…' : 'Deactivate my account' }}
+                </button>
+              </div>
+            </form>
+          </mat-card>
+
+          <mat-card class="st-card dz-note">
+            <mat-icon>info_outline</mat-icon>
+            <p>Permanent deletion is not available here. If you want your account deleted, ask an administrator.</p>
+          </mat-card>
+
+        </ng-container>
+
+        <ng-template #dangerSoon>
+          <mat-card class="st-card st-empty">
+            <mat-icon>{{ current.icon }}</mat-icon>
+            <h3>{{ current.label }} isn't available yet</h3>
+            <p>This setting isn't available for your account type.</p>
+          </mat-card>
+        </ng-template>
       </ng-container>
 
       <!-- NOT YET AVAILABLE (no backend support; deliberately no fake controls) -->

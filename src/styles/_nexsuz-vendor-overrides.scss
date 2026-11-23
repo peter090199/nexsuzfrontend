@@ -96,3 +96,96 @@ a { color: $nx-primary; &:hover { color: $nx-primary-dark; } }
 img, video, canvas, svg { max-width: 100%; }
 table { max-width: 100%; }
 pre, code { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+// ---------- Compact notifications (NotificationsService) ----------
+// ngx-toastr toasts: small card, smaller type, tighter padding
+.toast-container .ngx-toastr {
+  width: 280px; max-width: calc(100vw - 24px);
+  padding: 10px 12px 10px 44px; margin: 0 0 6px;
+  background-position: 12px center; background-size: 20px;
+  font-size: 12px; line-height: 1.4;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .18);
+}
+.toast-container .toast-title { font-size: 12px; font-weight: 700; }
+.toast-container .toast-message { font-size: 12px; }
+.toast-container .toast-close-button { font-size: 16px; top: -2px; right: -2px; }
+.toast-top-right { top: 12px; right: 12px; }
+
+// SweetAlert2 toast (success): slim pill
+.swal2-popup.swal2-toast {
+  width: auto !important; max-width: min(300px, calc(100vw - 24px));
+  padding: 8px 12px !important; box-shadow: 0 4px 14px rgba(0, 0, 0, .18) !important;
+  .swal2-title { margin: 0 6px; font-size: 12px !important; line-height: 1.4; }
+  .swal2-icon { width: 20px !important; height: 20px !important; min-width: 20px !important; margin: 0 4px 0 0 !important; border-width: 2px !important;
+    .swal2-icon-content { font-size: 14px !important; }
+    &.swal2-success [class^='swal2-success-line'] { height: 2px; }
+    &.swal2-success .swal2-success-ring { border-width: 2px; }
+  }
+}
+
+// SweetAlert2 dialogs (popup / popupWarning / toastPopUp / toastPopUpError): compact
+.swal2-popup:not(.swal2-toast) {
+  width: 340px !important; max-width: calc(100vw - 24px); padding: 16px 16px 14px !important;
+  .swal2-icon { width: 48px; height: 48px; margin: 4px auto 8px; border-width: 3px;
+    .swal2-icon-content { font-size: 32px; } }
+  .swal2-title { font-size: 16px; padding: 0; margin: 0 0 6px; }
+  .swal2-html-container { font-size: 13px; margin: 4px 0 0; line-height: 1.5; }
+  .swal2-actions { margin-top: 14px; gap: 8px; }
+  .swal2-styled { font-size: 13px; padding: 7px 16px; margin: 0; }
+}
+
+// ---------- SweetAlert2 design ----------
+// No dimmed overlay behind SweetAlert popups
+.swal2-container.swal2-backdrop-show, .swal2-container.swal2-noanimation, .swal2-container {
+  background: transparent !important;
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+}
+.swal2-container { padding: 12px; }
+
+// Dialogs
+.swal2-popup:not(.swal2-toast) {
+  border-radius: 16px !important;
+  background: #fff;
+  box-shadow: 0 20px 50px rgba(0, 30, 70, .28), 0 2px 8px rgba(0, 0, 0, .08) !important;
+  border-top: 4px solid $nx-primary;
+  text-align: center;
+  .swal2-title { color: #1b2a4a; font-weight: 700; }
+  .swal2-html-container { color: #5b6b88; }
+  // soft tinted icon discs
+  .swal2-icon.swal2-warning { color: #f59e0b; border-color: #fbd38d; background: #fff8e8; }
+  .swal2-icon.swal2-success { border-color: #a7e3c0; background: #eefaf3;
+    [class^='swal2-success-line'] { background-color: #1b8a4b; }
+    .swal2-success-ring { border-color: rgba(27, 138, 75, .25); } }
+  .swal2-icon.swal2-error { border-color: #f5b5b0; background: #fdf0ef; color: #d32f2f;
+    [class^='swal2-x-mark-line'] { background-color: #d32f2f; } }
+  .swal2-icon.swal2-info, .swal2-icon.swal2-question { border-color: #bcdcf6; background: #eef6fd; color: $nx-primary; }
+  // buttons
+  .swal2-actions { flex-wrap: wrap; }
+  .swal2-styled {
+    border-radius: 10px !important; font-weight: 700; min-height: 36px;
+    box-shadow: none !important;
+    transition: filter .2s ease, transform .1s ease, background-color .2s ease;
+    &:hover { filter: brightness(1.08); }
+    &:active { transform: translateY(1px); }
+    &:focus-visible { outline: 3px solid rgba(10, 102, 194, .35); outline-offset: 2px; box-shadow: none !important; }
+  }
+  .swal2-confirm { background: linear-gradient(135deg, #0a66c2, #004182) !important; color: #fff; }
+  .swal2-deny { background: #fff !important; color: #d32f2f !important; border: 1px solid #f5b5b0 !important; }
+  .swal2-cancel { background: #eef1f7 !important; color: #3b4a68 !important; }
+}
+
+// Toasts: white card with a coloured accent bar
+.swal2-popup.swal2-toast {
+  border-radius: 12px !important;
+  background: #fff;
+  border-left: 4px solid #1b8a4b;
+  .swal2-title { color: #1b2a4a; font-weight: 600; }
+  &.swal2-icon-error { border-left-color: #d32f2f; }
+  &.swal2-icon-warning { border-left-color: #f59e0b; }
+  &.swal2-icon-info, &.swal2-icon-question { border-left-color: $nx-primary; }
+  .swal2-timer-progress-bar { background: rgba(27, 138, 75, .45); height: 3px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swal2-popup, .swal2-styled { transition: none !important; animation-duration: .01ms !important; }
+}

@@ -1,1 +1,201 @@
-<p>admin-dashboard works!</p>
+<div class="dash">
+
+  <!-- ============ HEADER + RANGE ============ -->
+  <header class="dash-head">
+    <div class="dash-title">
+      <h1>Dashboard <span class="role-badge">{{ roleTitle }}</span></h1>
+      <p *ngIf="isMaster">Platform-wide overview of accounts, recruitment activity and subscriptions.</p>
+      <p *ngIf="!isMaster">Overview of users, clients, recruitment activity and applications.</p>
+    </div>
+
+    <div class="dash-tools">
+      <div class="presets" role="group" aria-label="Date range">
+        <button type="button" *ngFor="let p of presets" class="chip" [class.on]="preset === p.key"
+          [attr.aria-pressed]="preset === p.key" (click)="setPreset(p.key)">{{ p.label }}</button>
+      </div>
+
+      <div class="custom-range">
+        <label>
+          <span>From</span>
+          <input type="date" [(ngModel)]="from" [max]="to" aria-label="From date">
+        </label>
+        <label>
+          <span>To</span>
+          <input type="date" [(ngModel)]="to" [min]="from" aria-label="To date">
+        </label>
+        <button type="button" class="chip apply" [class.on]="preset === 'custom'" (click)="applyCustom()">Apply</button>
+      </div>
+
+      <button type="button" class="refresh" (click)="load()" [disabled]="loading || refreshing" aria-label="Refresh dashboard">
+        <mat-icon [class.spin]="refreshing">refresh</mat-icon>
+        <span>Refresh</span>
+      </button>
+    </div>
+
+    <p class="range-error" *ngIf="rangeError" role="alert">{{ rangeError }}</p>
+    <small class="updated" *ngIf="lastUpdated">Updated {{ lastUpdated | date:'h:mm a' }}</small>
+  </header>
+
+  <mat-progress-bar *ngIf="refreshing" mode="indeterminate" class="top-bar"></mat-progress-bar>
+
+  <!-- ============ ERROR ============ -->
+  <div class="state-card error" *ngIf="error" role="alert">
+    <mat-icon>error_outline</mat-icon>
+    <div>
+      <strong>{{ data ? "We couldn't refresh the dashboard." : "We couldn't load the dashboard." }}</strong>
+      <span>{{ data ? 'Showing the last data that loaded.' : 'Check your connection and try again.' }}</span>
+    </div>
+    <button mat-stroked-button color="primary" type="button" (click)="load()">Try again</button>
+  </div>
+
+  <!-- ============ LOADING ============ -->
+  <ng-container *ngIf="loading">
+    <div class="cards">
+      <div class="stat skeleton" *ngFor="let i of [1,2,3,4,5,6,7,8]"><span class="sk sk-ico"></span><span class="sk sk-line w60"></span><span class="sk sk-num"></span><span class="sk sk-line w40"></span></div>
+    </div>
+    <div class="grid">
+      <section class="panel span-8"><span class="sk sk-line w30"></span><span class="sk sk-chart"></span></section>
+      <section class="panel span-4"><span class="sk sk-line w30"></span><span class="sk sk-chart"></span></section>
+    </div>
+  </ng-container>
+
+  <!-- ============ CONTENT ============ -->
+  <ng-container *ngIf="data && !loading">
+
+    <!-- quick actions -->
+    <nav class="quick" aria-label="Quick actions">
+      <button type="button" *ngFor="let a of quickActions" (click)="go(a.route, a.query)">
+        <mat-icon>{{ a.icon }}</mat-icon><span>{{ a.label }}</span>
+      </button>
+    </nav>
+
+    <!-- statistic cards -->
+    <div class="cards">
+      <div class="stat" *ngFor="let c of cards; trackBy: trackIdx" [class.clickable]="c.route" [class.warn]="c.warn"
+        [attr.role]="c.route ? 'link' : null" [attr.tabindex]="c.route ? 0 : null"
+        [attr.aria-label]="c.label + ': ' + c.value"
+        (click)="go(c.route)" (keydown.enter)="go(c.route)">
+        <div class="stat-top">
+          <span class="stat-ico"><mat-icon>{{ c.icon }}</mat-icon></span>
+          <mat-icon class="stat-go" *ngIf="c.route" aria-hidden="true">arrow_forward</mat-icon>
+        </div>
+        <span class="stat-label">{{ c.label }}</span>
+        <strong class="stat-value">{{ c.value | number }}</strong>
+        <small class="stat-sub">{{ c.sub }}</small>
+      </div>
+    </div>
+
+    <div class="grid">
+
+      <!-- registrations -->
+      <section class="panel span-8">
+        <header><h2>User registrations</h2><small>New accounts per {{ data.range.bucket }}</small></header>
+        <app-mini-chart type="bar" [series]="registrationSeries" ariaLabel="New account registrations over time"
+          emptyText="No registrations in this period"></app-mini-chart>
+      </section>
+
+      <!-- account status -->
+      <section class="panel span-4">
+        <header><h2>Account status</h2><small>{{ isMaster ? 'All account types' : 'Users and clients' }}</small></header>
+        <app-mini-chart type="donut" [slices]="statusSlices" ariaLabel="Active and inactive accounts"
+          emptyText="No accounts yet"></app-mini-chart>
+      </section>
+
+      <!-- jobs + applications -->
+      <section class="panel span-8">
+        <header><h2>Job listings and applications</h2><small>Created per {{ data.range.bucket }}</small></header>
+        <app-mini-chart type="line" [series]="activitySeries" ariaLabel="Job listings and applications over time"
+          emptyText="No job listings or applications in this period"></app-mini-chart>
+      </section>
+
+      <!-- applications by status -->
+      <section class="panel span-4">
+        <header><h2>Applications by status</h2><small>All time</small></header>
+        <app-mini-chart type="donut" [slices]="applicationSlices" ariaLabel="Applications by status"
+          emptyText="No applications yet"></app-mini-chart>
+      </section>
+
+      <!-- account types -->
+      <section class="panel span-5">
+        <header><h2>Account types</h2><small>{{ isMaster ? 'Every account type' : 'Users and clients' }}</small></header>
+        <ul class="bars" *ngIf="data.roles.length; else noRoles">
+          <li *ngFor="let r of data.roles">
+            <div class="bar-head"><span>{{ roleLabel(r.role_code) }}</span><strong>{{ r.total }}</strong></div>
+            <div class="bar-track" [attr.title]="r.active + ' active, ' + r.inactive + ' inactive'">
+              <span class="bar-fill" [style.width.%]="barWidth(r.total, maxOf(data.roles, 'total'))"></span>
+            </div>
+            <small>{{ r.active }} active · {{ r.inactive }} inactive</small>
+          </li>
+        </ul>
+        <ng-template #noRoles><p class="empty">No accounts yet.</p></ng-template>
+      </section>
+
+      <!-- recent registrations -->
+      <section class="panel span-7">
+        <header>
+          <h2>Recent registrations</h2>
+          <button type="button" class="link" (click)="go('user')">View all users</button>
+        </header>
+        <ul class="people" *ngIf="data.recent_registrations.length; else noReg">
+          <li *ngFor="let u of data.recent_registrations; trackBy: trackIdx">
+            <button type="button" class="avatar" (click)="openProfile(u.code, u.role_code)" [attr.aria-label]="'View profile of ' + u.fullname">
+              <img *ngIf="u.photo_pic && !broken[u.code]; else ini" [src]="u.photo_pic" alt="" (error)="broken[u.code] = true">
+              <ng-template #ini><span>{{ initials(u.fullname) }}</span></ng-template>
+            </button>
+            <div class="who">
+              <strong>{{ u.fullname }}</strong>
+              <small>{{ accountType(u.role_code) }}<ng-container *ngIf="u.company"> · {{ u.company }}</ng-container></small>
+            </div>
+            <div class="meta">
+              <span class="pill" [class.off]="u.status !== 'A'">{{ u.status === 'A' ? 'Active' : 'Inactive' }}</span>
+              <small>{{ u.created_at | date:'MMM d, y' }}</small>
+            </div>
+          </li>
+        </ul>
+        <ng-template #noReg><p class="empty">No registrations yet.</p></ng-template>
+      </section>
+
+      <!-- recent activity -->
+      <section class="panel" [class.span-7]="isMaster" [class.span-12]="!isMaster">
+        <header><h2>Recent platform activity</h2><small>Newest first</small></header>
+        <ul class="timeline" *ngIf="data.recent_activity.length; else noAct">
+          <li *ngFor="let a of data.recent_activity; trackBy: trackIdx" [class.clickable]="a.code"
+            (click)="openProfile(a.code, a.role_code)" (keydown.enter)="openProfile(a.code, a.role_code)"
+            [attr.tabindex]="a.code ? 0 : null" [attr.role]="a.code ? 'link' : null">
+            <span class="tl-ico"><mat-icon>{{ activityIcon(a.type) }}</mat-icon></span>
+            <div class="tl-body">
+              <strong>{{ a.title }}</strong>
+              <small>{{ a.subtitle }}</small>
+            </div>
+            <time>{{ a.at | date:'MMM d, y · h:mm a' }}</time>
+          </li>
+        </ul>
+        <ng-template #noAct><p class="empty">No activity yet.</p></ng-template>
+      </section>
+
+      <!-- master admin only (the API does not send this to a DEF-ADMIN) -->
+      <section class="panel span-5" *ngIf="isMaster && data.master">
+        <header><h2>Subscriptions &amp; admin accounts</h2>
+          <button type="button" class="link" (click)="go('settings', { section: 'plan' })">Manage plans</button>
+        </header>
+
+        <div class="mini-stats">
+          <div><strong>{{ data.master.subscriptions.active }}</strong><small>Active subscriptions</small></div>
+          <div><strong>{{ data.master.subscriptions.new_in_range }}</strong><small>New in range</small></div>
+          <div><strong>{{ data.master.admin_accounts.admins }}</strong><small>Admin accounts</small></div>
+          <div><strong>{{ data.master.admin_accounts.master_admins }}</strong><small>Master admins</small></div>
+        </div>
+
+        <h3 class="sub-h">Active subscribers by plan</h3>
+        <ul class="bars compact" *ngIf="data.master.subscriptions.by_plan.length; else noPlans">
+          <li *ngFor="let p of data.master.subscriptions.by_plan">
+            <div class="bar-head"><span>{{ p.plan_name }}</span><strong>{{ p.count }}</strong></div>
+            <div class="bar-track"><span class="bar-fill" [style.width.%]="barWidth(p.count, maxOf(data.master.subscriptions.by_plan, 'count'))"></span></div>
+          </li>
+        </ul>
+        <ng-template #noPlans><p class="empty">No active subscriptions.</p></ng-template>
+      </section>
+
+    </div>
+  </ng-container>
+</div>

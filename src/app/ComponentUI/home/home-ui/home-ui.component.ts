@@ -1,3 +1,4 @@
+import { FEATURE } from 'src/app/services/AccountPlan/feature-access.map';
 import { Component, OnInit, OnDestroy, ElementRef, ViewChild, HostListener, Input, NgZone, AfterViewInit, ChangeDetectorRef, ViewChildren, QueryList } from '@angular/core';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { MatTableDataSource } from '@angular/material/table';
@@ -37,6 +38,8 @@ interface Reaction {
   styleUrls: ['./home-ui.component.css']
 })
 export class HomeUIComponent implements OnInit, AfterViewInit, OnDestroy {
+  /** feature codes for the template */
+  readonly FEATURE = FEATURE;
   // Basic UI / data
   maxImages: number = 5;
   error: any;
@@ -66,6 +69,12 @@ export class HomeUIComponent implements OnInit, AfterViewInit, OnDestroy {
   selectedReactions: { [postId: string]: any } = {};
   reactionList: any = [];
   users: any = [];
+
+  /** after blocking someone, take them out of the lists on this screen at once */
+  removeBlocked(code: any): void {
+    this.users = (this.users || []).filter((p: any) => String(p.code) !== String(code));
+    this.peopleRecentActivity = (this.peopleRecentActivity || []).filter((p: any) => String(p.code) !== String(code));
+  }
 
   displayedReactions: {
     name: string;
@@ -232,7 +241,26 @@ export class HomeUIComponent implements OnInit, AfterViewInit, OnDestroy {
   // ----------------------- LIFECYCLE -----------------------
 
 
+  /** Shortcut links, built once from the signed-in role (no waiting for any request, so they always work) */
+  shortcuts: { label: string; icon: string; link: string }[] = [];
+  trackShortcut(_: number, s: { link: string }): string { return s.link; }
+
+  private buildShortcuts(): void {
+    const role = this.sharedRoutines.getRole();
+    const base = '/' + role;
+    this.shortcuts = [
+      { label: 'My Network', icon: 'groups', link: `${base}/network` },
+      { label: 'Messaging', icon: 'chat', link: `${base}/message` },
+      ...(role === 'DEF-USERS' ? [
+        { label: 'Jobs', icon: 'work', link: `${base}/jobs` },
+        { label: 'Applied jobs', icon: 'assignment_turned_in', link: `${base}/applied-jobs` },
+      ] : []),
+      { label: 'Settings', icon: 'settings', link: `${base}/settings` },
+    ];
+  }
+
   ngOnInit(): void {
+    this.buildShortcuts();
     // a new / removed profile photo shows on the profile card and composer at once
     this.photoSub = this.profileImages.photo$.pipe(filter(url => url !== undefined)).subscribe(url => {
       this.profile_pic = { ...(this.profile_pic || {}), photo_pic: url };
@@ -269,7 +297,6 @@ export class HomeUIComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.newPostSubscription || this.newPostSubscription.closed) {
       this.echoService.listenToPosts();
       this.newPostSubscription = this.echoService.newPost$.subscribe(post => {
-        console.log('🆕 New post received:', post);
         this.newPostsQueue.unshift(post);
         this.newPostsAvailable = true; // matches the template
       });
@@ -311,7 +338,6 @@ export class HomeUIComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (hasNewPosts) {
       this.newPostsAvailable = true;
-      console.log('🔔 New posts detected!');
     }
   }
 
@@ -695,12 +721,10 @@ export class HomeUIComponent implements OnInit, AfterViewInit, OnDestroy {
   async selectReactions(postId: number, react: Reaction) {
     this.userReactions[postId] = react;
     this.isPopupVisible[postId] = false;
-    console.log(`Selected reaction for post ${postId}:`, react.label);
 
     try {
       const res: any = await this.postReactionByIdService.saveReaction(postId, react.label).toPromise();
       if (res && res.success) {
-        console.log('Reaction saved successfully');
       } else {
         console.error('Failed to save reaction:', res?.message || 'Unknown error');
       }
@@ -1186,7 +1210,6 @@ export class HomeUIComponent implements OnInit, AfterViewInit, OnDestroy {
 
   sendComment() {
     if (this.commentText.trim()) {
-      console.log('Comment:', this.commentText);
       this.commentText = '';
     }
   }
@@ -1224,7 +1247,6 @@ export class HomeUIComponent implements OnInit, AfterViewInit, OnDestroy {
     const payload = { reaction };
     this.reactionService.putReactionInvidual(post_uuidOrUuid, payload).subscribe({
       next: (res) => {
-        console.log('✅ Reaction response:', res);
         this.getReactionPost_uuidOrUuid(post_uuidOrUuid);
       },
       error: () => {
@@ -1293,7 +1315,6 @@ export class HomeUIComponent implements OnInit, AfterViewInit, OnDestroy {
     this.clientsService.getPeopleRecentActivity().subscribe({
       next: (res) => {
         this.users = res.data;
-        console.log(this.users);
         this.isLoading = false;
       },
       error: (err) => {

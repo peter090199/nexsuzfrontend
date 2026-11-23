@@ -13,10 +13,9 @@
 .contact-group {
   display: flex;
   gap: 12px;
-
-  .country-field { flex: 0 0 110px; }
-  .phone-field   { flex: 1; min-width: 0; }
 }
+.contact-group .country-field { flex: 0 0 110px; }
+.contact-group .phone-field   { flex: 1; min-width: 0; }
 .register-card mat-icon {
   color: var(--nexsuz-primary-dark); /* Replace var(--nexsuz-primary) with any color you prefer */
 }
@@ -78,18 +77,20 @@ h1{
 
 
 
-/* Card styling with scrolling enabled */
+/* Plain white panel (no mat-card). Centred with a max width on desktop; edge to edge on phones. */
 .register-card {
   width: min(100%, 800px);
-  max-width: 800px; /* Limits card width on larger screens */
-  padding: 10px;
-  box-shadow: 3 4px 10px rgba(0, 0, 0, 0.1);
-  overflow-y: auto; /* Enables vertical scrolling */
-  border-radius: 10px; 
+  max-width: 800px;
+  box-sizing: border-box;
+  background: #fff;
+  padding: 10px 14px 16px;
+  border-radius: 10px;
+  overflow-y: auto;
   max-height: 810px;
-  margin-bottom: 0px;
   margin: 20px;
 }
+.register-body { display: block; }
+.links { padding: 8px 4px 0; font-size: 14px; line-height: 1.8; }
 
 /* Custom scrollbar styling */
 .register-card::-webkit-scrollbar {
@@ -184,7 +185,7 @@ mat-form-field {
   text-decoration: underline;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767.98px) {
   .form-row {
     flex-direction: column;
     gap: 10px;
@@ -209,12 +210,6 @@ mat-form-field {
 }
 
 @media (max-width: 480px) {
-  .register-card {
-    padding: 10px;
-    width: min(100%, 600px);
-    max-height: 600px;
-    width: min(100%, 600px);
-  }
 
   .form-field {
     flex-direction: column;
@@ -231,3 +226,44 @@ mat-form-field {
 
 
 }
+/* ---- account type label on each sign-up tab ---- */
+.role-banner { display: flex; align-items: center; gap: 12px; margin: 16px 16px 4px; padding: 12px 14px; border-radius: 12px;
+  background: #eaf3fc; border: 1px solid #c5ddf4; color: #002a57; text-align: left; }
+.role-banner mat-icon { flex: none; width: 28px; height: 28px; font-size: 28px; color: #0a66c2; }
+.role-banner .role-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 13px; line-height: 1.35; }
+.role-banner .role-text strong { font-size: 14px; }
+.role-banner .role-text span { color: #3d5575; }
+.role-banner .role-code { flex: none; font-size: 11px; font-weight: 700; letter-spacing: .4px; padding: 3px 9px; border-radius: 999px; background: #fff; border: 1px solid #c5ddf4; color: #004182; }
+@media (max-width: 600px) { .role-banner { margin: 12px 8px 4px; flex-wrap: wrap; } .role-banner .role-code { order: 3; } }
+
+/* phones: both tabs fit side by side instead of hiding "Company Sign-up" behind scroll arrows */
+@media (max-width: 600px) {
+  :host ::ng-deep .register-card .mat-tab-label { min-width: 0; flex: 1 1 0; padding: 0 8px; font-size: 13px; }
+  :host ::ng-deep .register-card .mat-tab-header-pagination { display: none; }
+  :host ::ng-deep .register-card .mat-tab-label-container { margin: 0; }
+}
+
+/* ---------- phones and small tablets: use the whole screen width ---------- */
+@media (max-width: 767.98px) {
+  .register-container { padding: 0; align-items: flex-start; min-height: 100vh; }
+  .register-card {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    min-height: 100vh;
+    max-height: none;          /* the page scrolls, not a box inside it */
+    overflow-y: visible;
+    border-radius: 0;
+    padding: 8px 12px 24px;
+  }
+  .register-card .row { margin-left: 0; margin-right: 0; }
+  .register-card .row > [class*="col-"] { padding-left: 0; padding-right: 0; }
+  .register-card mat-form-field { width: 100%; }
+  .agreement-section { flex-wrap: wrap; margin: 8px 0; gap: 8px 16px; }
+  .signup-button { width: 100%; }
+}
+
+/* country code + phone number share one row at every width: fixed-width code, phone takes the rest */
+.contact-group { display: flex; flex-wrap: nowrap; align-items: flex-end; gap: 12px; }
+.contact-group .country-field { flex: 0 0 118px; width: 118px; max-width: 118px; min-width: 0; margin-top: 0; }
+.contact-group .phone-field { flex: 1 1 0; width: auto; min-width: 0; }

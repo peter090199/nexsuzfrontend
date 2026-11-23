@@ -38,10 +38,11 @@
           Suggested connection
         </p>
 
+        <app-block-button [role]="person.role_code" [code]="person.code" [name]="person.fullname" (blocked)="removeBlocked(person.code)"></app-block-button>
         <!-- ✅ Connect Button -->
         <button mat-flat-button
           [color]="person.follow_status === 'accepted' ? 'accent' : person.follow_status === 'pending' ? 'warn' : 'primary'"
-          *ngIf="currentUserCode !== person.code"
+          *ngIf="currentUserCode != person.code"
           (click)="AddConnect(person.code, person.fullname, person.follow_status, person.id)">
           <mat-icon *ngIf="person.follow_status === 'not_following'">person_add</mat-icon>
           <mat-icon *ngIf="person.follow_status === 'pending'" class="hourglass-animated">hourglass_top</mat-icon>
@@ -103,10 +104,11 @@
           <mat-card-subtitle>{{ person2.profession || '--' }}</mat-card-subtitle>
           <p class="based-text">Based on your recent {{ person2.source }}</p>
 
+          <app-block-button [role]="person2.role_code" [code]="person2.code" [name]="person2.fullname" (blocked)="removeBlocked(person2.code)"></app-block-button>
           <!-- ✅ Connect Button -->
           <button mat-flat-button
             [color]="person2.follow_status === 'accepted' ? 'accent' : person2.follow_status === 'pending' ? 'warn' : 'primary'"
-            *ngIf="currentUserCode !== person2.code"
+            *ngIf="currentUserCode != person2.code"
             (click)="AddConnect(person2.code, person2.fullname, person2.follow_status, person2.id)">
             <mat-icon *ngIf="person2.follow_status === 'not_following'">person_add</mat-icon>
             <mat-icon *ngIf="person2.follow_status === 'pending'" class="hourglass-animated">hourglass_top</mat-icon>

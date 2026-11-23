@@ -16,10 +16,15 @@ import { ReactionFxService } from 'src/app/ComponentSharedUI/Reactions/reaction-
 import { ChatService } from 'src/app/services/chat.service';
 import { NotificationPrefsService, NotificationPrefs } from 'src/app/services/notification-prefs.service';
 import { NotificationDeliveryService } from 'src/app/services/notification-delivery.service';
+import { BlockService, BlockedUser } from 'src/app/services/block.service';
+import { CvModeService } from 'src/app/services/CV/cv-mode.service';
+import { FeatureService } from 'src/app/services/AccountPlan/feature.service';
+import { FEATURE } from 'src/app/services/AccountPlan/feature-access.map';
+import { AppearanceService, AppearancePrefs, DEFAULT_APPEARANCE, FONT_SIZE_MIN, FONT_SIZE_MAX } from 'src/app/services/appearance.service';
 
 type SectionId =
   | 'account' | 'privacy' | 'security' | 'password' | 'notifications'
-  | 'email' | 'appearance' | 'blocked' | 'danger' | 'plan';
+  | 'email' | 'appearance' | 'blocked' | 'danger' | 'plan' | 'jobtemplates' | 'resume' | 'cvmode';
 
 interface SettingsSection {
   id: SectionId;
@@ -51,6 +56,20 @@ export class SettingsComponent implements OnInit {
 
   /** userprofiles row exists (saveProfile can only update an existing row without a new photo) */
   profileExists = false;
+
+  /** Administrators have no CV: they fill in their basic profile here without one. */
+  get isAdminRole(): boolean { return this.role === 'DEF-ADMIN' || this.role === 'DEF-MASTERADMIN'; }
+
+  /** The profile forms work with a saved profile, or for an administrator (no CV, no photo required). */
+  get canEditProfile(): boolean { return (this.profileExists || this.isAdminRole) && this.features.allows(FEATURE.CREATE_PROFILE); }
+
+  /** there is a profile (or the account is an administrator's); whether the PLAN allows editing it is a separate question */
+  get hasProfileToEdit(): boolean { return this.profileExists || this.isAdminRole; }
+
+  /** the sections to list: the Resume / CV section only when the plan includes building or uploading a CV */
+  get navSections(): SettingsSection[] {
+    return this.sections.filter(s => s.id !== 'resume' || this.features.allows(FEATURE.CREATE_RESUME));
+  }
   private profileData: any = {};
 
   savingAccount = false;
@@ -58,6 +77,11 @@ export class SettingsComponent implements OnInit {
   sendingReset = false;
 
   accountForm!: FormGroup;
+  /** Deactivation: your password and a tick, both required before the button works */
+  deactivateForm!: FormGroup;
+  hideDeactivatePw = true;
+  deactivating = false;
+  deactivateError = '';
   privacyForm!: FormGroup;
 
   activeSection: SectionId = 'account';
@@ -68,10 +92,10 @@ export class SettingsComponent implements OnInit {
     { id: 'security', label: 'Login & Security', icon: 'shield', description: 'Account status and sign-in.', available: true },
     { id: 'password', label: 'Password Management', icon: 'lock_reset', description: 'Reset your password by email.', available: true },
     { id: 'notifications', label: 'Notifications', icon: 'notifications_none', description: 'Choose what you get notified about.', available: true },
-    { id: 'email', label: 'Email Preferences', icon: 'mail_outline', description: 'Manage the emails we send you.', available: false },
-    { id: 'appearance', label: 'Appearance & Theme', icon: 'palette', description: 'Reaction sounds and effects.', available: true },
-    { id: 'blocked', label: 'Blocked Users', icon: 'block', description: 'People you have blocked.', available: false },
-    { id: 'danger', label: 'Deactivation / Deletion', icon: 'person_off', description: 'Deactivate or delete your account.', available: false },
+    { id: 'email', label: 'Email Preferences', icon: 'mail_outline', description: 'Choose which emails we send you.', available: true },
+    { id: 'appearance', label: 'Appearance & Theme', icon: 'palette', description: 'Page colour, font, text size and reaction sounds.', available: true },
+    { id: 'blocked', label: 'Blocked Users', icon: 'block', description: 'People you have blocked.', available: true },
+    { id: 'danger', label: 'Account Deactivation', icon: 'person_off', description: 'Pause your account, or sign in again to bring it back.', available: false },
   ];
 
   /** Read-only account facts (come from the `resources` table via user/profile) */
@@ -99,18 +123,70 @@ export class SettingsComponent implements OnInit {
     public fx: ReactionFxService,
     private chat: ChatService,
     public prefsSvc: NotificationPrefsService,
-    public delivery: NotificationDeliveryService
+    public delivery: NotificationDeliveryService,
+    public appearance: AppearanceService,
+    private blocks: BlockService,
+    private cvModeSvc: CvModeService,
+    public features: FeatureService
   ) { }
+
+  /** feature codes for the template */
+  readonly FEATURE = FEATURE;
 
   ngOnInit(): void {
     this.role = this.sharedRoutines.getRole();
-    if (this.role === 'DEF-USERS') {
+    if (this.role === 'DEF-USERS' || this.role === 'DEF-CLIENT' || this.role === 'DEF-MASTERADMIN') {
       this.sections.splice(4, 0, {
         id: 'plan', label: 'Subscription Plan', icon: 'workspace_premium',
-        description: 'Your account type and available plans.', available: true
+        description: this.role === 'DEF-MASTERADMIN'
+          ? 'Manage plans, pricing, features and user subscriptions.'
+          : this.role === 'DEF-CLIENT'
+            ? 'Your recruiter plan and the plans you can upgrade to.'
+            : 'Your plan and the plans you can upgrade to.',
+        available: true
       });
     }
 
+    // global job posting templates & themes: DEF-MASTERADMIN only (the API refuses everyone else too)
+    if (this.role === 'DEF-MASTERADMIN') {
+      const at = this.sections.findIndex(s => s.id === 'plan');
+      this.sections.splice(at >= 0 ? at + 1 : 5, 0, {
+        id: 'jobtemplates', label: 'Job Posting Templates & Themes', icon: 'dashboard_customize',
+        description: 'Create and publish the templates and themes recruiters use for job postings.',
+        available: true
+      });
+    }
+
+    // How job seekers provide their CV (upload only, or fill up the builder): DEF-MASTERADMIN only (the API refuses everyone else too)
+    if (this.role === 'DEF-MASTERADMIN') {
+      const at = this.sections.findIndex(x => x.id === 'jobtemplates');
+      this.sections.splice(at >= 0 ? at + 1 : 6, 0, {
+        id: 'cvmode', label: 'CV & Resume Mode', icon: 'tune',
+        description: 'Choose whether job seekers upload a CV or resume only, or fill up their CV online.',
+        available: true
+      });
+    }
+
+    // Resume / CV is for job seekers only (they are the only account type that has a CV)
+    if (this.role === 'DEF-USERS') {
+      const at = this.sections.findIndex(x => x.id === 'privacy');
+      this.sections.splice(at >= 0 ? at + 1 : 2, 0, {
+        id: 'resume', label: 'Resume / CV', icon: 'description',
+        description: 'Upload your resumes, choose the default one, or fill up your CV.', available: true
+      });
+    }
+
+    // Deactivation is for job seekers and recruiters only (administrators cannot lock themselves out)
+    if (this.role === 'DEF-USERS' || this.role === 'DEF-CLIENT') {
+      const danger = this.sections.find(x => x.id === 'danger');
+      if (danger) { danger.available = true; }
+    }
+    this.deactivateForm = this.fb.group({
+      password: ['', Validators.required],
+      understand: [false, Validators.requiredTrue],
+    });
+
+    this.buildDetailsForm();
     this.accountForm = this.fb.group({
       contact_no: ['', [Validators.maxLength(255), Validators.pattern(/^[0-9+()\-\s]*$/)]],
       date_birth: [''],
@@ -131,6 +207,8 @@ export class SettingsComponent implements OnInit {
       this.activeSection = wanted as SectionId;
     }
 
+    if (this.activeSection === 'blocked') { this.loadBlocked(); }
+    if (this.role === 'DEF-MASTERADMIN') { this.loadCvMode(); }
     this.loadAll();
     this.prefsSvc.load();
     this.delivery.refreshPermission();
@@ -141,9 +219,119 @@ export class SettingsComponent implements OnInit {
     return this.sections.find(s => s.id === this.activeSection) || this.sections[0];
   }
 
+  // ---------- Appearance: page colour, font and text size ----------
+  readonly fontSizeMin = FONT_SIZE_MIN;
+  readonly fontSizeMax = FONT_SIZE_MAX;
+  /** what the preview shows; only applied to the whole app on Save */
+  draft: AppearancePrefs = { ...this.appearance.prefs };
+  customHex = this.appearance.prefs.bgColor || '#ffffff';
+  colorError = '';
+
+  get draftDirty(): boolean {
+    const a = this.appearance.prefs;
+    return a.bgColor !== this.draft.bgColor || a.fontKey !== this.draft.fontKey || a.fontSize !== this.draft.fontSize;
+  }
+
+  get draftIsDefault(): boolean {
+    return this.draft.bgColor === DEFAULT_APPEARANCE.bgColor && this.draft.fontKey === DEFAULT_APPEARANCE.fontKey
+      && this.draft.fontSize === DEFAULT_APPEARANCE.fontSize;
+  }
+
+  get previewFont(): string { return this.appearance.stackOf(this.draft.fontKey); }
+  get previewBg(): string { return this.draft.bgColor || '#f5f7fb'; }
+
+  pickSwatch(color: string | null): void {
+    this.colorError = '';
+    this.draft = { ...this.draft, bgColor: color };
+    if (color) { this.customHex = color; }
+  }
+
+  /** the colour picker / hex box */
+  setCustomColor(value: string): void {
+    const hex = (value || '').trim();
+    this.customHex = hex;
+    if (!/^#[0-9a-fA-F]{6}$/.test(hex)) { this.colorError = 'Use a colour like #e8f1fb.'; return; }
+    if (!AppearanceService.isLight(hex)) {
+      this.colorError = 'Choose a lighter colour so text stays readable.';
+      return;
+    }
+    this.colorError = '';
+    this.draft = { ...this.draft, bgColor: hex.toLowerCase() };
+  }
+
+  setFont(key: string): void { this.draft = { ...this.draft, fontKey: key }; }
+
+  setFontSize(size: number): void {
+    this.draft = { ...this.draft, fontSize: Math.min(FONT_SIZE_MAX, Math.max(FONT_SIZE_MIN, Math.round(Number(size) || DEFAULT_APPEARANCE.fontSize))) };
+  }
+
+  saveAppearance(): void {
+    this.appearance.save(this.draft);
+    this.draft = { ...this.appearance.prefs };
+    this.alert.toastrSuccess('Appearance applied to the whole app.');
+  }
+
+  /** back to the standard look (previews it; Save applies it) */
+  resetDraft(): void {
+    this.colorError = '';
+    this.draft = { ...DEFAULT_APPEARANCE };
+    this.customHex = '#ffffff';
+  }
+
+  discardDraft(): void {
+    this.colorError = '';
+    this.draft = { ...this.appearance.prefs };
+    this.customHex = this.draft.bgColor || '#ffffff';
+  }
+
+  // ---------- Blocked users ----------
+  blockedUsers: BlockedUser[] = [];
+  blockedSearch = '';
+  blockedLoading = false;
+  blockedError = false;
+  unblockingCode: number | null = null;
+  private blockedTimer: any;
+
+  loadBlocked(): void {
+    this.blockedLoading = true;
+    this.blockedError = false;
+    this.blocks.list(this.blockedSearch).subscribe({
+      next: (res: any) => { this.blockedUsers = res?.data || []; this.blockedLoading = false; },
+      error: () => { this.blockedLoading = false; this.blockedError = true; }
+    });
+  }
+
+  onBlockedSearch(): void {
+    clearTimeout(this.blockedTimer);
+    this.blockedTimer = setTimeout(() => this.loadBlocked(), 300);
+  }
+
+  clearBlockedSearch(): void {
+    this.blockedSearch = '';
+    this.loadBlocked();
+  }
+
+  async unblockUser(u: BlockedUser): Promise<void> {
+    this.unblockingCode = u.code;
+    const done = await this.blocks.confirmUnblock(u.code, u.fullname);
+    this.unblockingCode = null;
+    if (done) { this.loadBlocked(); }   // refresh the list at once
+  }
+
+  trackBlocked(_: number, u: BlockedUser): number { return u.code; }
+
+  accountTypeLabel(role: string): string {
+    const map: Record<string, string> = {
+      'DEF-USERS': 'User', 'DEF-CLIENT': 'Recruiter / Client', 'DEF-ADMIN': 'Admin',
+      'DEF-MASTERADMIN': 'Master Admin', 'DEF-SUPERADMIN': 'Super Admin'
+    };
+    return map[role] || 'Account';
+  }
+
   select(id: SectionId): void {
     this.activeSection = id;
     this.safeSet(SECTION_KEY, id);
+    if (id === 'blocked') { this.loadBlocked(); }
     this.router.navigate([], { relativeTo: this.route, queryParams: { section: id }, replaceUrl: true });
   }
 
@@ -174,6 +362,7 @@ export class SettingsComponent implements OnInit {
 
   /** Cancel / initial fill: put saved values back in the forms */
   resetForms(): void {
+    this.fillDetails();
     this.fillAccount();
     this.fillPrivacy();
   }
@@ -190,7 +379,7 @@ export class SettingsComponent implements OnInit {
       home_state: p.home_state ?? '',
       summary: p.summary ?? '',
     });
-    if (this.profileExists) this.accountForm.enable(); else this.accountForm.disable();
+    if (this.canEditProfile) this.accountForm.enable(); else this.accountForm.disable();
   }
 
   private fillPrivacy(): void {
@@ -199,7 +388,7 @@ export class SettingsComponent implements OnInit {
       contact_visibility: !!p.contact_visibility,
       email_visibility: !!p.email_visibility,
     });
-    if (this.profileExists) this.privacyForm.enable(); else this.privacyForm.disable();
+    if (this.canEditProfile) this.privacyForm.enable(); else this.privacyForm.disable();
   }
 
   // ---------- Save (shared by Account + Privacy; saveProfile replaces the whole row) ----------
@@ -233,7 +422,7 @@ export class SettingsComponent implements OnInit {
   }
 
   private persist(which: 'account' | 'privacy'): void {
-    if (!this.profileExists) {
+    if (!this.canEditProfile) {
       this.alert.toastrInfo('Complete your profile first to change these settings.');
       return;
     }
@@ -299,11 +488,45 @@ export class SettingsComponent implements OnInit {
     });
   }
 
+  // ---------- Deactivation ----------
+  confirmDeactivate(): void {
+    if (this.deactivateForm.invalid || this.deactivating) { this.deactivateForm.markAllAsTouched(); return; }
+    this.dialog.open(SettingsConfirmDialogComponent, {
+      width: '420px',
+      data: {
+        title: 'Deactivate your account?',
+        message: 'You will be signed out on every device, and your account will be hidden from search and chat. Nothing is deleted. Sign in again any time to bring it back.',
+        confirmText: 'Deactivate', icon: 'person_off', danger: true
+      }
+    }).afterClosed().subscribe(ok => { if (ok) { this.deactivate(); } });
+  }
+
+  private deactivate(): void {
+    this.deactivating = true;
+    this.deactivateError = '';
+    this.http.post<any>(`${_url}account/deactivate`, { password: this.deactivateForm.value.password }, {
+      headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` }
+    }).subscribe({
+      next: (res) => {
+        this.alert.toastrSuccess(res?.message || 'Your account has been deactivated.');
+        this.sharedRoutines.onLogout('/signin');       // the server already ended every session; this clears this browser
+      },
+      error: (err) => {
+        this.deactivating = false;
+        this.deactivateError = this.firstMessage(err?.error?.errors?.password) || this.firstMessage(err?.error?.message) || 'Your account could not be deactivated.';
+        if (err?.status === 422) { this.deactivateForm.get('password')?.setErrors({ wrong: true }); }
+      }
+    });
+  }
+
   // ---------- Notifications ----------
   /** the most recent real message, so the preview shows exactly what a notification will look like for this user */
   previewConv: any = null;
 
   get np(): NotificationPrefs { return this.prefsSvc.prefs; }
+
+  /** "Interview invites" is for people who receive invitations: users and admins, not recruiters (DEF-CLIENT) */
+  get showInterviewInvites(): boolean { return this.role !== 'DEF-CLIENT'; }
 
   private loadPreview(): void {
     this.chat.getConversations().subscribe({
@@ -420,7 +643,120 @@ export class SettingsComponent implements OnInit {
 
   goToCV(): void { this.uploadPic(); }
 
+  // ---------- CV & Resume Mode (DEF-MASTERADMIN) ----------
+  /** checked: job seekers see only "upload your CV or resume"; unchecked (the default): they can fill up their CV */
+  cvUploadOnly = false;
+  cvModeLoading = false;
+  cvModeSaving = false;
+  cvModeError = '';
+
+  private loadCvMode(): void {
+    this.cvModeLoading = true;
+    this.cvModeSvc.get().subscribe({
+      next: m => { this.cvUploadOnly = !!m.upload_only; this.cvModeLoading = false; },
+      error: () => { this.cvModeLoading = false; this.cvModeError = 'Could not load this setting.'; }
+    });
+  }
+
+  setCvUploadOnly(on: boolean): void {
+    if (this.cvModeSaving) { return; }
+    const before = this.cvUploadOnly;
+    this.cvUploadOnly = on;                       // applied on screen at once, put back if the server refuses
+    this.cvModeSaving = true;
+    this.cvModeError = '';
+    this.cvModeSvc.set(on).subscribe({
+      next: m => {
+        this.cvModeSaving = false;
+        this.cvUploadOnly = !!m.upload_only;
+        this.alert.toastrSuccess(m.upload_only ? 'Job seekers now upload a CV or resume only.' : 'Job seekers can fill up their CV again.');
+      },
+      error: err => {
+        this.cvModeSaving = false;
+        this.cvUploadOnly = before;
+        this.cvModeError = this.firstMessage(err?.error?.message) || 'The setting could not be saved. Nothing was changed.';
+      }
+    });
+  }
+
+
   // ---------- helpers ----------
+  // ---------- Account details (DEF-ADMIN and DEF-MASTERADMIN edit everything except the role) ----------
+  detailsForm!: FormGroup;
+  savingDetails = false;
+  hideDetailsPw = true;
+  detailsError = '';
+
+  private buildDetailsForm(): void {
+    this.detailsForm = this.fb.group({
+      fname: ['', [Validators.required, Validators.maxLength(255)]],
+      mname: ['', Validators.maxLength(255)],
+      lname: ['', [Validators.required, Validators.maxLength(255)]],
+      email: ['', [Validators.required, Validators.email, Validators.maxLength(255)]],
+      profession: ['', Validators.maxLength(255)],
+      company: ['', Validators.maxLength(255)],
+      companywebsite: ['', Validators.maxLength(255)],
+      current_password: [''],
+    });
+  }
+
+  private fillDetails(): void {
+    const u = this.users || {};
+    this.detailsForm.reset({
+      fname: u.fname ?? '', mname: u.mname ?? '', lname: u.lname ?? '', email: u.email ?? '',
+      profession: u.profession ?? '', company: u.company ?? '', companywebsite: u.companywebsite ?? '',
+      current_password: '',
+    });
+    this.detailsError = '';
+  }
+
+  /** the sign-in email is being changed: the current password is needed */
+  get emailChanged(): boolean {
+    const now = String(this.detailsForm?.get('email')?.value || '').trim().toLowerCase();
+    return now !== '' && now !== String(this.users?.email || '').trim().toLowerCase();
+  }
+
+  get detailsDirty(): boolean { return !!this.detailsForm?.dirty; }
+
+  cancelDetails(): void { this.fillDetails(); this.detailsForm.markAsPristine(); }
+
+  saveDetails(): void {
+    if (!this.isAdminRole || this.savingDetails) { return; }
+    if (this.emailChanged && !String(this.detailsForm.value.current_password || '').trim()) {
+      this.detailsForm.get('current_password')?.setErrors({ required: true });
+      this.detailsForm.get('current_password')?.markAsTouched();
+    }
+    if (this.detailsForm.invalid) {
+      this.detailsForm.markAllAsTouched();
+      this.alert.toastrWarning('Please fix the highlighted fields.');
+      return;
+    }
+    this.savingDetails = true;
+    this.detailsError = '';
+    const v = this.detailsForm.getRawValue();
+    const body: any = { ...v };
+    if (!this.emailChanged) { delete body.current_password; }
+
+    this.http.put<any>(`${_url}account/details`, body, {
+      headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` }
+    }).subscribe({
+      next: (res) => {
+        this.savingDetails = false;
+        this.users = { ...this.users, ...(res?.data || {}) };
+        this.fillDetails();
+        this.detailsForm.markAsPristine();
+        this.alert.toastrSuccess(res?.message || 'Account details saved.');
+      },
+      error: (err) => {
+        this.savingDetails = false;
+        const errors = err?.error?.errors || {};
+        this.detailsError = this.firstMessage(errors.email) || this.firstMessage(errors.current_password)
+          || this.firstMessage(err?.error?.message) || 'Your details could not be saved.';
+        if (errors.email) { this.detailsForm.get('email')?.setErrors({ server: true }); }
+        if (errors.current_password) { this.detailsForm.get('current_password')?.setErrors({ server: true }); }
+      }
+    });
+  }
+
   get accountDirty(): boolean { return this.accountForm?.dirty; }
   get privacyDirty(): boolean { return this.privacyForm?.dirty; }
 

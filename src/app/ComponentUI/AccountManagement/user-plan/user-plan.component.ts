@@ -62,7 +62,8 @@ export class UserPlanComponent implements OnInit {
   async getPlans() {
     this.isLoading = true;
 
-    this.userPlanService.getAll().subscribe({
+    // master admin pages: disabled plans are listed too, so they can be enabled again
+    this.userPlanService.getAll(true).subscribe({
       next: (res) => {
         if (res.success) {
           this.dataSource.data = res.data;
@@ -128,6 +129,7 @@ export class UserPlanComponent implements OnInit {
   onClickNew() {
     const dialogConfig = new MatDialogConfig();
     dialogConfig.width = '500px';
+    dialogConfig.maxWidth = '95vw';
     dialogConfig.disableClose = true;
     dialogConfig.autoFocus = true;
 
@@ -140,6 +142,7 @@ export class UserPlanComponent implements OnInit {
   edit(row: any): void {
     const dialogRef = this.dialog.open(UserPlanUIComponent, {
       width: '500px',
+      maxWidth: '95vw',
       disableClose: true,
       data: row
     });
@@ -154,7 +157,8 @@ export class UserPlanComponent implements OnInit {
 
   view(row: any): void {
     const dialogRef = this.dialog.open(FeaturesPlanUIComponent, {
-      width: '1000px',
+      width: '95vw',
+      maxWidth: '1000px',
       disableClose: true,
       data: row
     });

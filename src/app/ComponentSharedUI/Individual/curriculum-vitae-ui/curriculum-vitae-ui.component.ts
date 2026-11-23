@@ -502,11 +502,9 @@ removeItemFromArray6(arrayName: 'certificate', index: number) {
     
         reader.onload = () => {
           const binaryString = reader.result as string; // Binary data of the image
-          console.log('Binary String:', binaryString);
     
           // You can also convert the binary string to a base64 string if needed
           const base64String = btoa(binaryString);
-          console.log('Base64 String:', base64String);
     
           // Example: attach it to a form payload
           this.firstFormGroup.patchValue({
@@ -610,7 +608,7 @@ removeItemFromArray6(arrayName: 'certificate', index: number) {
     //   mergedData.append('photo_pic', this.selectedFile, this.selectedFile.name);
     // }
     
-    console.log("data:",mergedData); // Output the sorted object
+     // Output the sorted object
   
 
     this.cvService.postCV(mergedData).subscribe({
@@ -670,7 +668,6 @@ submit() {
   }
 
   // Log the payload to verify the content
-  console.log(payload);
 
   // Submit the combined payload to the server
   this.cvService.postCV(payload).subscribe({
@@ -696,7 +693,7 @@ submit() {
       if (this.selectedFile) {
         formData.append('photo_pic', this.selectedFile, this.selectedFile.name); // Optional: provide a filename
       } 
-     console.log(this.selectedFile)  //  formData.append('photo_pic', this.firstFormGroup.value.photo_pic);
+       //  formData.append('photo_pic', this.firstFormGroup.value.photo_pic);
       formData.append('contact_no', this.firstFormGroup.value.contact_no);
       formData.append('contact_visibility', this.firstFormGroup.value.contact_visibility.toString());
       formData.append('email_visibility', this.firstFormGroup.value.email_visibility.toString());
@@ -724,7 +721,6 @@ submit() {
         console.error('The "lines" object is not valid.');
       }
   
-      console.log(formData);
   
       this.cvService.postCV(formData).subscribe({
         next: (res) => {

@@ -349,7 +349,7 @@ export class TopNavigationComponent implements OnInit, OnDestroy {
   sendData(): void {
     const requestBody = { name: 'John Doe', email: 'john@example.com' };
     this.navigationService.postData('submit-form', requestBody).subscribe({
-      next: response => console.log('Form submitted successfully', response),
+      next: response => {},
       error: error => console.error('Error submitting form:', error)
     });
   }
@@ -360,7 +360,6 @@ export class TopNavigationComponent implements OnInit, OnDestroy {
 
   search(): void {
     if (!this.searchKeyword.trim()) return;
-    console.log(this.searchKeyword);
     // this.router.navigate(['/search'], { queryParams: { q: this.searchKeyword } });
   }
 

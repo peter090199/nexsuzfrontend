@@ -1,9 +1,11 @@
+import { FEATURE } from 'src/app/services/AccountPlan/feature-access.map';
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { firstValueFrom } from 'rxjs';
+import { SharedRoutinesService } from 'src/app/services/Function/shared-routines.service';
 import { JobPostingUIComponent } from 'src/app/ComponentSharedUI/job-posting-ui/job-posting-ui.component';
 import { JobPostingService } from 'src/app/services/Jobs/job-posting.service';
 import { NotificationsService } from 'src/app/services/Global/notifications.service';
@@ -19,6 +21,8 @@ import { ImagesService } from 'src/app/services/images/images.service';
   styleUrls: ['./job-posting.component.css']
 })
 export class JobPostingComponent implements OnInit {
+  /** feature codes for the template */
+  readonly FEATURE = FEATURE;
   searchKey: string = '';
   placeHolder: string = 'Search';
   isLoading: boolean = false;
@@ -66,7 +70,8 @@ export class JobPostingComponent implements OnInit {
     private jobServices: JobPostingService, private router: Router,
     public dialog: MatDialog,
     private notificationsService: NotificationsService,
-    private sharedService: ImagesService
+    private sharedService: ImagesService,
+    private sharedRoutines: SharedRoutinesService
   ) { }
 
   ngOnInit(): void {
@@ -151,15 +156,9 @@ export class JobPostingComponent implements OnInit {
 
   }
 
+  /** candidates of this vacancy have their own page */
   openCandidates(job: any): void {
-    const dialogRef = this.dialog.open(ListAppliedJobsComponent, {
-      width: '1400px',
-      data: job
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) this.getJobPosting();
-    });
+    this.router.navigate(['/' + this.sharedRoutines.getRole(), 'vacancies', job.transNo, 'candidates']);
   }
 
 
@@ -188,34 +187,16 @@ export class JobPostingComponent implements OnInit {
 
 
   createJobPosting(): void {
-    const dialogRef = this.dialog.open(JobPostingUIComponent, {
-      width: '900px',
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.getJobPosting();
-      }
-    });
+    this.router.navigate(['/' + this.sharedRoutines.getRole(), 'posting-job']);
   }
 
 
   edit(job: any): void {
-    const dialogRef = this.dialog.open(JobPostingUIComponent, {
-      width: '1000px',
-      data: job
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.getJobPosting();
-      }
-    });
+    this.router.navigate(['/' + this.sharedRoutines.getRole(), 'posting-job'], { queryParams: { job: job.transNo } });
   }
 
 
   viewDetails(data: any): void {
-    console.log('Job details:', data);
 
     const dialogRef = this.dialog.open(JobViewDetailsComponent, {
       width: '800px',

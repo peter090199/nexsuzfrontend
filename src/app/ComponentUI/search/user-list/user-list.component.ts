@@ -87,7 +87,7 @@ filter: any;
 
     this.route.queryParams.subscribe(params => {
       this.searchQuery = params['search'] || '';
-      console.log('Search Query:', this.searchQuery); // Debugging
+       // Debugging
       this.fetchUsers();
     });
 
@@ -107,16 +107,13 @@ filter: any;
   
   connectUser(item: any) {
     if (!item || item.code === this.loggedInUser.code) {
-      console.log('Cannot connect to yourself!');
       return;
     }
 
-    console.log(`Sending connection request to ${item.fullname} (User ID: ${item.code})`);
 
     // Simulate API call to send a connection request
     // Replace this with your actual API call
     setTimeout(() => {
-      console.log(`Connection request sent to ${item.fullname}`);
       alert(`You have sent a connection request to ${item.fullname}`);
     }, 1000);
 
@@ -138,8 +135,6 @@ filter: any;
           this.onlineUsers = Array.isArray(response.online) ? response.online : [];
           this.offlineUsers = Array.isArray(response.offline) ? response.offline : [];
   
-          console.log(`🔹 Found ${this.onlineUsers.length} online users`);
-          console.log(`🔹 Found ${this.offlineUsers.length} offline users`);
         } else {
           console.error('⚠️ Unexpected API response format:', response);
           this.onlineUsers = [];
@@ -159,7 +154,7 @@ filter: any;
     if (this.searchQuery) {
       this.userService.searchUsers(this.searchQuery).subscribe(
         response => {
-          console.log('API Response:', response); // Debugging
+           // Debugging
           if (Array.isArray(response)) {
             this.users = response;
           } else {

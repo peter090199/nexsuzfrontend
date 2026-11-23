@@ -17,6 +17,11 @@ export class BaseOnRecenActivityComponent implements OnInit {
 
   peopleRecentActivity: any[] = [];
 
+  /** after blocking someone, take them out of the lists on this screen at once */
+  removeBlocked(code: any): void {
+    this.peopleRecentActivity = (this.peopleRecentActivity || []).filter((p: any) => String(p.code) !== String(code));
+  }
+
   isLoading = false;
   skeletonRows: number[] = [];
 

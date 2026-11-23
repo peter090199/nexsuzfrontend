@@ -213,6 +213,8 @@ export class PrivatePostComponent implements OnInit, AfterViewInit, OnDestroy {
       reaction_summary: post.reaction_summary ?? emptySummary(),
       my_reaction: post.my_reaction ?? null,
       comments_count: post.comments_count ?? 0,
+      // the API sets this; for posts that arrive without it (live updates) compare codes as text
+      is_owner: post.is_owner ?? (String(post.code) === String(this.authService.getAuthCode())),
       expanded: false
     };
   }
@@ -332,12 +334,10 @@ export class PrivatePostComponent implements OnInit, AfterViewInit, OnDestroy {
   async selectReactions(postId: number, react: any) {
     this.userReactions[postId] = react;
     this.isPopupVisible[postId] = false;
-    console.log(`Selected reaction for post ${postId}:`, react.label);
 
     try {
       const res: any = await this.postReactionByIdService.saveReaction(postId, react.label).toPromise();
       if (res && res.success) {
-        console.log('Reaction saved successfully');
       } else {
         console.error('Failed to save reaction:', res?.message || 'Unknown error');
       }

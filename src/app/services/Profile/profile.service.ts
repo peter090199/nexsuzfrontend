@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { catchError, Observable, of } from 'rxjs';
+import { catchError, Observable, of, throwError } from 'rxjs';
 import { _url } from 'src/global-variables';
 
 @Injectable({
@@ -37,6 +37,15 @@ export class ProfileService {
 getProfileByUser(code:any): Observable<any> {
   const headers = this.createHeaders();
   return this.http.get(`${_url}profile/${code}`, { headers }).pipe(
+    catchError(error => this.handleAuthError(error))
+  );
+}
+
+/** People connected to a company, split online / offline (same shape as the search page's people list). */
+getCompanyPeople(code: any, search = '', page = 1, perPage = 10): Observable<any> {
+  const headers = this.createHeaders();
+  const params = new HttpParams().set('search', search).set('page', String(page)).set('per_page', String(perPage));
+  return this.http.get(`${_url}company/people/${code}`, { headers, params }).pipe(
     catchError(error => this.handleAuthError(error))
   );
 }
@@ -81,6 +90,10 @@ getCompanyProfile(code: any): Observable<any> {
   
   //follow users
   AddFollow(code: string): Observable<any> {
+    // Codes from the URL / session are strings, codes from the API are numbers: compare as text
+    if (String(code) === String(sessionStorage.getItem('code'))) {
+      return throwError(() => ({ error: { status: false, success: false, message: 'You cannot connect to your own account.' } }));
+    }
     const headers = this.createHeaders();
     return this.http.put<any>(`${_url}follow/${code}`, {}, { headers });
   }

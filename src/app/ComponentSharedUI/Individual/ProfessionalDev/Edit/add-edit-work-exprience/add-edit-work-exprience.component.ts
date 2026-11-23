@@ -13,7 +13,6 @@ export class AddEditWorkExprienceComponent implements OnInit {
     @Inject(MAT_DIALOG_DATA) public data: any,private alert:NotificationsService) { }
 
   ngOnInit(): void {
-    console.log(this.data)
   }
 
   formatDate(dateString: string): string {

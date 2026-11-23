@@ -1,0 +1,87 @@
+<app-sub-page-header title="User Subscription Monitoring" subtitle="Track every user's plan, status, expiry and feature usage."></app-sub-page-header>
+
+<div class="state error" *ngIf="error" role="alert">
+    <mat-icon>error_outline</mat-icon> {{ error }}
+    <button mat-button (click)="load()">Retry</button>
+</div>
+
+<div class="stats">
+    <div class="stat"><div class="ico"><mat-icon>group</mat-icon></div>
+        <div><div class="val">{{ counts.all }}</div><div class="lbl">All users</div></div></div>
+    <div class="stat ok"><div class="ico"><mat-icon>check_circle</mat-icon></div>
+        <div><div class="val">{{ counts.active }}</div><div class="lbl">Active</div></div></div>
+    <div class="stat warn"><div class="ico"><mat-icon>schedule</mat-icon></div>
+        <div><div class="val">{{ counts.expiring_soon }}</div><div class="lbl">Expiring in 14 days</div></div></div>
+    <div class="stat bad"><div class="ico"><mat-icon>event_busy</mat-icon></div>
+        <div><div class="val">{{ counts.expired + counts.suspended }}</div><div class="lbl">Expired / suspended</div></div></div>
+</div>
+
+<div class="panel">
+    <div class="toolbar">
+        <mat-form-field appearance="outline" floatLabel="never">
+            <mat-icon matPrefix>search</mat-icon>
+            <input matInput [(ngModel)]="search" (ngModelChange)="onSearch()" placeholder="Search name or email">
+            <button mat-icon-button matSuffix *ngIf="search" (click)="search = ''; onSearch()" aria-label="Clear search"><mat-icon>close</mat-icon></button>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="small">
+            <mat-label>Plan</mat-label>
+            <mat-select [(ngModel)]="planFilter" (selectionChange)="filterChanged()">
+                <mat-option value="">All plans</mat-option>
+                <mat-option *ngFor="let p of plans" [value]="p.planId">{{ p.plan_name }}</mat-option>
+            </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="small">
+            <mat-label>Status</mat-label>
+            <mat-select [(ngModel)]="statusFilter" (selectionChange)="filterChanged()">
+                <mat-option value="">All</mat-option>
+                <mat-option value="active">Active</mat-option>
+                <mat-option value="expired">Expired</mat-option>
+                <mat-option value="suspended">Suspended</mat-option>
+                <mat-option value="pending">Pending</mat-option>
+                <mat-option value="none">No subscription</mat-option>
+            </mat-select>
+        </mat-form-field>
+        <button mat-button (click)="clear()"><mat-icon>filter_alt_off</mat-icon> Reset</button>
+    </div>
+    <mat-progress-bar *ngIf="loading" mode="indeterminate"></mat-progress-bar>
+
+    <div class="table-wrap">
+        <table class="sub-table">
+            <thead>
+                <tr><th>User</th><th>Plan</th><th>Status</th><th>Expires</th><th class="hide-md">Payment</th><th class="actions">Actions</th></tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let s of rows">
+                    <td data-label="User">
+                        <div class="who"><div class="av">{{ initials(s.name) }}</div>
+                            <div><strong>{{ s.name }}</strong><small>{{ s.email }}</small></div></div>
+                    </td>
+                    <td data-label="Plan"><span class="pill info" *ngIf="s.plan">{{ s.plan }}</span><span *ngIf="!s.plan">—</span></td>
+                    <td data-label="Status"><span class="pill cap" [ngClass]="pillClass(s)">{{ s.status === 'none' ? 'No subscription' : s.status }}</span></td>
+                    <td data-label="Expires">
+                        <ng-container *ngIf="s.end; else dash">
+                            {{ s.end | date:'mediumDate' }}
+                            <small class="left" *ngIf="s.days_left !== null" [class.soon]="s.days_left <= 14">{{ s.days_left }} days left</small>
+                        </ng-container>
+                        <ng-template #dash>—</ng-template>
+                    </td>
+                    <td data-label="Payment" class="hide-md">{{ s.payment_method || '—' }}</td>
+                    <td class="actions">
+                        <button mat-icon-button matTooltip="View details" (click)="act(s, 'details')"><mat-icon>visibility</mat-icon></button>
+                        <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="More actions"><mat-icon>more_vert</mat-icon></button>
+                        <mat-menu #menu="matMenu">
+                            <button mat-menu-item (click)="act(s, 'change')"><mat-icon>swap_horiz</mat-icon> Change plan</button>
+                            <button mat-menu-item (click)="act(s, 'extend')" [disabled]="s.status === 'none' || s.status === 'suspended'"><mat-icon>update</mat-icon> Extend subscription</button>
+                            <button mat-menu-item (click)="act(s, 'history')"><mat-icon>history</mat-icon> Subscription history</button>
+                            <button mat-menu-item *ngIf="s.status !== 'suspended'" (click)="act(s, 'suspend')" [disabled]="s.status !== 'active'"><mat-icon>pause_circle</mat-icon> Suspend</button>
+                            <button mat-menu-item *ngIf="s.status === 'suspended'" (click)="act(s, 'reactivate')"><mat-icon>play_circle</mat-icon> Reactivate</button>
+                        </mat-menu>
+                    </td>
+                </tr>
+                <tr *ngIf="!loading && !rows.length"><td class="empty" colspan="6">No users match your filters.</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <mat-paginator [length]="total" [pageSize]="pageSize" [pageIndex]="pageIndex"
+        [pageSizeOptions]="[8, 16, 32]" (page)="onPage($event)" showFirstLastButtons></mat-paginator>
+</div>

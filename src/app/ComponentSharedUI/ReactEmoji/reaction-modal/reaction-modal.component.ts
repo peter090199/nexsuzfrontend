@@ -1,5 +1,6 @@
 import { Component, Inject, OnInit } from '@angular/core';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { SharedRoutinesService } from 'src/app/services/Function/shared-routines.service';
 import { AuthService } from 'src/app/services/auth.service';
 import { ReactionEmojiService } from 'src/app/services/Reaction/reaction-emoji.service';
 
@@ -13,12 +14,22 @@ export class ReactionModalComponent implements OnInit {
 
 
     constructor( private reactionService: ReactionEmojiService,private authService: AuthService,
+                private sharedRoutines: SharedRoutinesService,
+                private dialogRef: MatDialogRef<ReactionModalComponent>,
                 @Inject(MAT_DIALOG_DATA) public data: any,
     )
     {
       this.post_uuidOrUind = data;
-      console.log(this.post_uuidOrUind);
     }
+
+  profileRoute(code: string | number): any[] {
+    return this.sharedRoutines.getProfileRoute(String(code));
+  }
+
+  /** close the modal when a profile link is clicked */
+  close(): void {
+    this.dialogRef.close();
+  }
 
 
   ngOnInit(): void {

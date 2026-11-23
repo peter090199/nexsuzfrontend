@@ -1,72 +1,63 @@
+<mat-menu #acctMenu="matMenu" class="acct-menu" xPosition="before">
+  <div class="acct-head" (click)="$event.stopPropagation()">
+    <span class="acct-avatar"><img *ngIf="accountPhoto; else headInit" [src]="accountPhoto" alt=""><ng-template #headInit><span>{{ accountInitials }}</span></ng-template></span>
+    <span class="acct-who"><strong>{{ accountName || 'Your account' }}</strong><small>{{ accountRole }}</small></span>
+  </div>
+  <button mat-menu-item type="button" (click)="openWorkspace()"><mat-icon>dashboard</mat-icon><span>Go to my workspace</span></button>
+  <button mat-menu-item type="button" (click)="switchAccount()"><mat-icon>switch_account</mat-icon><span>Switch account</span></button>
+  <button mat-menu-item type="button" (click)="signOut()"><mat-icon>logout</mat-icon><span>Sign out</span></button>
+</mat-menu>
+
 <mat-sidenav-container>
   <!-- Mobile Sidebar -->
   <mat-sidenav #drawer mode="over" position="end" class="mobile-sidebar" [fixedInViewport]="true" [autoFocus]="false">
-    <div class="sidebar-header">
-      <app-app-logo></app-app-logo>
-      <button *ngIf="isMobile" mat-icon-button type="button" class="menu-toggle" (click)="drawer.toggle()"
-        [attr.aria-expanded]="drawer.opened" aria-controls="mobile-drawer"
-        [attr.aria-label]="drawer.opened ? 'Close menu' : 'Open menu'">
-        <mat-icon aria-hidden="true">{{ drawer.opened ? 'close' : 'menu' }}</mat-icon>
-      </button>
+    <div class="dr">
 
-      <app-translate></app-translate>
+      <!-- header -->
+      <header class="dr-head">
+        <app-app-logo></app-app-logo>
+        <span class="dr-spacer"></span>
+        <app-translate></app-translate>
+        <button type="button" class="dr-close" (click)="drawer.close()" aria-label="Close menu"><mat-icon aria-hidden="true">close</mat-icon></button>
+      </header>
+
+      <!-- who is this: your account when signed in, a short welcome for guests -->
+      <section class="dr-card" *ngIf="loggedIn; else guestCard">
+        <span class="dr-avatar"><img *ngIf="accountPhoto; else drInit" [src]="accountPhoto" alt=""><ng-template #drInit><span>{{ accountInitials }}</span></ng-template></span>
+        <span class="dr-who"><strong>{{ accountName || 'Your account' }}</strong><small>{{ accountRole }}</small></span>
+        <button type="button" class="dr-go" (click)="openWorkspace(); drawer.close()" aria-label="Go to my workspace"><mat-icon>arrow_forward</mat-icon></button>
+      </section>
+      <ng-template #guestCard>
+        <section class="dr-card dr-welcome">
+          <strong>Welcome to NEXSUZ</strong>
+          <small>Find jobs, build your network and hire great people.</small>
+        </section>
+      </ng-template>
+
+      <!-- menu -->
+      <nav class="dr-nav" aria-label="Mobile navigation">
+        <span class="dr-label">Menu</span>
+        <a class="dr-link" *ngFor="let l of navLinks; trackBy: trackLink" [href]="'#' + l.id" [class.active]="activeSection === l.id"
+          [attr.aria-current]="activeSection === l.id ? 'page' : null" (click)="scrollToSection($event, l.id); drawer.close()">
+          <span class="dr-ico"><mat-icon aria-hidden="true">{{ l.icon }}</mat-icon></span>
+          <span class="dr-text">{{ l.label }}</span>
+          <mat-icon class="dr-chev" aria-hidden="true">chevron_right</mat-icon>
+        </a>
+      </nav>
+
+      <!-- pinned actions -->
+      <footer class="dr-foot">
+        <ng-container *ngIf="!loggedIn">
+          <button type="button" class="dr-btn ghost" routerLink="/signin" (click)="drawer.close()">{{ 'SIGN_IN' | translate }}</button>
+          <button type="button" class="dr-btn solid" routerLink="/signup" (click)="drawer.close()">{{ 'SIGN_UP' | translate }}</button>
+        </ng-container>
+        <ng-container *ngIf="loggedIn">
+          <button type="button" class="dr-btn ghost" (click)="switchAccount()"><mat-icon>switch_account</mat-icon> Switch account</button>
+          <button type="button" class="dr-btn solid" (click)="signOut()"><mat-icon>logout</mat-icon> Sign out</button>
+        </ng-container>
+      </footer>
+
     </div>
-
-    <nav class="sidebar-content" aria-label="Mobile navigation">
-      <a class="sidebar-link" href="#home-section" [class.active]="activeSection === 'home-section'"
-        [attr.aria-current]="activeSection === 'home-section' ? 'page' : null"
-        (click)="scrollToSection($event, 'home-section'); drawer.close()">
-        <mat-icon aria-hidden="true">home</mat-icon>
-        <span>Home</span>
-      </a>
-
-      <a class="sidebar-link" href="#about-section" [class.active]="activeSection === 'about-section'"
-        [attr.aria-current]="activeSection === 'about-section' ? 'page' : null"
-        (click)="scrollToSection($event, 'about-section'); drawer.close()">
-        <mat-icon aria-hidden="true">info</mat-icon>
-        <span>About</span>
-      </a>
-
-      <a class="sidebar-link" href="#pricing-section" [class.active]="activeSection === 'pricing-section'"
-        [attr.aria-current]="activeSection === 'pricing-section' ? 'page' : null"
-        (click)="scrollToSection($event, 'pricing-section'); drawer.close()">
-        <mat-icon aria-hidden="true">payments</mat-icon>
-        <span>Pricing</span>
-      </a>
-
-      <a class="sidebar-link" href="#jobs-section" [class.active]="activeSection === 'jobs-section'"
-        [attr.aria-current]="activeSection === 'jobs-section' ? 'page' : null"
-        (click)="scrollToSection($event, 'jobs-section'); drawer.close()">
-        <mat-icon aria-hidden="true">work</mat-icon>
-        <span>Jobs</span>
-      </a>
-
-      <a class="sidebar-link" href="#client-section" [class.active]="activeSection === 'client-section'"
-        [attr.aria-current]="activeSection === 'client-section' ? 'page' : null"
-        (click)="scrollToSection($event, 'client-section'); drawer.close()">
-        <mat-icon aria-hidden="true">groups</mat-icon>
-        <span>Clients</span>
-      </a>
-
-      <a class="sidebar-link" href="#contact-section" [class.active]="activeSection === 'contact-section'"
-        [attr.aria-current]="activeSection === 'contact-section' ? 'page' : null"
-        (click)="scrollToSection($event, 'contact-section'); drawer.close()">
-        <mat-icon aria-hidden="true">contacts</mat-icon>
-        <span>Contact</span>
-      </a>
-
-      <div class="sidebar-divider"></div>
-
-      <div class="sidebar-actions">
-        <button mat-stroked-button type="button" class="btn-signin" routerLink="/signin" (click)="drawer.close()">
-          {{ 'SIGN_IN' | translate }}
-        </button>
-        <button mat-raised-button type="button" class="btn-signup" routerLink="/signup" (click)="drawer.close()">
-          {{ 'SIGN_UP' | translate }}
-        </button>
-      </div>
-
-    </nav>
   </mat-sidenav>
 
   <!-- Main -->
@@ -77,9 +68,7 @@
 
         <!-- Desktop -->
         <nav class="desktop-nav" *ngIf="!isMobile" aria-label="Primary">
-          <span class="nav-spacer"></span>
-          <span class="nav-spacer"></span>
-
+          <div class="nav-links">
           <a href="#home-section" [class.active]="activeSection === 'home-section'"
             [attr.aria-current]="activeSection === 'home-section' ? 'page' : null"
             (click)="scrollToSection($event, 'home-section')">Home</a>
@@ -99,20 +88,31 @@
           <a href="#contact-section" [class.active]="activeSection === 'contact-section'"
             [attr.aria-current]="activeSection === 'contact-section' ? 'page' : null"
             (click)="scrollToSection($event, 'contact-section')">Contact Us</a>
+          </div>
 
-          <span class="nav-spacer"></span>
-
-          <div class="nav-actions">
+          <div class="nav-right">
+          <div class="nav-actions" *ngIf="!loggedIn">
             <button mat-button type="button" class="btn-signin" routerLink="/signin">{{ 'SIGN_IN' | translate
               }}</button>
             <button mat-button type="button" class="btn-signup" routerLink="/signup">{{ 'SIGN_UP' | translate
               }}</button>
           </div>
 
+          <!-- signed in: account icon (switch account, workspace, sign out) -->
+          <button *ngIf="loggedIn" type="button" class="acct-btn" [matMenuTriggerFor]="acctMenu" aria-label="Account menu" aria-haspopup="menu">
+            <img *ngIf="accountPhoto; else acctInit" [src]="accountPhoto" alt="">
+            <ng-template #acctInit><span>{{ accountInitials }}</span></ng-template>
+          </button>
+
           <app-translate></app-translate>
+          </div>
         </nav>
 
         <!-- Mobile -->
+        <button *ngIf="isMobile && loggedIn" type="button" class="acct-btn mobile" [matMenuTriggerFor]="acctMenu" aria-label="Account menu" aria-haspopup="menu">
+          <img *ngIf="accountPhoto; else acctInitM" [src]="accountPhoto" alt="">
+          <ng-template #acctInitM><span>{{ accountInitials }}</span></ng-template>
+        </button>
         <button *ngIf="isMobile" mat-icon-button type="button" class="menu-toggle" (click)="drawer.toggle()"
           [attr.aria-expanded]="drawer.opened" aria-controls="mobile-drawer"
           [attr.aria-label]="drawer.opened ? 'Close menu' : 'Open menu'">

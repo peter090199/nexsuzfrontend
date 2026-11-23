@@ -1,0 +1,13 @@
+:host { display: inline-flex; align-items: center; vertical-align: middle; font-family: Verdana, Geneva, Tahoma, sans-serif; }
+
+.blk-icon { color: #8a94a8; transition: color .2s ease, background-color .2s ease; }
+.blk-icon:hover { color: #c62828; background: rgba(198, 40, 40, .08); }
+.blk-icon mat-icon { font-size: 20px; width: 20px; height: 20px; line-height: 20px; }
+
+.blk-btn { border-radius: 8px; min-height: 40px; }
+.blk-btn mat-icon { margin-right: 6px; font-size: 18px; width: 18px; height: 18px; line-height: 18px; }
+
+@media (max-width: 600px) {
+  .blk-icon { width: 44px; height: 44px; }
+  .blk-btn { min-height: 44px; }
+}

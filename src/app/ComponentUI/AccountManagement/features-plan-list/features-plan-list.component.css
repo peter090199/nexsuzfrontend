@@ -1,0 +1,193 @@
+:host {
+    display: block;
+    padding: 16px;
+}
+
+/* ---------- Toolbar / search ---------- */
+.search-div {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.search-div .mat-form-field {
+    flex: 1 1 240px;
+    min-width: 0;
+    max-width: 420px;
+}
+
+.search-div button[mat-raised-button] {
+    flex: 0 0 auto;
+}
+
+/* ---------- Table container ---------- */
+section.container-fluid {
+    padding: 0;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .12);
+}
+
+.mat-table {
+    width: 100%;
+    box-shadow: none;
+}
+
+.mat-header-row {
+    background: #f5f7fa;
+    min-height: 48px;
+}
+
+.mat-header-cell {
+    font-weight: 600;
+    color: #37474f;
+}
+
+.mat-row {
+    cursor: pointer;
+    transition: background .15s ease;
+}
+
+.mat-row:hover {
+    background: #f1f6ff;
+}
+
+.mat-cell,
+.mat-header-cell {
+    padding: 0 8px;
+    word-break: break-word;
+}
+
+/* ---------- Badges ---------- */
+.price {
+    font-weight: 600;
+    color: #2e7d32;
+    white-space: nowrap;
+}
+
+.plan-tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    background: #e3f2fd;
+    color: #1565c0;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.active,
+.inactive {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.active {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.inactive {
+    background: #ffebee;
+    color: #c62828;
+}
+
+mat-paginator {
+    border-top: 1px solid #eceff1;
+}
+
+/* ---------- Tablet: hide low-priority columns ---------- */
+@media (max-width: 991px) {
+    .mat-column-sort_number,
+    .mat-column-tag {
+        display: none;
+    }
+}
+
+/* ---------- Mobile: stack rows as cards ---------- */
+@media (max-width: 600px) {
+    :host {
+        padding: 12px;
+    }
+
+    .search-div .mat-form-field {
+        flex-basis: 100%;
+        max-width: none;
+    }
+
+    .search-div button[mat-raised-button] {
+        width: 100%;
+    }
+
+    section.container-fluid {
+        background: transparent;
+        box-shadow: none;
+        overflow: visible;
+    }
+
+    .mat-column-sort_number,
+    .mat-column-tag {
+        display: flex;
+    }
+
+    .mat-header-row {
+        display: none;
+    }
+
+    .mat-table {
+        background: transparent;
+    }
+
+    .mat-row {
+        display: block;
+        height: auto;
+        margin-bottom: 12px;
+        padding: 8px 12px;
+        background: #fff;
+        border: 1px solid #eceff1;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, .1);
+    }
+
+    .mat-cell {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        min-height: 36px;
+        padding: 4px 0;
+        border-bottom: 1px dashed #eceff1;
+        text-align: right;
+    }
+
+    .mat-cell:last-child {
+        border-bottom: none;
+        justify-content: flex-end;
+    }
+
+    .mat-cell::before {
+        content: attr(data-label);
+        flex: 0 0 38%;
+        text-align: left;
+        font-weight: 600;
+        color: #607d8b;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: .3px;
+    }
+
+    .mat-cell:last-child::before {
+        content: none;
+    }
+
+    .mat-footer-row {
+        display: block;
+        text-align: center;
+    }
+}

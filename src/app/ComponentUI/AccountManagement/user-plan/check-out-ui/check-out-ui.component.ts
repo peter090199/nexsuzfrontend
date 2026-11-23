@@ -202,10 +202,7 @@ export class CheckOutUIComponent implements OnInit {
 
   /** Reload the user's feature access so the new plan applies immediately. */
   private refreshFeatures(): void {
-    this.subscriptionService.myFeatures().pipe(take(1)).subscribe({
-      next: (r: any) => this.featureService.set(r?.success ? r.features : []),
-      error: () => { }
-    });
+    this.featureService.refresh().subscribe();
   }
 
   private loadAccount(): void {

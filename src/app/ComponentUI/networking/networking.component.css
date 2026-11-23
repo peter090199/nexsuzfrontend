@@ -1,71 +1,249 @@
 /* =====================================================================
-   My Network: clean, light and simple. Main column left, invitations rail right.
+   My Network: left sidebar | center feed | right promo
    ===================================================================== */
 :host {
-  --mn-bg: #f4f6fa;
+  --mn-bg: #f3f2ef;
   --mn-card: #ffffff;
-  --mn-soft: #f8fafd;
-  --mn-border: #e3e8f0;
+  --mn-border: #e6eaf1;
   --mn-text: #1b2a4a;
   --mn-muted: #6b7a99;
   --mn-accent: #0a66c2;
+  --mn-accent-2: #7a5af8;
   --mn-accent-soft: #eaf3fc;
   --mn-ok: #057642;
+  --mn-shadow: 0 2px 8px rgba(20, 40, 80, .07);
+  --mn-shadow-hover: 0 10px 26px rgba(20, 40, 80, .14);
   display: block;
   background: var(--mn-bg);
   color: var(--mn-text);
   min-height: 100%;
 }
 
-.mynet { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; width: 100%; max-width: 1400px; margin: 0 auto; padding: 16px 12px 32px; box-sizing: border-box; }
-.mynet-main, .mynet-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-/* phones: invitations first (they need an answer), then people */
-.mynet-side { order: -1; }
+.mynet {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 16px 12px 32px;
+  box-sizing: border-box;
+}
+.mynet-left, .mynet-main, .mynet-right { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 
-@media (min-width: 1024px) {
-  .mynet { grid-template-columns: minmax(0, 1fr) 340px; padding: 24px; gap: 24px; align-items: start; }
-  .mynet-side { order: 0; position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow-y: auto; scrollbar-width: thin; }
+/* phones: main first, then sidebar and promo */
+.mynet-left  { order: 1; }
+.mynet-main  { order: 0; }
+.mynet-right { order: 2; }
+
+@media (min-width: 900px) {
+  .mynet { grid-template-columns: 240px minmax(0, 1fr); padding: 24px; gap: 24px; align-items: start; }
+  .mynet-left, .mynet-main { order: 0; }
+  .mynet-right { grid-column: 1 / -1; flex-direction: row; }
+  .mynet-right .panel { flex: 1; }
+}
+@media (min-width: 1200px) {
+  .mynet { grid-template-columns: 240px minmax(0, 1fr) 300px; }
+  .mynet-right { grid-column: auto; flex-direction: column; }
+  .mynet-left, .mynet-right { position: sticky; top: 12px; }
 }
 
-.mynet-head h1 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 24px; color: var(--mn-text); }
-.mynet-head h1 mat-icon { color: var(--mn-accent); }
-.mynet-head p { margin: 6px 0 0; font-size: 14px; color: var(--mn-muted); }
-
-.panel { background: var(--mn-card); border: 1px solid var(--mn-border); border-radius: 12px; box-shadow: 0 1px 3px rgba(20, 40, 80, .06); overflow: hidden; }
-.panel-title { display: flex; align-items: center; gap: 8px; margin: 0; padding: 14px 16px; font-size: 16px; font-weight: 700; color: var(--mn-text); border-bottom: 1px solid var(--mn-border); }
-.panel-title mat-icon { color: var(--mn-accent); }
-.list-wrapper { padding: 12px; }
-
+/* ---------- panels ---------- */
+.panel {
+  background: var(--mn-card);
+  border: 1px solid var(--mn-border);
+  border-radius: 16px;
+  box-shadow: var(--mn-shadow);
+  overflow: hidden;
+}
+.panel-title {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin: 0; padding: 16px 20px;
+  font-size: 17px; font-weight: 700; color: var(--mn-text);
+  border-bottom: 1px solid var(--mn-border);
+}
+.list-wrapper { padding: 16px; }
 .spinner-wrapper { display: flex; justify-content: center; padding: 30px 0; }
 
-/* ---------- children: tidy the existing cards without touching their templates ---------- */
+.count-pill, .count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px;
+  background: var(--mn-accent); color: #fff; font-size: 12px; font-weight: 700;
+}
+.count-pill { margin-left: 6px; vertical-align: middle; }
+
+/* ---------- left: manage my network ---------- */
+.manage .panel-title { font-size: 16px; }
+.manage-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 20px; color: var(--mn-text); text-decoration: none; font-size: 14px; font-weight: 600;
+  transition: background .15s ease, color .15s ease, padding-left .15s ease;
+}
+.manage-item mat-icon { color: var(--mn-muted); transition: color .15s ease; }
+.manage-item span:nth-child(2) { flex: 1; }
+.manage-item:hover { background: var(--mn-accent-soft); color: var(--mn-accent); padding-left: 24px; }
+.manage-item:hover mat-icon { color: var(--mn-accent); }
+
+/* ---------- right: promo ---------- */
+.promo-cover { height: 72px; background: linear-gradient(120deg, var(--mn-accent), var(--mn-accent-2)); }
+.promo-body { padding: 20px; text-align: center; }
+.promo-cover + .promo-body { margin-top: -34px; padding-top: 0; }
+.promo-icon {
+  width: 56px; height: 56px; font-size: 28px; line-height: 56px;
+  border-radius: 50%; background: #fff; color: var(--mn-accent);
+  box-shadow: var(--mn-shadow); border: 3px solid #fff; box-sizing: content-box;
+}
+.promo h3 { margin: 10px 0 6px; font-size: 16px; }
+.promo p { margin: 0 0 14px; font-size: 13px; color: var(--mn-muted); line-height: 1.45; }
+.promo-alt { background: linear-gradient(160deg, #fff, var(--mn-accent-soft)); }
+
+.pill-btn {
+  display: inline-block; padding: 8px 22px; border-radius: 999px;
+  background: var(--mn-accent); color: #fff; font-size: 14px; font-weight: 700; text-decoration: none;
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.pill-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(10, 102, 194, .35); background: #0958a8; }
+.pill-btn.ghost { background: transparent; color: var(--mn-accent); border: 1.5px solid var(--mn-accent); }
+.pill-btn.ghost:hover { background: var(--mn-accent-soft); box-shadow: none; }
+
+/* ---------- children: restyle the existing cards without touching their templates ---------- */
 .mynet ::ng-deep .section { padding: 0; background: transparent; }
 .mynet ::ng-deep .no-data { color: var(--mn-muted); text-align: center; padding: 16px 0; }
 
-/* people grid: fluid columns instead of a fixed 6 */
-.mynet-main ::ng-deep .grid-container, .mynet-main ::ng-deep .skeleton-list, .mynet-main ::ng-deep .suggestions {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; padding: 0;
+/* people: card grid */
+.mynet-main ::ng-deep .grid-container,
+.mynet-main ::ng-deep .skeleton-list,
+.mynet-main ::ng-deep .suggestions {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; padding: 0;
 }
-/* rail: one invitation per row */
-.mynet-side .grid { display: block; }
-.mynet-side ::ng-deep .grid-container, .mynet-side ::ng-deep .skeleton-list { display: flex; flex-direction: column; gap: 12px; padding: 0; }
+/* invitations: one per row */
+.invites ::ng-deep .grid-container, .invites ::ng-deep .skeleton-list { display: flex; flex-direction: column; gap: 12px; }
 
 .mynet ::ng-deep .suggestion-card {
+  position: relative; overflow: hidden;
   width: auto; max-width: 100%; margin-top: 0; box-sizing: border-box;
-  background: var(--mn-card); border: 1px solid var(--mn-border); border-radius: 12px; box-shadow: none;
-  transition: box-shadow .15s ease, border-color .15s ease;
+  background: var(--mn-card); border: 1px solid var(--mn-border); border-radius: 16px; box-shadow: var(--mn-shadow);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
-.mynet ::ng-deep .suggestion-card:hover { border-color: #c5d6ea; box-shadow: 0 4px 14px rgba(20, 40, 80, .08); }
+/* gradient cover strip */
+.mynet ::ng-deep .suggestion-card::before {
+  content: ''; position: absolute; inset: 0 0 auto 0; height: 56px;
+  background: linear-gradient(120deg, var(--mn-accent), var(--mn-accent-2)); opacity: .9; z-index: 0;
+}
+.mynet ::ng-deep .suggestion-card > * { position: relative; z-index: 1; }
+.mynet ::ng-deep .suggestion-card .profile-image-container { margin-top: 12px; }
+.mynet ::ng-deep .suggestion-card .profile-image { border: 3px solid #fff; box-shadow: var(--mn-shadow); }
+.mynet ::ng-deep .suggestion-card .close-button { color: #fff; }
+.mynet ::ng-deep .suggestion-card:hover { transform: translateY(-3px); box-shadow: var(--mn-shadow-hover); border-color: #c5d6ea; }
+
 .mynet ::ng-deep .custom-title, .mynet ::ng-deep .custom-title:visited { color: var(--mn-text); font-weight: 700; text-decoration: none; }
 .mynet ::ng-deep .custom-title:hover { color: var(--mn-accent); text-decoration: underline; }
-.mynet ::ng-deep .mat-card-subtitle, .mynet ::ng-deep .mat-mdc-card-subtitle, .mynet ::ng-deep .skills-line, .mynet ::ng-deep .based-text { color: var(--mn-muted); }
-.mynet ::ng-deep .profession-badge { background: var(--mn-accent-soft); color: var(--mn-accent); }
+.mynet ::ng-deep .mat-card-subtitle, .mynet ::ng-deep .mat-mdc-card-subtitle,
+.mynet ::ng-deep .skills-line, .mynet ::ng-deep .based-text { color: var(--mn-muted); }
+.mynet ::ng-deep .profession-badge { background: var(--mn-accent-soft); color: var(--mn-accent); border-radius: 999px; }
 .mynet ::ng-deep .card-top-bar { background: var(--mn-accent); }
 
-/* buttons: clear, rounded, one primary colour */
+/* pill buttons */
+.mynet ::ng-deep .mat-flat-button, .mynet ::ng-deep .mat-raised-button,
+.mynet ::ng-deep .mat-mdc-unelevated-button, .mynet ::ng-deep .mat-mdc-raised-button { border-radius: 999px; font-weight: 700; transition: transform .15s ease, box-shadow .15s ease; }
+.mynet ::ng-deep .mat-flat-button:hover, .mynet ::ng-deep .mat-mdc-unelevated-button:hover { transform: translateY(-1px); }
 .mynet ::ng-deep .mat-flat-button.mat-primary, .mynet ::ng-deep .mat-raised-button.mat-primary,
-.mynet ::ng-deep .mat-mdc-unelevated-button.mat-primary, .mynet ::ng-deep .mat-mdc-raised-button.mat-primary { background: var(--mn-accent); color: #fff; font-weight: 600; border-radius: 18px; }
-.mynet ::ng-deep .mat-flat-button.mat-accent, .mynet ::ng-deep .mat-mdc-unelevated-button.mat-accent { background: #fff; color: var(--mn-ok); border: 1px solid var(--mn-ok); border-radius: 18px; }
-.mynet ::ng-deep .mat-flat-button.mat-warn, .mynet ::ng-deep .mat-mdc-unelevated-button.mat-warn { background: #fff; color: var(--mn-muted); border: 1px solid var(--mn-border); border-radius: 18px; }
+.mynet ::ng-deep .mat-mdc-unelevated-button.mat-primary, .mynet ::ng-deep .mat-mdc-raised-button.mat-primary { background: var(--mn-accent); color: #fff; }
+.mynet ::ng-deep .mat-flat-button.mat-accent, .mynet ::ng-deep .mat-mdc-unelevated-button.mat-accent { background: #fff; color: var(--mn-ok); border: 1px solid var(--mn-ok); }
+.mynet ::ng-deep .mat-flat-button.mat-warn, .mynet ::ng-deep .mat-mdc-unelevated-button.mat-warn { background: #fff; color: var(--mn-muted); border: 1px solid var(--mn-border); }
 
-@media (prefers-reduced-motion: reduce) { .mynet ::ng-deep .suggestion-card { transition: none; } }
+@media (max-width: 480px) {
+  .mynet-main ::ng-deep .grid-container, .mynet-main ::ng-deep .suggestions { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .list-wrapper { padding: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mynet ::ng-deep .suggestion-card, .manage-item, .pill-btn, .mynet ::ng-deep .mat-flat-button { transition: none; }
+  .mynet ::ng-deep .suggestion-card:hover, .pill-btn:hover { transform: none; }
+}
+
+/* =====================================================================
+   Responsive refinements
+   ===================================================================== */
+
+/* phones + small tablets (< 900px): sidebar becomes a swipeable pill bar on top */
+@media (max-width: 899.98px) {
+  .mynet { padding: 10px 10px 24px; gap: 12px; }
+  .mynet-left { order: -1; }
+  .mynet-main { order: 0; }
+  .mynet-right { order: 1; flex-direction: column; gap: 12px; }
+
+  .manage { border-radius: 999px; }
+  .manage .panel-title { display: none; }
+  .manage {
+    display: flex; flex-direction: row; gap: 4px; padding: 6px;
+    overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity;
+  }
+  .manage::-webkit-scrollbar { display: none; }
+  .manage-item {
+    flex: none; scroll-snap-align: start; white-space: nowrap;
+    padding: 8px 14px; border-radius: 999px; gap: 6px; font-size: 13px;
+  }
+  .manage-item:hover { padding-left: 14px; }
+  .manage-item mat-icon { font-size: 18px; width: 18px; height: 18px; line-height: 18px; }
+  .manage-item .count { margin-left: 2px; }
+
+  .panel { border-radius: 14px; }
+  .panel-title { padding: 12px 14px; font-size: 16px; }
+
+  /* promo: compact horizontal strips */
+  .promo { display: flex; align-items: center; }
+  .promo-cover { width: 8px; height: auto; align-self: stretch; flex: none; }
+  .promo-cover + .promo-body { margin-top: 0; padding-top: 14px; }
+  .promo-body { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 4px 12px; text-align: left; padding: 14px; width: 100%; box-sizing: border-box; }
+  .promo-icon { grid-row: 1 / span 2; width: 40px; height: 40px; font-size: 22px; line-height: 40px; border-width: 2px; }
+  .promo h3 { margin: 0; font-size: 15px; }
+  .promo p { margin: 0; font-size: 12px; grid-column: 2; }
+  .promo .pill-btn { grid-column: 3; grid-row: 1 / span 2; padding: 7px 16px; font-size: 13px; }
+}
+
+/* tablets (600–899px): roomy 3-up grid */
+@media (min-width: 600px) and (max-width: 899.98px) {
+  .mynet-main ::ng-deep .grid-container,
+  .mynet-main ::ng-deep .skeleton-list,
+  .mynet-main ::ng-deep .suggestions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* phones (< 600px): 2-up grid, tighter cards */
+@media (max-width: 599.98px) {
+  .mynet-main ::ng-deep .grid-container,
+  .mynet-main ::ng-deep .skeleton-list,
+  .mynet-main ::ng-deep .suggestions { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .mynet ::ng-deep .suggestion-card { min-width: 0; padding: 10px; border-radius: 14px; }
+  .mynet ::ng-deep .suggestion-card::before { height: 44px; }
+  .mynet ::ng-deep .suggestion-card .profile-image { width: 64px; height: 64px; }
+  .mynet ::ng-deep .custom-title { font-size: 14px; overflow-wrap: anywhere; }
+  .mynet ::ng-deep .mat-card-subtitle, .mynet ::ng-deep .mat-mdc-card-subtitle { font-size: 12px; }
+  .mynet ::ng-deep .mat-flat-button, .mynet ::ng-deep .mat-mdc-unelevated-button { width: 100%; min-height: 36px; padding: 0 8px; font-size: 13px; }
+  .promo p { display: none; }
+  .promo-body { grid-template-columns: auto 1fr auto; }
+  .promo-icon { grid-row: auto; }
+  .promo .pill-btn { grid-row: auto; }
+}
+
+/* very small phones: single column so cards never squeeze */
+@media (max-width: 359.98px) {
+  .mynet-main ::ng-deep .grid-container,
+  .mynet-main ::ng-deep .skeleton-list,
+  .mynet-main ::ng-deep .suggestions { grid-template-columns: 1fr; }
+}
+
+/* large desktops: a little more breathing room */
+@media (min-width: 1600px) {
+  .mynet { max-width: 1560px; grid-template-columns: 260px minmax(0, 1fr) 320px; }
+  .mynet-main ::ng-deep .grid-container,
+  .mynet-main ::ng-deep .skeleton-list,
+  .mynet-main ::ng-deep .suggestions { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+}
+
+/* mobile: exactly 10px margin around the page. The layout shell already adds 16px padding at <=768px,
+   so pull the page back by 6px and drop its own padding. */
+@media (max-width: 768px) {
+  :host { margin: -6px; }
+  .mynet { padding: 0; }
+}

@@ -34,11 +34,10 @@ export class JobsComponent implements OnInit {
       const res = await firstValueFrom(this.jobListServices.getActiveJobs());
       if (res.success) {
         this.isLoading = false;
+        // API returns a full image URL already
         this.jobs = res.data.map((job: any) => ({
           ...job,
-          job_image: job.job_image
-            ? `https://exploredition.com${job.job_image}`
-            : null
+          job_image: job.job_image || null
         }));
 
       } else {

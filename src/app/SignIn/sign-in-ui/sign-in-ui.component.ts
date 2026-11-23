@@ -17,6 +17,7 @@ export class SignInUIComponent implements OnInit {
   isLoading = false;
   isRedirecting = false;
   passwordVisible = false;
+  private readonly REMEMBER_KEY = 'nexsuz_remembered_email';
 
   returnUrl: string | null = null;
   applyTransNo: string | null = null;
@@ -46,24 +47,49 @@ export class SignInUIComponent implements OnInit {
       this.viewPeople = params['view'] === 'people';
     });
 
+    const rememberedEmail = this.getRememberedEmail();
+
     this.loginForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
+      email: [rememberedEmail, [Validators.required, Validators.email]],
       password: ['', [
         Validators.required,
         Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}$/)
-      ]]
+      ]],
+      rememberMe: [!!rememberedEmail]
     });
   }
+
+  // Only the email is ever persisted - never the password.
+  private getRememberedEmail(): string {
+    try {
+      return localStorage.getItem(this.REMEMBER_KEY) || '';
+    } catch {
+      return '';
+    }
+  }
+
+  private saveRememberedEmail(email: string, remember: boolean): void {
+    try {
+      if (remember) {
+        localStorage.setItem(this.REMEMBER_KEY, email);
+      } else {
+        localStorage.removeItem(this.REMEMBER_KEY);
+      }
+    } catch { /* storage unavailable - ignore */ }
+  }
+
+  get emailCtrl() { return this.loginForm.get('email'); }
+  get passwordCtrl() { return this.loginForm.get('password'); }
 
   togglePasswordVisibility(): void {
     this.passwordVisible = !this.passwordVisible;
   }
 
   onSubmit(): void {
-    if (this.loginForm.invalid) return;
+    if (this.loginForm.invalid || this.isLoading || this.isRedirecting) return;
 
     this.isLoading = true;
-    const { email, password } = this.loginForm.value;
+    const { email, password, rememberMe } = this.loginForm.value;
 
     this.sigInService.signin(email, password).subscribe({
       next: (res: any) => {
@@ -74,11 +100,24 @@ export class SignInUIComponent implements OnInit {
           return;
         }
 
+        this.saveRememberedEmail(email, !!rememberMe);
+
         // Save session
         sessionStorage.setItem('token', res.token);
         sessionStorage.setItem('role', res.role);
+        // the account code is needed to tell "my own profile" from someone else's on every page, for every role
+        if (res.code !== undefined && res.code !== null) { sessionStorage.setItem('code', String(res.code)); }
         sessionStorage.setItem('is_online', String(res.is_online ?? true));
         localStorage.setItem('chatmessages', 'true');
+        // what this account's plan includes: asked for right away, shared by every guard and menu that needs it
+        this.featureService.invalidate();
+        this.featureService.refresh();
+
+        // DEF-CLIENT always lands on the dashboard (job-seeker shortcuts below don't apply to recruiters)
+        if (res.role === 'DEF-CLIENT') {
+          this.redirectUser(res.role);
+          return;
+        }
 
         // Came from "Apply Now" -> go straight back to that job
         if (this.applyTransNo) {
@@ -100,23 +139,10 @@ export class SignInUIComponent implements OnInit {
           return;
         }
 
-        // No subscription -> prompt to activate plan
-        if (res.role === 'DEF-USERS' && !res.has_subscription) {
-          this.router.navigate([`/${res.role}/subscription`]);
-          return;
-        }
+        // DEF-USERS go straight to Home, with or without a plan (plan-limited actions ask to upgrade when used)
 
         // Load features, then redirect by role
-        this.subscriptionService.myFeatures().subscribe({
-          next: (featureRes: any) => {
-            this.featureService.set(featureRes.success ? featureRes.features : []);
-            this.redirectUser(res.role);
-          },
-          error: () => {
-            this.featureService.set([]);
-            this.redirectUser(res.role);
-          }
-        });
+        this.featureService.refresh().subscribe(() => this.redirectUser(res.role));
       },
 
       error: (err) => {

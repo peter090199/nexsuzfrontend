@@ -1,0 +1,71 @@
+:host { display: block; font-family: Verdana, Geneva, Tahoma, sans-serif; }
+:host(.inline-host) { display: inline-block; }
+
+.nx { display: flex; align-items: center; justify-content: center; }
+.nx-box { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding: 0 16px; position: relative; }
+
+/* the navy badge keeps the pale logo readable on any background */
+.nx-badge { position: relative; width: 64px; height: 64px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  background: linear-gradient(145deg, #0a1f3d, #0b2c57); box-shadow: 0 6px 18px rgba(8, 32, 63, .28); }
+.nx-badge img { width: 36px; height: 36px; object-fit: contain; filter: drop-shadow(0 0 6px rgba(112, 181, 249, .7)); animation: nx-pulse 2s ease-in-out infinite; }
+.nx-ring { position: absolute; inset: -5px; border-radius: 50%; border: 2px solid rgba(10, 102, 194, .15); border-top-color: #0a66c2; border-right-color: #7a5af8; animation: nx-spin 1s linear infinite; }
+.nx-text { font-size: 14px; font-weight: 700; color: #1b2a4a; }
+.nx-hint { font-size: 12.5px; color: #6b7a99; }
+
+/* page: centered in the space it is given */
+.m-page { min-height: 38vh; padding: 28px 0; }
+
+/* inline: a small badge with the text beside it */
+.m-inline { justify-content: flex-start; }
+.m-inline .nx-box { flex-direction: row; gap: 10px; padding: 0; }
+.m-inline .nx-badge { width: 30px; height: 30px; box-shadow: none; }
+.m-inline .nx-badge img { width: 17px; height: 17px; }
+.m-inline .nx-ring { inset: -3px; border-width: 2px; }
+.m-inline .nx-text { font-size: 13px; }
+
+/* overlay: the same brand screen as after sign-in */
+.m-overlay { position: fixed; inset: 0; z-index: 2147482000; overflow: hidden;
+  background: radial-gradient(120% 80% at 15% 0%, rgba(122, 90, 248, .35), transparent 55%), radial-gradient(100% 70% at 100% 100%, rgba(10, 102, 194, .45), transparent 60%), linear-gradient(180deg, #0a1f3d 0%, #0b2c57 55%, #08254a 100%); }
+.nx-glow { position: absolute; width: 520px; height: 520px; max-width: 90vw; max-height: 90vw; border-radius: 50%; background: radial-gradient(circle, rgba(112, 181, 249, .28), transparent 65%); animation: nx-breathe 3.2s ease-in-out infinite; }
+.m-overlay .nx-badge { width: 120px; height: 120px; background: transparent; box-shadow: none; }
+.m-overlay .nx-badge img { width: 78px; height: 78px; filter: drop-shadow(0 0 14px rgba(112, 181, 249, .75)); }
+.m-overlay .nx-ring { inset: 0; border-color: rgba(255, 255, 255, .12); border-top-color: #70b5f9; border-right-color: #a78bfa; }
+.nx-word { margin-top: 6px; font-size: 21px; font-weight: 700; letter-spacing: .38em; padding-left: .38em; background: linear-gradient(90deg, #fff, #9cc9fb); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
+.m-overlay .nx-text { font-size: 18px; color: #fff; margin-top: 10px; } .m-overlay .nx-hint { color: #9fb7d8; }
+.nx-bar { margin-top: 16px; width: min(240px, 70vw); height: 4px; border-radius: 999px; background: rgba(255, 255, 255, .14); overflow: hidden; }
+.nx-bar i { display: block; width: 40%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #70b5f9, #a78bfa); animation: nx-slide 1.3s ease-in-out infinite; }
+
+@keyframes nx-spin { to { transform: rotate(360deg); } }
+@keyframes nx-pulse { 0%, 100% { transform: scale(.94); opacity: .85; } 50% { transform: scale(1.06); opacity: 1; } }
+@keyframes nx-breathe { 0%, 100% { transform: scale(.9); opacity: .7; } 50% { transform: scale(1.08); opacity: 1; } }
+@keyframes nx-slide { 0% { transform: translateX(-110%); } 100% { transform: translateX(270%); } }
+@media (prefers-reduced-motion: reduce) { .nx-ring, .nx-badge img, .nx-glow, .nx-bar i { animation: none; } .nx-bar i { width: 100%; opacity: .6; } }
+
+
+/* =====================================================================
+   Responsive: phones (small, large), landscape, notches, short screens
+   ===================================================================== */
+.m-overlay { height: 100vh; height: 100dvh; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); box-sizing: border-box; }
+.m-overlay .nx-badge { width: clamp(88px, 28vmin, 132px); height: clamp(88px, 28vmin, 132px); }
+.m-overlay .nx-badge img { width: 64%; height: 64%; }
+.m-overlay .nx-word { font-size: clamp(16px, 4.6vmin, 22px); }
+.m-overlay .nx-text { font-size: clamp(15px, 4.2vmin, 19px); max-width: 86vw; overflow-wrap: anywhere; }
+.m-overlay .nx-hint { max-width: 86vw; overflow-wrap: anywhere; }
+.nx-text, .nx-hint { overflow-wrap: anywhere; }
+
+@media (max-width: 480px) {
+  .m-page { min-height: 30vh; padding: 20px 0; }
+  .nx-badge { width: 56px; height: 56px; } .nx-badge img { width: 32px; height: 32px; }
+  .m-inline .nx-badge { width: 28px; height: 28px; } .m-inline .nx-badge img { width: 16px; height: 16px; }
+  .nx-text { font-size: 13.5px; } .nx-hint { font-size: 12px; }
+}
+/* very small phones (320px) */
+@media (max-width: 340px) { .nx-box { padding: 0 8px; gap: 8px; } .m-overlay .nx-bar { width: 64vw; } }
+
+/* landscape phones: little height, so the overlay lays out in a row and drops the extras */
+@media (max-height: 440px) and (orientation: landscape) {
+  .m-overlay .nx-box { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 4px 20px; max-width: 90vw; }
+  .m-overlay .nx-badge { width: 72px; height: 72px; }
+  .m-overlay .nx-hint, .m-overlay .nx-bar, .nx-glow { display: none; }
+  .m-page { min-height: 0; padding: 12px 0; }
+}

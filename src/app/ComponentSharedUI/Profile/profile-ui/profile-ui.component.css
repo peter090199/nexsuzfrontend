@@ -372,3 +372,10 @@
 .connect-btn.pending { border-color: #8a97b0; color: #6b7a99; }
 .connect-btn.connected { border-color: #057642; color: #057642; }
 .connect-btn[disabled] { opacity: .6; cursor: progress; }
+
+/* ---------- your uploaded CV / resume, shown on your own profile ---------- */
+.resume-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-height: 36px; padding: 0 14px 0 10px; border-radius: 999px; border: 1px solid #b9d3ee; background: #f6faff; color: #004182; font-size: 13px; font-weight: 600; text-decoration: none; }
+.resume-chip:hover { background: #eaf3fc; }
+.resume-chip mat-icon { font-size: 18px; width: 18px; height: 18px; flex: none; }
+.resume-chip span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+.resume-chip small { color: #6b7a90; font-weight: 500; white-space: nowrap; }

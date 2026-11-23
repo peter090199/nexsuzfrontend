@@ -1,0 +1,197 @@
+<!-- ============================ LIST ============================ -->
+<section class="jt-list" *ngIf="mode === 'list'">
+
+  <div class="jt-toolbar">
+    <p>Templates control how a job looks to applicants: colours, fonts, buttons, layout and which sections appear. Published templates are offered when a recruiter posts a job.</p>
+    <button mat-flat-button color="primary" type="button" (click)="newTemplate()"><mat-icon>add</mat-icon> New template</button>
+  </div>
+
+  <mat-progress-bar *ngIf="loading" mode="indeterminate"></mat-progress-bar>
+
+  <div class="jt-empty" *ngIf="loadError && !loading">
+    <mat-icon>error_outline</mat-icon>
+    <p>The templates could not be loaded.</p>
+    <button mat-stroked-button color="primary" type="button" (click)="load()">Try again</button>
+  </div>
+
+  <div class="jt-grid" *ngIf="!loading && !loadError">
+    <article class="jt-card" *ngFor="let t of templates; trackBy: trackId" [class.busy]="busyId === t.id">
+      <div class="jt-swatch" [style.background]="'linear-gradient(120deg,' + t.theme.primary + ',' + t.theme.accent + ')'">
+        <span class="dot" [style.background]="t.theme.surface"></span>
+        <span class="dot" [style.background]="t.theme.background"></span>
+        <span class="dot" [style.background]="t.theme.text"></span>
+      </div>
+
+      <div class="jt-body">
+        <div class="jt-row">
+          <h3>{{ t.name }}</h3>
+          <span class="pill def" *ngIf="t.is_default"><mat-icon>star</mat-icon> Default</span>
+          <span class="pill" [class.live]="t.status === 'published'">{{ t.status === 'published' ? 'Published' : 'Draft' }}</span>
+        </div>
+        <p class="desc">{{ t.description || 'No description.' }}</p>
+        <p class="meta">
+          <span>{{ t.theme.layout === 'two_column' ? 'Two columns' : t.theme.layout === 'sidebar' ? 'Sidebar' : 'Single column' }}</span>
+          <span>{{ t.jobs_using || 0 }} job{{ t.jobs_using === 1 ? '' : 's' }}</span>
+        </p>
+      </div>
+
+      <div class="jt-actions">
+        <button mat-stroked-button type="button" (click)="edit(t)"><mat-icon>edit</mat-icon> Edit</button>
+        <button mat-icon-button type="button" (click)="duplicate(t)" matTooltip="Duplicate" aria-label="Duplicate"><mat-icon>content_copy</mat-icon></button>
+        <button mat-icon-button type="button" *ngIf="t.status !== 'published'" (click)="publish(t)" matTooltip="Publish" aria-label="Publish"><mat-icon>publish</mat-icon></button>
+        <button mat-icon-button type="button" *ngIf="t.status === 'published' && !t.is_default" (click)="unpublish(t)" matTooltip="Unpublish" aria-label="Unpublish"><mat-icon>unpublished</mat-icon></button>
+        <button mat-icon-button type="button" *ngIf="t.status === 'published' && !t.is_default" (click)="makeDefault(t)" matTooltip="Make default" aria-label="Make default"><mat-icon>star_outline</mat-icon></button>
+        <button mat-icon-button type="button" color="warn" *ngIf="!t.is_default" (click)="remove(t)" matTooltip="Delete" aria-label="Delete"><mat-icon>delete_outline</mat-icon></button>
+      </div>
+    </article>
+
+    <div class="jt-empty" *ngIf="!templates.length">
+      <mat-icon>dashboard_customize</mat-icon>
+      <p>No templates yet.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ EDITOR ============================ -->
+<section class="jt-editor" *ngIf="mode === 'edit' && editing">
+
+  <header class="jt-ed-head">
+    <button mat-icon-button type="button" (click)="cancel()" aria-label="Back to templates"><mat-icon>arrow_back</mat-icon></button>
+    <h3>{{ isNew ? 'New template' : 'Edit template' }}</h3>
+    <span class="spacer"></span>
+    <button mat-stroked-button type="button" (click)="cancel()" [disabled]="!!saving">Cancel</button>
+    <button mat-stroked-button color="primary" type="button" (click)="save(false)" [disabled]="!valid || !!saving">
+      <mat-spinner *ngIf="saving === 'draft'" diameter="16"></mat-spinner> Save
+    </button>
+    <button mat-flat-button color="primary" type="button" (click)="save(true)" [disabled]="!valid || !!saving">
+      <mat-spinner *ngIf="saving === 'publish'" diameter="16"></mat-spinner> Save &amp; publish
+    </button>
+  </header>
+
+  <div class="jt-ed-grid">
+
+    <!-- ---------------- controls ---------------- -->
+    <div class="jt-controls">
+
+      <mat-card class="box">
+        <h4>Details</h4>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Template name</mat-label>
+          <input matInput [(ngModel)]="editing.name" maxlength="120" required (ngModelChange)="refresh()" autocomplete="off">
+          <mat-error>The name is required.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Description (optional)</mat-label>
+          <input matInput [(ngModel)]="editing.description" maxlength="255" autocomplete="off">
+        </mat-form-field>
+      </mat-card>
+
+      <mat-card class="box">
+        <h4>Theme</h4>
+        <p class="hint">Start from a predefined theme, then adjust it below.</p>
+        <div class="presets">
+          <button type="button" class="preset" *ngFor="let p of presets" [class.on]="editing.theme.preset === p.id" (click)="applyPreset(p.id)"
+            [attr.aria-pressed]="editing.theme.preset === p.id">
+            <span class="sw" [style.background]="'linear-gradient(120deg,' + p.theme.primary + ',' + p.theme.accent + ')'"></span>
+            <span>{{ p.label }}</span>
+          </button>
+        </div>
+      </mat-card>
+
+      <mat-card class="box">
+        <h4>Colours</h4>
+        <div class="colors">
+          <div class="color" *ngFor="let c of [['primary','Primary'],['accent','Accent'],['background','Page background'],['surface','Card background'],['text','Text']]">
+            <label [for]="'c-' + c[0]">{{ c[1] }}</label>
+            <div class="color-row">
+              <input type="color" [id]="'c-' + c[0]" [value]="$any(editing.theme)[c[0]]" (input)="setColor($any(c[0]), $any($event.target).value)">
+              <input type="text" class="hex" maxlength="7" [value]="$any(editing.theme)[c[0]]" (input)="setColor($any(c[0]), $any($event.target).value)"
+                [class.bad]="!isHex($any(editing.theme)[c[0]])" aria-label="{{ c[1] }} hex colour">
+            </div>
+          </div>
+        </div>
+      </mat-card>
+
+      <mat-card class="box">
+        <h4>Fonts, buttons and layout</h4>
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Font</mat-label>
+          <mat-select [value]="editing.theme.font" (selectionChange)="setTheme('font', $event.value)">
+            <mat-option *ngFor="let f of fonts" [value]="f.value"><span [style.font-family]="f.stack">{{ f.label }}</span></mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <label class="lbl">Corner roundness: {{ editing.theme.radius }}px</label>
+        <mat-slider class="full" min="0" max="32" step="2" [value]="editing.theme.radius" (input)="setTheme('radius', $any($event.value))" aria-label="Corner roundness"></mat-slider>
+
+        <label class="lbl">Button style</label>
+        <mat-button-toggle-group class="tg" [value]="editing.theme.buttonStyle" (change)="setTheme('buttonStyle', $event.value)" aria-label="Button style">
+          <mat-button-toggle value="filled">Filled</mat-button-toggle>
+          <mat-button-toggle value="outline">Outline</mat-button-toggle>
+          <mat-button-toggle value="soft">Soft</mat-button-toggle>
+        </mat-button-toggle-group>
+
+        <label class="lbl">Button shape</label>
+        <mat-button-toggle-group class="tg" [value]="editing.theme.buttonShape" (change)="setTheme('buttonShape', $event.value)" aria-label="Button shape">
+          <mat-button-toggle value="square">Square</mat-button-toggle>
+          <mat-button-toggle value="rounded">Rounded</mat-button-toggle>
+          <mat-button-toggle value="pill">Pill</mat-button-toggle>
+        </mat-button-toggle-group>
+
+        <label class="lbl">Header</label>
+        <mat-button-toggle-group class="tg" [value]="editing.theme.headerStyle" (change)="setTheme('headerStyle', $event.value)" aria-label="Header style">
+          <mat-button-toggle value="gradient">Gradient</mat-button-toggle>
+          <mat-button-toggle value="solid">Solid</mat-button-toggle>
+          <mat-button-toggle value="plain">Plain</mat-button-toggle>
+        </mat-button-toggle-group>
+
+        <label class="lbl">Background</label>
+        <mat-button-toggle-group class="tg" [value]="editing.theme.backgroundStyle" (change)="setTheme('backgroundStyle', $event.value)" aria-label="Background style">
+          <mat-button-toggle value="solid">Solid</mat-button-toggle>
+          <mat-button-toggle value="soft">Soft tint</mat-button-toggle>
+          <mat-button-toggle value="gradient">Gradient</mat-button-toggle>
+        </mat-button-toggle-group>
+
+        <label class="lbl">Layout</label>
+        <mat-button-toggle-group class="tg" [value]="editing.theme.layout" (change)="setTheme('layout', $event.value)" aria-label="Layout">
+          <mat-button-toggle value="single"><mat-icon>view_agenda</mat-icon> Single</mat-button-toggle>
+          <mat-button-toggle value="two_column"><mat-icon>view_column</mat-icon> Two columns</mat-button-toggle>
+          <mat-button-toggle value="sidebar"><mat-icon>view_sidebar</mat-icon> Sidebar</mat-button-toggle>
+        </mat-button-toggle-group>
+        <p class="hint">Two columns and Sidebar apply when there is room; phones always show one column.</p>
+      </mat-card>
+
+      <mat-card class="box">
+        <h4>Job sections</h4>
+        <p class="hint">Switch sections on or off, rename them and change their order.</p>
+        <ol class="secs">
+          <li *ngFor="let s of editing.sections; let i = index" [class.off]="!s.enabled">
+            <mat-icon class="ico" aria-hidden="true">{{ iconOf(s) }}</mat-icon>
+            <mat-slide-toggle [(ngModel)]="s.enabled" (ngModelChange)="refresh()" color="primary" [attr.aria-label]="'Show ' + defaultLabel(s)"></mat-slide-toggle>
+            <input type="text" class="slabel" [(ngModel)]="s.label" maxlength="60" (ngModelChange)="refresh()" [placeholder]="defaultLabel(s)" [attr.aria-label]="'Heading for ' + defaultLabel(s)">
+            <button mat-icon-button type="button" (click)="move(i, -1)" [disabled]="i === 0" aria-label="Move up"><mat-icon>arrow_upward</mat-icon></button>
+            <button mat-icon-button type="button" (click)="move(i, 1)" [disabled]="i === editing.sections.length - 1" aria-label="Move down"><mat-icon>arrow_downward</mat-icon></button>
+          </li>
+        </ol>
+      </mat-card>
+    </div>
+
+    <!-- ---------------- live preview ---------------- -->
+    <aside class="jt-preview" aria-label="Live preview">
+      <div class="pv-bar">
+        <strong><mat-icon>visibility</mat-icon> Live preview</strong>
+        <mat-button-toggle-group [value]="device" (change)="device = $event.value" aria-label="Preview size">
+          <mat-button-toggle value="desktop"><mat-icon>desktop_windows</mat-icon> Desktop</mat-button-toggle>
+          <mat-button-toggle value="mobile"><mat-icon>smartphone</mat-icon> Mobile</mat-button-toggle>
+        </mat-button-toggle-group>
+      </div>
+
+      <div class="pv-stage" [class.mobile]="device === 'mobile'" [style.background]="view?.theme?.background">
+        <div class="pv-frame" [class.mobile]="device === 'mobile'">
+          <app-job-preview [job]="sampleJob" [questions]="sampleQuestions" [template]="view" companyName="Your Company"></app-job-preview>
+        </div>
+      </div>
+    </aside>
+  </div>
+</section>

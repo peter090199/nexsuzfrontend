@@ -1,0 +1,200 @@
+<app-sub-page-header title="Database" section="System" subtitle="Back up the database, check the server, watch storage and keep tables healthy."></app-sub-page-header>
+
+<div class="panel">
+    <mat-tab-group [selectedIndex]="index" (selectedIndexChange)="open($event)" animationDuration="0ms" mat-stretch-tabs="false">
+
+        <!-- ================= BACKUP ================= -->
+        <mat-tab [aria-label]="tabs[0].label">
+            <ng-template mat-tab-label><mat-icon>{{ tabs[0].icon }}</mat-icon><span class="tab-label">{{ tabs[0].label }}</span></ng-template>
+            <div class="tab">
+                <mat-progress-bar *ngIf="loading.backup" mode="indeterminate"></mat-progress-bar>
+                <div class="state error" *ngIf="error.backup" role="alert"><mat-icon>error_outline</mat-icon> {{ error.backup }}
+                    <button mat-button (click)="load('backup')">Retry</button></div>
+
+                <div class="stats">
+                    <div class="stat"><div class="ico"><mat-icon>folder_zip</mat-icon></div>
+                        <div><div class="val">{{ backups.length }}</div><div class="lbl">Backups kept</div></div></div>
+                    <div class="stat"><div class="ico"><mat-icon>schedule</mat-icon></div>
+                        <div><div class="val small">{{ backups.length ? (backups[0].created_at | date:'MMM d, h:mm a') : 'Never' }}</div><div class="lbl">Latest backup</div></div></div>
+                    <div class="stat"><div class="ico"><mat-icon>sd_storage</mat-icon></div>
+                        <div><div class="val">{{ fmt(backupBytes) }}</div><div class="lbl">Space used by backups</div></div></div>
+                </div>
+
+                <div class="actions">
+                    <button mat-flat-button color="primary" (click)="createBackup()" [disabled]="creating">
+                        <mat-icon>backup</mat-icon> {{ creating ? 'Creating backup…' : 'Create backup now' }}
+                    </button>
+                    <span class="note">A compressed copy of every table, saved on the server. Backups contain personal data, so download and store them securely.</span>
+                </div>
+
+                <div class="table-wrap">
+                    <table class="sub-table">
+                        <thead><tr><th>Backup file</th><th>Created</th><th>Size</th><th class="actions-col">Download</th></tr></thead>
+                        <tbody>
+                            <tr *ngFor="let b of backups">
+                                <td data-label="File"><code>{{ b.name }}</code></td>
+                                <td data-label="Created">{{ b.created_at | date:'medium' }}</td>
+                                <td data-label="Size">{{ fmt(b.bytes) }}</td>
+                                <td class="actions-col">
+                                    <button mat-stroked-button (click)="download(b)" [disabled]="downloading === b.name">
+                                        <mat-icon>download</mat-icon> {{ downloading === b.name ? 'Preparing…' : 'Download' }}
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr *ngIf="!loading.backup && !backups.length"><td class="empty" colspan="4">No backups yet. Create the first one above.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </mat-tab>
+
+        <!-- ================= SERVER ================= -->
+        <mat-tab [aria-label]="tabs[1].label">
+            <ng-template mat-tab-label><mat-icon>{{ tabs[1].icon }}</mat-icon><span class="tab-label">{{ tabs[1].label }}</span></ng-template>
+            <div class="tab">
+                <mat-progress-bar *ngIf="loading.server" mode="indeterminate"></mat-progress-bar>
+                <div class="state error" *ngIf="error.server" role="alert"><mat-icon>error_outline</mat-icon> {{ error.server }}
+                    <button mat-button (click)="load('server')">Retry</button></div>
+                <div class="actions"><button mat-stroked-button (click)="load('server')" [disabled]="loading.server"><mat-icon>refresh</mat-icon> Refresh</button></div>
+
+                <div class="state warn" *ngIf="riskyDebug" role="alert">
+                    <mat-icon>warning_amber</mat-icon> Debug mode is ON in a production environment. Error pages can expose sensitive details. Set APP_DEBUG=false.
+                </div>
+
+                <div class="cards" *ngIf="serverInfo as s">
+                    <section class="card">
+                        <h3><mat-icon>database</mat-icon> Database</h3>
+                        <dl>
+                            <dt>Name</dt><dd>{{ s.database.name }}</dd>
+                            <dt>MySQL version</dt><dd>{{ s.database.version }}</dd>
+                            <dt>Response time</dt><dd><span class="pill" [ngClass]="s.database.latency_ms < 50 ? 'ok' : s.database.latency_ms < 200 ? 'warn' : 'bad'">{{ s.database.latency_ms }} ms</span></dd>
+                            <dt>Uptime</dt><dd>{{ uptime(s.database.uptime_seconds) }}</dd>
+                            <dt>Open connections</dt><dd>{{ s.database.connections }}</dd>
+                        </dl>
+                    </section>
+                    <section class="card">
+                        <h3><mat-icon>apps</mat-icon> Application</h3>
+                        <dl>
+                            <dt>Laravel</dt><dd>{{ s.app.laravel }}</dd>
+                            <dt>PHP</dt><dd>{{ s.app.php }}</dd>
+                            <dt>Environment</dt><dd class="cap">{{ s.app.environment }}</dd>
+                            <dt>Debug mode</dt><dd><span class="pill" [ngClass]="s.app.debug ? 'warn' : 'ok'">{{ s.app.debug ? 'On' : 'Off' }}</span></dd>
+                            <dt>Timezone</dt><dd>{{ s.app.timezone }}</dd>
+                            <dt>Cache / Queue</dt><dd>{{ s.app.cache_driver }} / {{ s.app.queue_driver }}</dd>
+                            <dt>PHP memory limit</dt><dd>{{ s.app.memory_limit }}</dd>
+                        </dl>
+                    </section>
+                    <section class="card">
+                        <h3><mat-icon>dns</mat-icon> Server</h3>
+                        <dl>
+                            <dt>Operating system</dt><dd>{{ s.server.os }}</dd>
+                            <dt>Server time</dt><dd>{{ s.server.server_time }}</dd>
+                        </dl>
+                        <div class="ext"><span class="pill" *ngFor="let e of extensions()" [ngClass]="e.ok ? 'ok' : 'bad'">{{ e.name }}</span></div>
+                    </section>
+                </div>
+            </div>
+        </mat-tab>
+
+        <!-- ================= STORAGE ================= -->
+        <mat-tab [aria-label]="tabs[2].label">
+            <ng-template mat-tab-label><mat-icon>{{ tabs[2].icon }}</mat-icon><span class="tab-label">{{ tabs[2].label }}</span></ng-template>
+            <div class="tab">
+                <mat-progress-bar *ngIf="loading.storage" mode="indeterminate"></mat-progress-bar>
+                <div class="state error" *ngIf="error.storage" role="alert"><mat-icon>error_outline</mat-icon> {{ error.storage }}
+                    <button mat-button (click)="load('storage')">Retry</button></div>
+                <div class="actions"><button mat-stroked-button (click)="load('storage')" [disabled]="loading.storage"><mat-icon>refresh</mat-icon> Refresh</button></div>
+
+                <ng-container *ngIf="storageInfo as st">
+                    <div class="disk">
+                        <div class="disk-top"><strong>Server disk</strong><span>{{ fmt(st.disk.used) }} used of {{ fmt(st.disk.total) }}</span></div>
+                        <div class="meter big" role="progressbar" [attr.aria-valuenow]="st.disk.used_percent" aria-valuemin="0" aria-valuemax="100">
+                            <span [style.width.%]="st.disk.used_percent" [class.hot]="st.disk.used_percent >= 85"></span></div>
+                        <div class="disk-bot"><span>{{ st.disk.used_percent }}% used</span><span>{{ fmt(st.disk.free) }} free</span></div>
+                        <div class="state warn" *ngIf="st.disk.used_percent >= 85" role="alert"><mat-icon>warning_amber</mat-icon> The disk is nearly full. Free up space before backups or uploads start failing.</div>
+                    </div>
+
+                    <div class="stats">
+                        <div class="stat"><div class="ico"><mat-icon>database</mat-icon></div><div><div class="val">{{ fmt(st.database_bytes) }}</div><div class="lbl">Database size</div></div></div>
+                        <div class="stat ok"><div class="ico"><mat-icon>check_circle</mat-icon></div><div><div class="val">{{ fmt(st.disk.free) }}</div><div class="lbl">Free on disk</div></div></div>
+                    </div>
+
+                    <h3 class="sub">Where the space goes</h3>
+                    <ul class="folders">
+                        <li *ngFor="let f of st.folders">
+                            <div class="f-top"><span>{{ f.label }}</span><span>{{ fmt(f.bytes) }} <small>· {{ f.files }} files</small></span></div>
+                            <div class="meter"><span [style.width.%]="barPct(f.bytes)"></span></div>
+                        </li>
+                    </ul>
+                </ng-container>
+            </div>
+        </mat-tab>
+
+        <!-- ================= OPERATIONS ================= -->
+        <mat-tab [aria-label]="tabs[3].label">
+            <ng-template mat-tab-label><mat-icon>{{ tabs[3].icon }}</mat-icon><span class="tab-label">{{ tabs[3].label }}</span></ng-template>
+            <div class="tab">
+                <mat-progress-bar *ngIf="loading.operations || running" mode="indeterminate"></mat-progress-bar>
+                <div class="state error" *ngIf="error.operations" role="alert"><mat-icon>error_outline</mat-icon> {{ error.operations }}
+                    <button mat-button (click)="load('operations')">Retry</button></div>
+
+                <div class="stats">
+                    <div class="stat"><div class="ico"><mat-icon>table_chart</mat-icon></div><div><div class="val">{{ tables.length }}</div><div class="lbl">Tables</div></div></div>
+                    <div class="stat"><div class="ico"><mat-icon>database</mat-icon></div><div><div class="val">{{ fmt(totalBytes) }}</div><div class="lbl">Total size</div></div></div>
+                    <div class="stat warn"><div class="ico"><mat-icon>auto_delete</mat-icon></div><div><div class="val">{{ fmt(reclaimable) }}</div><div class="lbl">Reclaimable by optimizing</div></div></div>
+                </div>
+
+                <div class="toolbar">
+                    <mat-form-field appearance="outline" floatLabel="never">
+                        <mat-icon matPrefix>search</mat-icon>
+                        <input matInput [(ngModel)]="search" placeholder="Search tables">
+                        <button mat-icon-button matSuffix *ngIf="search" (click)="search = ''" aria-label="Clear search"><mat-icon>close</mat-icon></button>
+                    </mat-form-field>
+                    <span class="spacer"></span>
+                    <button mat-button (click)="selectReclaimable()" [disabled]="!reclaimable">Select reclaimable</button>
+                    <button mat-stroked-button (click)="run('analyze')" [disabled]="!selected.size || running"><mat-icon>analytics</mat-icon> Analyze ({{ selected.size }})</button>
+                    <button mat-flat-button color="primary" (click)="run('optimize')" [disabled]="!selected.size || running"><mat-icon>bolt</mat-icon> Optimize ({{ selected.size }})</button>
+                </div>
+
+                <div class="results" *ngIf="results.length" role="status">
+                    <div class="r-head"><strong>{{ resultTitle }}</strong><button mat-icon-button (click)="results = []" aria-label="Dismiss results"><mat-icon>close</mat-icon></button></div>
+                    <ul><li *ngFor="let r of results"><code>{{ r.table }}</code> <span class="pill" [ngClass]="r.status === 'error' ? 'bad' : 'ok'">{{ r.status }}</span> {{ r.message }}</li></ul>
+                </div>
+
+                <div class="table-wrap">
+                    <table class="sub-table">
+                        <thead>
+                            <tr>
+                                <th class="chk"><mat-checkbox [checked]="allSelected" (change)="toggleAll($event.checked)" aria-label="Select all tables"></mat-checkbox></th>
+                                <th>Table</th><th>Engine</th><th class="num">Rows</th><th class="num">Size</th><th class="num hide-md">Reclaimable</th><th class="actions-col"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let t of filtered">
+                                <td class="chk"><mat-checkbox [checked]="selected.has(t.name)" (change)="toggle(t.name, $event.checked)" [attr.aria-label]="'Select ' + t.name"></mat-checkbox></td>
+                                <td data-label="Table"><code>{{ t.name }}</code></td>
+                                <td data-label="Engine"><span class="pill" [ngClass]="t.engine === 'MyISAM' ? 'warn' : 'info'">{{ t.engine }}</span></td>
+                                <td data-label="Rows" class="num">{{ t.rows | number }}</td>
+                                <td data-label="Size" class="num">{{ fmt(t.total_bytes) }}</td>
+                                <td data-label="Reclaimable" class="num hide-md">{{ t.free_bytes ? fmt(t.free_bytes) : '—' }}</td>
+                                <td class="actions-col"><button mat-button (click)="run('optimize', t.name)" [disabled]="running">Optimize</button></td>
+                            </tr>
+                            <tr *ngIf="!loading.operations && !filtered.length"><td class="empty" colspan="7">No tables match your search.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="note foot">Row counts are estimates. MyISAM tables are flagged because they cannot roll back a failed change.</p>
+
+                <section class="danger" aria-labelledby="danger-h">
+                    <div class="danger-text">
+                        <h3 id="danger-h"><mat-icon>warning</mat-icon> Danger zone</h3>
+                        <p><b>Reset all data</b> deletes every user and recruiter account and everything they created: profiles, CVs, posts, comments, messages,
+                            jobs, applications and subscriptions. <b>Admin and master admin accounts, their data and all settings are kept.</b>
+                            A backup is made automatically first, and you will see exactly what is affected before confirming.</p>
+                    </div>
+                    <button mat-flat-button color="warn" type="button" (click)="openReset()"><mat-icon>delete_forever</mat-icon> Reset all data…</button>
+                </section>
+            </div>
+        </mat-tab>
+    </mat-tab-group>
+</div>

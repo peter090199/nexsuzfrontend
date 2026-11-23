@@ -65,101 +65,104 @@
 
     <!-- Selected Job -->
     <ng-container *ngIf="selectedJob; else noJobSelected">
-      <!-- Header -->
-      <div class="job-header">
-        <img [src]="selectedJob.job_image" class="company-logo" alt="Company Logo">
-        <div class="job-header-info">
+      <ng-container *ngIf="{ t: templateFor(selectedJob) | async } as tp">
+      <article class="jd" [nxJobTheme]="tp.t">
 
-          <h3 class="job-title">
-            {{ selectedJob.job_name }}
-          </h3>
+        <!-- phones and tablets: back to the list -->
+        <button type="button" class="jd-back" mat-button (click)="closeSidebar()"><mat-icon>arrow_back</mat-icon> All jobs</button>
 
-          <p class="company-name">
-            {{ selectedJob.comp_name }} · {{ selectedJob.work_type }}
-          </p>
-
-          <p class="job-meta">
-            {{ selectedJob.location }} · Posted {{ selectedJob.created_at }}
-          </p>
-
-        </div>
-
-      </div>
-
-
-      <!-- Actions -->
-      <div class="sidebar-actions">
-        <button mat-raised-button class="apply-btn" (click)="onApplyClick(selectedJob)"
-          [ngStyle]="sharedRoutines.getApplyButtonStyle(selectedJob)">
-
-          <mat-icon>
-            {{ sharedRoutines.getApplyIcon(selectedJob) }}
-          </mat-icon>
-
-          {{ sharedRoutines.getApplyText(selectedJob) }}
-
-        </button>
-
-
-        <button mat-stroked-button [color]="saved ? 'accent' : 'warn'" [class.is-saved]="saved"
-          [disabled]="!selectedJob" (click)="saveJobs(selectedJob)">
-
-          <mat-icon>
-            {{ saved ? 'favorite' : 'favorite_border' }}
-          </mat-icon>
-
-          {{ saved ? 'Saved' : 'Save' }}
-
-        </button>
-
-      </div>
-
-
-      <mat-divider></mat-divider>
-
-
-      <!-- Job Information -->
-      <section class="job-details-section">
-
-        <h4>About the Job</h4>
-
-        <p class="job-description">
-          {{ selectedJob.job_description }}
-        </p>
-
-
-        <h4>More About This Role</h4>
-
-        <p class="job-description">
-          {{ selectedJob.job_about }}
-        </p>
-
-
-        <mat-divider></mat-divider>
-
-
-        <!-- Recruiter -->
-        <h4>About the Recruiter</h4>
-
-        <div class="avatar-wrapper">
-
-          <div class="company-details">
-
-            <a class="custom-title" [routerLink]="[
-                '/' + sharedRoutines.getRole() + '/client_profile',
-                selectedJob.code
-              ]">
-
-              {{ selectedJob.fullname }}
-
-            </a>
-
+        <header class="jd-head jt-hero">
+          <img [src]="selectedJob.job_image" class="jd-logo" alt="">
+          <div class="jd-title">
+            <h1>{{ selectedJob.job_name }}</h1>
+            <p class="jd-co">{{ selectedJob.comp_name || selectedJob.fullname }}<ng-container *ngIf="selectedJob.location"> · {{ selectedJob.location }}</ng-container></p>
+            <p class="jd-posted">Posted {{ selectedJob.created_at | date:'MMM d, y' }}</p>
           </div>
+        </header>
 
+        <div class="jd-chips">
+          <span class="jd-chip" *ngIf="workplace(selectedJob)"><mat-icon>apartment</mat-icon>{{ workplace(selectedJob) }}</span>
+          <span class="jd-chip" *ngIf="selectedJob.employment_type"><mat-icon>schedule</mat-icon>{{ selectedJob.employment_type }}</span>
+          <span class="jd-chip" *ngIf="selectedJob.experience_level"><mat-icon>school</mat-icon>{{ selectedJob.experience_level }}</span>
+          <span class="jd-chip" *ngIf="selectedJob.job_position"><mat-icon>category</mat-icon>{{ selectedJob.job_position }}</span>
         </div>
 
-      </section>
+        <div class="jd-facts">
+          <div class="fact" *ngIf="salaryText(selectedJob)"><mat-icon>payments</mat-icon><div><small>Salary</small><strong>{{ salaryText(selectedJob) }}</strong></div></div>
+          <div class="fact" *ngIf="selectedJob.vacancies"><mat-icon>groups</mat-icon><div><small>Openings</small><strong>{{ selectedJob.vacancies }}</strong></div></div>
+          <div class="fact" [class.warn]="isClosed(selectedJob)" *ngIf="deadlineOf(selectedJob)">
+            <mat-icon>event</mat-icon>
+            <div><small>Apply by</small><strong>{{ deadlineOf(selectedJob) | date:'MMM d, y' }}</strong></div>
+          </div>
+        </div>
 
+        <div class="jd-closed" *ngIf="isClosed(selectedJob)" role="status"><mat-icon>block</mat-icon> Applications for this job are closed.</div>
+        <div class="jd-soon" *ngIf="!isClosed(selectedJob) && daysLeft(selectedJob) !== null && daysLeft(selectedJob)! <= 7" role="status">
+          <mat-icon>timer</mat-icon> {{ daysLeft(selectedJob) === 1 ? 'Last day to apply' : daysLeft(selectedJob) + ' days left to apply' }}
+        </div>
+
+        <!-- Actions (sticky on phones) -->
+        <div class="jd-actions">
+          <button mat-flat-button class="apply-btn jt-btn" (click)="onApplyClick(selectedJob)"
+            [disabled]="isClosed(selectedJob) && getButtonStatus(selectedJob) === 'default'"
+            [ngStyle]="sharedRoutines.getApplyButtonStyle(selectedJob)">
+            <mat-icon>{{ sharedRoutines.getApplyIcon(selectedJob) }}</mat-icon>
+            {{ sharedRoutines.getApplyText(selectedJob) }}
+          </button>
+
+          <button mat-stroked-button class="save-toggle" [class.is-saved]="saved" (click)="saveJobs(selectedJob)">
+            <mat-icon>{{ saved ? 'favorite' : 'favorite_border' }}</mat-icon>
+            {{ saved ? 'Saved' : 'Save' }}
+          </button>
+        </div>
+
+        <!-- the job's template decides which sections show, their order, wording and layout -->
+        <app-job-sections *ngIf="tp.t; else legacySections" class="jd-themed" [job]="selectedJob" [template]="tp.t" [showQuestions]="false"></app-job-sections>
+        <ng-template #legacySections>
+        <section class="jd-sec" *ngIf="selectedJob.job_about">
+          <h2>About the job</h2>
+          <p>{{ selectedJob.job_about }}</p>
+        </section>
+
+        <section class="jd-sec" *ngIf="selectedJob.job_description">
+          <h2>Job description</h2>
+          <p class="pre">{{ selectedJob.job_description }}</p>
+        </section>
+
+        <section class="jd-sec" *ngIf="selectedJob.qualification || selectedJob.education || selectedJob.preferred_qualifications">
+          <h2>Qualifications</h2>
+          <p class="pre" *ngIf="selectedJob.qualification">{{ selectedJob.qualification }}</p>
+          <p *ngIf="selectedJob.education"><strong>Education:</strong> {{ selectedJob.education }}</p>
+          <ng-container *ngIf="selectedJob.preferred_qualifications">
+            <h3>Nice to have</h3>
+            <p class="pre">{{ selectedJob.preferred_qualifications }}</p>
+          </ng-container>
+        </section>
+
+        <section class="jd-sec" *ngIf="skillsOf(selectedJob).length">
+          <h2>Required skills</h2>
+          <div class="jd-skills"><span *ngFor="let k of skillsOf(selectedJob)">{{ k }}</span></div>
+        </section>
+
+        <section class="jd-sec" *ngIf="selectedJob.benefits">
+          <h2>Benefits and perks</h2>
+          <p class="pre">{{ selectedJob.benefits }}</p>
+        </section>
+
+        </ng-template>
+
+        <section class="jd-sec">
+          <h2>About the recruiter</h2>
+          <a class="jd-rec" [routerLink]="['/' + sharedRoutines.getRole() + '/client_profile', selectedJob.code]">
+            <img *ngIf="selectedJob.recruiter_photo; else recIcon" class="jd-rec-avatar"
+              [src]="selectedJob.recruiter_photo" [alt]="selectedJob.fullname" referrerpolicy="no-referrer">
+            <ng-template #recIcon><mat-icon>account_circle</mat-icon></ng-template>
+            <span>{{ selectedJob.fullname }}</span>
+            <mat-icon class="chev">chevron_right</mat-icon>
+          </a>
+        </section>
+      </article>
+      </ng-container>
     </ng-container>
 
 
@@ -174,90 +177,5 @@
     </ng-template>
 
   </main>
-
-
-  <!-- ================= RIGHT: SAVED JOBS ================= -->
-  <aside class="sidebar saved-jobs-sidebar">
-
-    <div class="saved-header">
-      <span>Saved Jobs</span>
-    </div>
-
-    <mat-divider></mat-divider>
-
-
-    <!-- Loading -->
-    <ng-container *ngIf="isSavedLoading; else savedContent">
-
-      <mat-list>
-
-        <mat-list-item *ngFor="let _ of skeletonRows">
-
-          <div class="skeleton skeleton-avatar" matListAvatar></div>
-
-          <div class="job-details w-full">
-            <div class="skeleton skeleton-line w-56"></div>
-            <div class="skeleton skeleton-line w-40 mt-6px"></div>
-          </div>
-
-        </mat-list-item>
-
-      </mat-list>
-
-    </ng-container>
-
-
-    <!-- Saved Jobs -->
-    <ng-template #savedContent>
-
-      <div class="jobs-list" *ngIf="savedJobs.length; else noSavedJobs">
-
-        <div class="job-item" *ngFor="let job of savedJobs">
-
-          <img [src]="job.job_image" class="job-logo" alt="Company Logo">
-
-          <div class="job-details">
-            <span class="job-name">
-              {{ job.job_name }}
-            </span>
-
-            <small>
-              {{ job.comp_name }} · {{ job.work_type }}
-            </small>
-
-            <small>
-              {{ job.location }}
-            </small>
-          </div>
-
-          <!-- Save Button Right -->
-          <button mat-stroked-button class="save-btn" [color]="saved ? 'accent' : 'warn'" [class.is-saved]="saved"
-            [disabled]="!job" (click)="saveJobs(job)">
-
-            <mat-icon>
-              {{ saved ? 'favorite' : 'favorite_border' }}
-            </mat-icon>
-
-            {{ saved ? 'Saved' : 'Save' }}
-
-          </button>
-
-        </div>
-
-      </div>
-
-      <ng-template #noSavedJobs>
-
-        <div class="empty-state">
-          <mat-icon>favorite_border</mat-icon>
-          <p>No saved jobs yet.</p>
-          <small>Jobs you save will appear here.</small>
-        </div>
-
-      </ng-template>
-
-    </ng-template>
-
-  </aside>
 
 </div>

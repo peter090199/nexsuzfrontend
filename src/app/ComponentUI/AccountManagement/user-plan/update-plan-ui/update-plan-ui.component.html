@@ -10,29 +10,28 @@
 <mat-dialog-content>
     <mat-progress-bar *ngIf="isLoading" mode="indeterminate"></mat-progress-bar>
 
-    <form [formGroup]="featureForm">
-        <mat-form-field appearance="standard" class="w-100">
+    <form [formGroup]="featureForm" class="feature-form">
+        <mat-form-field appearance="outline" class="w-100">
             <mat-label>Feature Name</mat-label>
-            <input matInput formControlName="feature_name">
-            <mat-error *ngIf="featureForm.get('feature_name')?.hasError('required')">
-                Feature name is required
-            </mat-error>
+            <input matInput formControlName="feature_name" placeholder="e.g. Job Posting Limit" required>
+            <mat-error *ngIf="featureForm.get('feature_name')?.invalid">Feature name is required</mat-error>
         </mat-form-field>
 
-        <mat-form-field appearance="standard" class="w-100" required>
+        <mat-form-field appearance="outline" class="w-100">
             <mat-label>Feature Code</mat-label>
-            <input matInput formControlName="feature_code">
-            <mat-error *ngIf="featureForm.get('feature_code')?.hasError('required')">
-                Feature code is required
-            </mat-error>
+            <input matInput formControlName="feature_code" placeholder="e.g. JOB_POST_LIMIT" required>
+            <mat-hint>Unique identifier used by the system</mat-hint>
+            <mat-error *ngIf="featureForm.get('feature_code')?.invalid">Feature code is required</mat-error>
         </mat-form-field>
 
-        <mat-form-field appearance="standard" class="w-100" required>
+        <mat-form-field appearance="outline" class="w-100">
             <mat-label>Feature Value</mat-label>
-            <input matInput formControlName="feature_value">
-            <mat-error *ngIf="featureForm.get('feature_value')?.hasError('required')">
-                Feature value is required
-            </mat-error>
+            <textarea matInput formControlName="feature_value" rows="2" maxlength="500"
+                cdkTextareaAutosize cdkAutosizeMinRows="2" cdkAutosizeMaxRows="6"
+                placeholder="e.g. 10 posts per month, Unlimited, Yes" required></textarea>
+            <mat-hint align="start">The limit or setting granted by this feature</mat-hint>
+            <mat-hint align="end">{{ featureForm.get('feature_value')?.value?.length || 0 }}/500</mat-hint>
+            <mat-error *ngIf="featureForm.get('feature_value')?.invalid">Feature value is required</mat-error>
         </mat-form-field>
     </form>
     <div class="button-end">

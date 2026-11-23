@@ -1,0 +1,74 @@
+<div class="mc" #host (pointerleave)="onLeave()">
+
+  <!-- empty -->
+  <div class="mc-empty" *ngIf="isEmpty">
+    <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M4 20V10m6 10V4m6 16v-7m4 7H2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    <span>{{ emptyText }}</span>
+  </div>
+
+  <!-- line / bar -->
+  <svg *ngIf="!isEmpty && type !== 'donut'" class="mc-svg" [attr.viewBox]="'0 0 ' + W + ' ' + H" role="img" [attr.aria-label]="ariaLabel"
+    (pointermove)="onMove($event, host)">
+    <g class="mc-grid">
+      <ng-container *ngFor="let t of yTicks; trackBy: trackIdx">
+        <line [attr.x1]="pad.l" [attr.x2]="W - pad.r" [attr.y1]="t.y" [attr.y2]="t.y"></line>
+        <text [attr.x]="pad.l - 8" [attr.y]="t.y + 4" text-anchor="end">{{ t.label }}</text>
+      </ng-container>
+    </g>
+
+    <g class="mc-x">
+      <text *ngFor="let x of xLabels; trackBy: trackIdx" [attr.x]="x.x" [attr.y]="H - 8" text-anchor="middle">{{ x.label }}</text>
+    </g>
+
+    <line *ngIf="guideX !== null" class="mc-guide" [attr.x1]="guideX" [attr.x2]="guideX" [attr.y1]="pad.t" [attr.y2]="H - pad.b"></line>
+
+    <!-- bars -->
+    <rect *ngFor="let b of bars; trackBy: trackIdx" class="mc-bar" [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.w" [attr.height]="b.h" rx="3" [attr.fill]="b.color"></rect>
+
+    <!-- lines -->
+    <ng-container *ngFor="let l of lines; trackBy: trackIdx">
+      <path class="mc-line" [attr.d]="l.d" [attr.stroke]="l.color"></path>
+      <circle *ngIf="hoverIndex !== null" class="mc-dot" [attr.cx]="l.dots[hoverIndex].x" [attr.cy]="l.dots[hoverIndex].y" r="4.5" [attr.stroke]="l.color"></circle>
+    </ng-container>
+  </svg>
+
+  <!-- donut -->
+  <div class="mc-donut" *ngIf="!isEmpty && type === 'donut'">
+    <svg class="mc-donut-svg" viewBox="0 0 160 160" role="img" [attr.aria-label]="ariaLabel">
+      <g transform="rotate(-90 80 80)">
+        <circle cx="80" cy="80" [attr.r]="R" fill="none" stroke="#eef2f8" stroke-width="22"></circle>
+        <circle *ngFor="let a of arcs; let i = index; trackBy: trackIdx" class="mc-arc" [class.dim]="hoverSlice !== null && hoverSlice !== i"
+          cx="80" cy="80" [attr.r]="R" fill="none" [attr.stroke]="a.color" stroke-width="22"
+          [attr.stroke-dasharray]="a.dash" [attr.stroke-dashoffset]="a.offset"
+          (pointermove)="onSlice(i, $event, host)"></circle>
+      </g>
+      <text x="80" y="78" text-anchor="middle" class="mc-total">{{ total }}</text>
+      <text x="80" y="95" text-anchor="middle" class="mc-total-label">total</text>
+    </svg>
+
+    <ul class="mc-legend">
+      <li *ngFor="let a of arcs; trackBy: trackIdx" [class.dim]="hoverSlice !== null && arcs[hoverSlice] !== a">
+        <span class="mc-swatch" [style.background]="a.color"></span>
+        <span class="mc-legend-label">{{ a.label }}</span>
+        <strong>{{ a.value }}</strong>
+        <small>{{ a.pct }}%</small>
+      </li>
+    </ul>
+  </div>
+
+  <!-- tooltip -->
+  <div class="mc-tip" *ngIf="tip" [style.left.%]="tip.left" [style.top.px]="tip.top" role="status">
+    <strong>{{ tip.title }}</strong>
+    <div class="mc-tip-row" *ngFor="let r of tip.rows">
+      <span class="mc-swatch" [style.background]="r.color"></span>
+      <span>{{ r.name }}</span>
+      <b>{{ r.value }}</b>
+      <small *ngIf="r.extra">{{ r.extra }}</small>
+    </div>
+  </div>
+
+  <!-- legend for line / bar with more than one series -->
+  <ul class="mc-legend inline" *ngIf="!isEmpty && type !== 'donut' && series.length > 1">
+    <li *ngFor="let s of series"><span class="mc-swatch" [style.background]="s.color"></span> {{ s.name }}</li>
+  </ul>
+</div>

@@ -1,0 +1,55 @@
+<!-- loading placeholder -->
+<mat-card class="pc pc-skeleton" *ngIf="skeleton; else card" aria-hidden="true">
+  <div class="sk sk-avatar"></div>
+  <div class="sk sk-line"></div>
+  <div class="sk sk-line short"></div>
+  <div class="sk sk-btn"></div>
+</mat-card>
+
+<ng-template #card>
+  <mat-card class="pc">
+
+    <!-- cover photo (the gradient behind it is the fallback) -->
+    <img class="pc-cover" *ngIf="cover && !coverFailed" [src]="cover" alt="" loading="lazy" (error)="coverFailed = true" />
+
+    <!-- avatar + online dot -->
+    <div class="pc-avatar">
+      <a *ngIf="link; else plainAvatar" [routerLink]="link" [attr.aria-label]="'Open ' + name">
+        <ng-container *ngTemplateOutlet="avatarImg"></ng-container>
+      </a>
+      <ng-template #plainAvatar>
+        <span class="pc-avatar-btn" role="button" tabindex="0" (click)="onOpen()" (keydown.enter)="onOpen()" [attr.aria-label]="'Open ' + name">
+          <ng-container *ngTemplateOutlet="avatarImg"></ng-container>
+        </span>
+      </ng-template>
+      <ng-template #avatarImg>
+        <img *ngIf="photo && !imgFailed; else letter" [src]="photo" [alt]="name" class="pc-img" (error)="imgFailed = true" />
+        <ng-template #letter><span class="pc-letter">{{ initial }}</span></ng-template>
+      </ng-template>
+      <i class="pc-dot" [class.online]="online" [attr.title]="online ? 'Active now' : 'Offline'"></i>
+    </div>
+
+    <!-- name -->
+    <a class="pc-name" *ngIf="link; else plainName" [routerLink]="link">{{ name }}</a>
+    <ng-template #plainName>
+      <span class="pc-name" role="button" tabindex="0" (click)="onOpen()" (keydown.enter)="onOpen()">{{ name }}</span>
+    </ng-template>
+
+    <p class="pc-prof">{{ profession || '--' }}</p>
+    <p class="pc-label" *ngIf="label">{{ label }}</p>
+
+    <!-- actions -->
+    <div class="pc-actions" *ngIf="showActions">
+      <app-block-button [role]="roleCode" [code]="code" [name]="name" (blocked)="blocked.emit($event)"></app-block-button>
+
+      <button mat-flat-button type="button" class="pc-btn" *appFeature="FEATURE.NETWORK_FEED" [color]="color" [ngClass]="status" (click)="connect.emit()">
+        <mat-icon *ngIf="status === 'not_following'">person_add</mat-icon>
+        <mat-icon *ngIf="status === 'pending'" class="pc-spin">hourglass_top</mat-icon>
+        <mat-icon *ngIf="status === 'accepted'">check_circle</mat-icon>
+        <mat-icon *ngIf="status === 'connect_back'">autorenew</mat-icon>
+        <mat-icon *ngIf="status === 'invite'">check</mat-icon>
+        <span>{{ buttonLabel }}</span>
+      </button>
+    </div>
+  </mat-card>
+</ng-template>

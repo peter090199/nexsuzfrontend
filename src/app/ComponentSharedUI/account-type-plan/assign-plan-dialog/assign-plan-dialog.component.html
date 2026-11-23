@@ -1,0 +1,65 @@
+<div class="ap-head">
+  <h2 mat-dialog-title>Change a user's plan</h2>
+  <button mat-icon-button type="button" (click)="close()" aria-label="Close"><mat-icon>close</mat-icon></button>
+</div>
+
+<mat-dialog-content>
+  <p class="ap-note">
+    <mat-icon>info_outline</mat-icon>
+    Admin change: no payment is taken and none is recorded. The previous subscription is kept as expired.
+  </p>
+
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+
+    <mat-form-field appearance="outline" class="ap-full">
+      <mat-label>Find user</mat-label>
+      <mat-icon matPrefix>person_search</mat-icon>
+      <input matInput formControlName="search" [matAutocomplete]="auto" placeholder="Type at least 2 letters of the name" autocomplete="off">
+      <mat-spinner matSuffix *ngIf="searching" diameter="18"></mat-spinner>
+      <mat-autocomplete #auto="matAutocomplete" (optionSelected)="pick($event.option.value)" [displayWith]="displayUser">
+        <mat-option *ngFor="let u of users" [value]="u">
+          <span class="ap-user">{{ u.fullname }}</span>
+          <small class="ap-role">{{ u.role_code }}</small>
+        </mat-option>
+      </mat-autocomplete>
+      <mat-hint *ngIf="!selected">Pick a person from the list.</mat-hint>
+    </mat-form-field>
+
+    <div class="ap-current" *ngIf="selected">
+      <mat-progress-bar *ngIf="loadingSub" mode="indeterminate"></mat-progress-bar>
+      <ng-container *ngIf="!loadingSub">
+        <span>Current plan</span>
+        <strong>{{ currentSub ? currentSub.plan_name : 'No active subscription' }}</strong>
+        <small *ngIf="currentSub?.end_date">until {{ currentSub.end_date | date:'mediumDate' }}</small>
+      </ng-container>
+    </div>
+
+    <mat-form-field appearance="outline" class="ap-full">
+      <mat-label>New plan</mat-label>
+      <mat-icon matPrefix>workspace_premium</mat-icon>
+      <mat-select formControlName="planId" required>
+        <mat-option *ngFor="let p of plans" [value]="p.planId">{{ p.plan_name }} — ₱{{ p.price | number:'1.0-2' }}/{{ p.tagmonthYear || 'Monthly' }}</mat-option>
+      </mat-select>
+      <mat-hint *ngIf="change === 'same'" class="ap-warn">This user is already on this plan.</mat-hint>
+    </mat-form-field>
+
+    <div class="ap-chip" *ngIf="change && change !== 'same'" [ngClass]="change">
+      <mat-icon>{{ change === 'downgrade' ? 'trending_down' : 'trending_up' }}</mat-icon>
+      {{ change === 'new' ? 'New subscription' : (change === 'upgrade' ? 'Upgrade' : 'Downgrade') }}
+    </div>
+
+    <mat-form-field appearance="outline" class="ap-full">
+      <mat-label>Reason (optional)</mat-label>
+      <textarea matInput rows="2" maxlength="200" formControlName="remarks"></textarea>
+      <mat-hint align="end">{{ form.get('remarks')?.value?.length || 0 }} / 200</mat-hint>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="ap-actions">
+  <button mat-stroked-button type="button" (click)="close()">Cancel</button>
+  <button mat-flat-button color="primary" type="button" (click)="save()" [disabled]="!canSave">
+    <mat-spinner *ngIf="saving" diameter="18"></mat-spinner>
+    <span>{{ saving ? 'Saving…' : 'Change plan' }}</span>
+  </button>
+</mat-dialog-actions>

@@ -2,6 +2,7 @@
 
     <!-- HEADER + SEARCH -->
     <header class="search-hero">
+        <div class="hero-cover"></div>
         <h1>{{ searchType === 'jobs' ? 'Find your next job' : 'Find people' }}</h1>
         <p>{{ searchType === 'jobs' ? 'Search by title, position or location.' : 'Search by name, profession or skills.' }}</p>
 
@@ -31,8 +32,13 @@
     </header>
 
     <!-- LOADING -->
-    <div class="state-box" *ngIf="isLoading">
-        <p>Loading {{ searchType === 'jobs' ? 'jobs' : 'people' }}...</p>
+    <div class="skeleton-grid" *ngIf="isLoading" aria-busy="true" [attr.aria-label]="'Loading ' + (searchType === 'jobs' ? 'jobs' : 'people')">
+        <div class="skeleton-card" *ngFor="let s of [1,2,3,4,5,6,7,8]">
+            <div class="sk sk-avatar"></div>
+            <div class="sk sk-line"></div>
+            <div class="sk sk-line short"></div>
+            <div class="sk sk-btn"></div>
+        </div>
     </div>
 
     <!-- RESULT COUNT -->
@@ -69,13 +75,14 @@
     </div>
 
     <!-- PEOPLE VIEW -->
-    <ng-container *ngIf="!isLoading && searchType === 'people'">
+    <ng-container *ngIf="!isLoading && searchType === 'people' && (filteredOnlinePeople.length + filteredOfflinePeople.length) > 0">
+      <div class="people-panel">
 
         <div *ngIf="filteredOnlinePeople.length > 0">
             <h4 class="people-section-title">
                 <span class="status-dot online"></span> Online ({{ filteredOnlinePeople.length }})
             </h4>
-            <div class="people-grid">
+            <div class="pc-grid">
                 <ng-container *ngFor="let person of filteredOnlinePeople">
                     <ng-container *ngTemplateOutlet="personCard; context: { $implicit: person, status: 'online' }"></ng-container>
                 </ng-container>
@@ -86,30 +93,33 @@
             <h4 class="people-section-title">
                 <span class="status-dot offline"></span> Offline ({{ filteredOfflinePeople.length }})
             </h4>
-            <div class="people-grid">
+            <div class="pc-grid">
                 <ng-container *ngFor="let person of filteredOfflinePeople">
                     <ng-container *ngTemplateOutlet="personCard; context: { $implicit: person, status: 'offline' }"></ng-container>
                 </ng-container>
             </div>
         </div>
 
+      </div>
     </ng-container>
 
-    <!-- one person: avatar, name, profession, skills -->
+    <!-- one person: the shared person card (same design as the Network page) -->
     <ng-template #personCard let-person let-status="status">
-        <div class="person-card" (click)="selectPerson(person)" tabindex="0" role="button"
-            (keydown.enter)="selectPerson(person)">
-            <div class="person-avatar">
-                <img [src]="person.image" [alt]="person.fullname" (error)="person.image = placeholderImg">
-                <span class="status-dot avatar-dot" [ngClass]="status"></span>
-            </div>
-            <div class="person-info">
-                <h3 class="person-name">{{ person.fullname }}</h3>
-                <p class="person-profession" *ngIf="person.profession">{{ person.profession }}</p>
-                <p class="person-skills" *ngIf="person.skills"><i class="fas fa-tools"></i> {{ person.skills }}</p>
-            </div>
-            <mat-icon class="person-go">chevron_right</mat-icon>
-        </div>
+        <app-person-card
+            [name]="person.fullname"
+            [photo]="person.image"
+            [cover]="person.cover"
+            [profession]="person.profession"
+            [label]="person.skills"
+            [online]="status === 'online'"
+            [status]="person.follow_status"
+            [showActions]="isLoggedIn && currentUserCode != person.code"
+            [code]="person.code"
+            [roleCode]="person.role_code"
+            [link]="profileLink(person)"
+            (connect)="AddConnect(person)"
+            (blocked)="removeBlocked(person.code)">
+        </app-person-card>
     </ng-template>
 
     <!-- EMPTY STATES -->

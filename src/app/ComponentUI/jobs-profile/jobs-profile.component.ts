@@ -10,6 +10,9 @@ import { SharedRoutinesService } from 'src/app/services/Function/shared-routines
 import { AppliedStatusDialogComponent } from '../jobs/applied-status-dialog/applied-status-dialog.component';
 import { FeatureService } from 'src/app/services/AccountPlan/feature.service';
 import { ImagesService } from 'src/app/services/images/images.service';
+import { SavedJobsStateService } from 'src/app/services/Jobs/saved-jobs-state.service';
+import { JobTemplate, JobTemplateService } from 'src/app/services/Jobs/job-template.service';
+import { Observable, of } from 'rxjs';
 
 @Component({
   selector: 'app-jobs-profile',
@@ -41,8 +44,16 @@ export class JobsProfileComponent implements OnInit {
     private dialog: MatDialog,
     private alert: NotificationsService,
     private sharedService: ImagesService,
-    public sharedRoutines: SharedRoutinesService
+    public sharedRoutines: SharedRoutinesService,
+    private savedJobsState: SavedJobsStateService,
+    private templateSvc: JobTemplateService
   ) { }
+
+  // the template a job was posted with (cached per id, so the async pipe keeps the same stream)
+  private readonly noTemplate$: Observable<JobTemplate | null> = of(null);
+  templateFor(job: any): Observable<JobTemplate | null> {
+    return job?.template_id ? this.templateSvc.get(Number(job.template_id)) : this.noTemplate$;
+  }
 
   // =========================================================
   // INIT
@@ -322,6 +333,11 @@ export class JobsProfileComponent implements OnInit {
 
     const status = this.getButtonStatus(job);
 
+    if (status === 'default' && this.isClosed(job)) {
+      this.alert.toastrWarning('Applications for this job are closed.');
+      return;
+    }
+
     if (status === 'default') {
 
       this.router.navigate([
@@ -446,8 +462,9 @@ export class JobsProfileComponent implements OnInit {
         );
       }
 
-      // Reload saved jobs from database
+      // Reload saved jobs from database (and the top-bar saved-jobs list)
       await this.getSavedJobs();
+      this.savedJobsState.load();
 
     } catch (error) {
 
@@ -465,6 +482,46 @@ export class JobsProfileComponent implements OnInit {
   // =========================================================
   // CLOSE SIDEBAR
   // =========================================================
+
+  // ---------------------------------------------------------------- display helpers for the job detail
+  workplace(job: any): string {
+    const map: Record<string, string> = { 'Onsite': 'On-site', 'Work From Home': 'Remote', 'Hybrid': 'Hybrid' };
+    return map[job?.work_type] || job?.work_type || '';
+  }
+
+  salaryText(job: any): string {
+    const has = (v: any) => v !== null && v !== undefined && v !== '' && !isNaN(Number(v));
+    if (!has(job?.min_salary) && !has(job?.max_salary)) { return ''; }
+    const sym = this.sharedRoutines.getCurrencyByCode(job?.currency || '')?.symbol || job?.currency || '';
+    const n = (v: any) => Number(v).toLocaleString(undefined, { maximumFractionDigits: 2 });
+    const range = has(job.min_salary) && has(job.max_salary) ? `${sym}${n(job.min_salary)} – ${sym}${n(job.max_salary)}` : `${sym}${n(has(job.min_salary) ? job.min_salary : job.max_salary)}`;
+    const unit: Record<string, string> = { Hourly: 'hour', Monthly: 'month', Yearly: 'year' };
+    return job.salary_period ? `${range} / ${unit[job.salary_period] || job.salary_period}` : range;
+  }
+
+  skillsOf(job: any): string[] {
+    let s = job?.required_skills;
+    if (typeof s === 'string') { try { s = JSON.parse(s); } catch { s = []; } }
+    return Array.isArray(s) ? s.filter((x: string) => !!x) : [];
+  }
+
+  deadlineOf(job: any): Date | null {
+    return job?.application_deadline ? new Date(String(job.application_deadline).substring(0, 10) + 'T00:00:00') : null;
+  }
+
+  /** the API refuses applications after the deadline (end of that day); this only explains it to the user */
+  isClosed(job: any): boolean {
+    const d = this.deadlineOf(job);
+    if (!d) { return false; }
+    d.setDate(d.getDate() + 1);
+    return d.getTime() <= Date.now();
+  }
+
+  daysLeft(job: any): number | null {
+    const d = this.deadlineOf(job);
+    if (!d || this.isClosed(job)) { return null; }
+    return Math.ceil((d.getTime() + 86400000 - Date.now()) / 86400000);
+  }
 
   closeSidebar(): void {
 

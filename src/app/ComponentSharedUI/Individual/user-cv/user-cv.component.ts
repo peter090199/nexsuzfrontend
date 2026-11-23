@@ -32,6 +32,8 @@ import { AuthService } from 'src/app/services/auth.service';
 import { MatTabChangeEvent } from '@angular/material/tabs';
 import { ImagesService } from 'src/app/services/images/images.service';
 import { ProfileImageService } from 'src/app/services/Profile/profile-image.service';
+import { CvSetupService, CvStatus } from 'src/app/services/CV/cv-setup.service';
+import { CvModeService } from 'src/app/services/CV/cv-mode.service';
 
 
 
@@ -147,7 +149,9 @@ export class UserCVComponent implements AfterViewInit {
     private dialog: MatDialog, private passDataServices: ProfessionalService, private alert: NotificationsService,
     private profileService: ProfessionalService, private educacationServices: CurriculumVitaeService,
     private authServiceCode: AuthService,private imageService:ImagesService,
-    private profileImages: ProfileImageService
+    private profileImages: ProfileImageService,
+    private cvSetup: CvSetupService,
+    private cvModeSvc: CvModeService
   ) {
     this.countryControl1.valueChanges.subscribe(value => {
       this.filteredCountries1 = this.filterCountries(value);
@@ -166,7 +170,17 @@ export class UserCVComponent implements AfterViewInit {
     'Build Your Qualifications'
   ];
 
+  /** Short names for the step headers (the long ones above are the page heading and do not fit in a header). */
+  readonly stepShort: string[] = ['Basic info', 'Location', 'Summary', 'Qualifications'];
+  /** Index of the step that is open, for the header's "Step 2 of 4" and progress bar. */
+  currentStep = 0;
+
+  get progressPct(): number {
+    return Math.round(((this.currentStep + 1) / this.stepShort.length) * 100);
+  }
+
   onStepChange(event: StepperSelectionEvent) {
+    this.currentStep = event.selectedIndex;
     this.profileTitle = this.stepLabels[event.selectedIndex];
   }
   onTabChange(event: MatTabChangeEvent) {
@@ -381,7 +395,6 @@ export class UserCVComponent implements AfterViewInit {
 
   // Edit a skill
   editSkills(skill: any): void {
-    console.log("skill", skill)
     const dialogRef = this.dialog.open(AddEditSkillsComponent, {
       width: '500px',
       data: skill,
@@ -627,8 +640,34 @@ export class UserCVComponent implements AfterViewInit {
 
   isImageSelected: boolean = false;
   currentUserCode: any;
+  /** Set-up status shown in the "finish your CV first" banner (null until the API answers). */
+  setup: CvStatus | null = null;
+
+  // ---- how job seekers provide their CV (set by the master admin in Settings) ----
+  /** true: the page shows only "upload your CV / resume"; false (the default): the CV builder below */
+  cvUploadOnly = false;
+  /** false until the setting is known, so neither view flashes first */
+  cvModeLoaded = false;
+
+  /** the builder is hidden while the mode is unknown and in upload-only mode (it stays in the page, only not shown) */
+  get builderHidden(): boolean { return !this.cvModeLoaded || this.cvUploadOnly; }
+
+  private loadCvMode(): void {
+    this.cvModeSvc.get().subscribe({
+      next: m => { this.cvUploadOnly = !!m.upload_only; this.cvModeLoaded = true; },
+      error: () => { this.cvModeLoaded = true; }        // cannot tell: the builder, as always, rather than a blank page
+    });
+  }
+
+  /** a resume was uploaded or deleted: the "set up your CV" status may have changed */
+  onResumesChanged(): void { if (this.cvUploadOnly) { this.refreshSetup(); } }
+
+  goHome(): void { this.router.navigate(['/DEF-USERS/home']); }
+
   ngOnInit(): void {
+    this.loadCvMode();
     this.currentUserCode = this.authServiceCode.getAuthCode();
+    this.refreshSetup();
     this.loadProfileCV();
 
     this.initializeFormGroups();
@@ -653,7 +692,6 @@ export class UserCVComponent implements AfterViewInit {
       next: (response) => {
         if (response.success == true) {
           this.profiles = response.data.code;
-          console.log(this.profiles)
 
         } else {
           this.error = 'Failed to load profile data';
@@ -765,7 +803,6 @@ export class UserCVComponent implements AfterViewInit {
           const rawPath = res.data.photo_pic;
 
           this.previewUrl = this.imageService.cleanImageUrl(rawPath);
-          console.log(this.previewUrl);
 
           this.filename = this.getFilenameFromPath(this.previewUrl);
 
@@ -1431,7 +1468,6 @@ export class UserCVComponent implements AfterViewInit {
     formData.append('summary', formValues3.summary);
 
     for (const pair of (formData as any).entries()) {
-      console.log(pair[0], pair[1]);
     }
 
     this.saving = true;
@@ -1455,8 +1491,23 @@ export class UserCVComponent implements AfterViewInit {
     });
   }
 
+  /** Ask the API whether the CV is finished and update the banner. Failures are ignored: the banner just stays hidden. */
+  refreshSetup(done?: (s: CvStatus | null) => void): void {
+    this.cvSetup.check(true).subscribe({
+      next: s => { this.setup = s; done?.(s); },
+      error: () => done?.(null)
+    });
+  }
+
+  /** The CV is finished (the preview dialog closed with success): confirm with the API, then open the app. */
   previewAndFinish2() {
-    this.router.navigate(['/home']);
+    this.refreshSetup(s => {
+      if (s && s.applies && !s.complete) {
+        this.notificationService.toastrWarning('Your CV is still missing: ' + s.missing.join(', ') + '.');
+        return;
+      }
+      this.router.navigate(['/DEF-USERS/home']);   // was '/home', which does not exist
+    });
   }
 
   previewAndFinish() {

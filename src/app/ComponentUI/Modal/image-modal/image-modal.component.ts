@@ -162,11 +162,9 @@ export class ImageModalComponent implements OnInit, AfterViewInit {
 
   //get comment
   getComment(): void {
-    console.log(this.post_uuidOrUind)
     this.comment.getComment(this.post_uuidOrUind).subscribe({
       next: (res) => {
         this.comments = res;
-        console.log(this.comments)
         this.getReactionPost_uuidOrUuid();
       },
       error: (err: any) => {
@@ -219,7 +217,6 @@ export class ImageModalComponent implements OnInit, AfterViewInit {
     if (!this.newComment.trim()) {
       return;
     }
-    console.log(this.post_uuidOrUind, " ", this.newComment)
 
     const data = {
       post_uuid: this.post_uuidOrUind,
@@ -321,7 +318,6 @@ editHeadersComment(comment: any, id: any) {
    
   this.comment.updateReply(id, data).subscribe({
     next: (res) => {
-      console.log('commentHeaders saved:', res);
       comment.isEditing = false;
     },
     error: (err) => {
@@ -340,7 +336,6 @@ saveReplyEdit(reply: any, id: any) {
    
   this.comment.updateReply(id, data).subscribe({
     next: (res) => {
-      console.log('Reply saved:', res);
       reply.isEditing = false;
     },
     error: (err) => {

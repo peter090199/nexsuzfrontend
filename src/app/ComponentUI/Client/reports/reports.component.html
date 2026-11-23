@@ -1,0 +1,149 @@
+<section class="rp">
+
+  <!-- ============ header + controls ============ -->
+  <header class="rp-head">
+    <div class="rp-title">
+      <small>Reports / Analytics</small>
+      <h1>Hiring overview</h1>
+      <p *ngIf="data">{{ data.range.from | date:'mediumDate' }} – {{ data.range.to | date:'mediumDate' }}<ng-container *ngIf="transNo"> · one vacancy</ng-container></p>
+    </div>
+    <div class="rp-actions">
+      <button mat-stroked-button type="button" (click)="exportCsv()" [disabled]="!data || isLoading"><mat-icon>download</mat-icon><span class="lbl">Export CSV</span></button>
+      <button mat-stroked-button type="button" (click)="print()" [disabled]="!data || isLoading"><mat-icon>print</mat-icon><span class="lbl">Print</span></button>
+      <button mat-stroked-button type="button" (click)="load()" [disabled]="isLoading"><mat-icon>refresh</mat-icon><span class="lbl">Refresh</span></button>
+    </div>
+  </header>
+
+  <div class="rp-filters">
+    <div class="seg" role="tablist" aria-label="Period">
+      <button type="button" role="tab" *ngFor="let p of presets" [class.on]="preset === p.key" [attr.aria-selected]="preset === p.key" (click)="setPreset(p.key)">{{ p.label }}</button>
+    </div>
+    <div class="dates" *ngIf="preset === 'custom'">
+      <mat-form-field appearance="outline"><mat-label>From</mat-label><input matInput type="date" [(ngModel)]="from" (change)="onCustom()" [max]="to"></mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>To</mat-label><input matInput type="date" [(ngModel)]="to" (change)="onCustom()" [min]="from"></mat-form-field>
+    </div>
+    <mat-form-field appearance="outline" class="job" *ngIf="data?.jobs?.length">
+      <mat-label>Vacancy</mat-label>
+      <mat-select [value]="transNo" (selectionChange)="setJob($event.value)">
+        <mat-option value="">All vacancies</mat-option>
+        <mat-option *ngFor="let j of data.jobs; trackBy: trackKey" [value]="j.transNo">{{ j.job_name }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+  <p class="err" *ngIf="rangeError" role="alert"><mat-icon>error_outline</mat-icon> {{ rangeError }}</p>
+
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" color="primary"></mat-progress-bar>
+
+  <div class="state" *ngIf="error && !isLoading" role="alert">
+    <mat-icon>error_outline</mat-icon><h3>Could not load the report</h3><p>{{ error }}</p>
+    <button mat-stroked-button type="button" (click)="load()">Try again</button>
+  </div>
+
+  <div class="state" *ngIf="isEmpty">
+    <mat-icon>insights</mat-icon><h3>No applications in this period</h3>
+    <p>Try a longer period or a different vacancy. The report fills in as people apply to your jobs.</p>
+    <button mat-stroked-button type="button" *ngIf="preset !== '365'" (click)="setPreset('365')">Show the last 12 months</button>
+  </div>
+
+  <ng-container *ngIf="data && !isEmpty && !error">
+
+    <!-- ============ KPI cards ============ -->
+    <div class="kpis">
+      <article class="kpi"><span class="ic a"><mat-icon>groups</mat-icon></span><div><b>{{ k.total }}</b><span>Applicants</span><small>across {{ k.vacancies }} {{ k.vacancies === 1 ? 'vacancy' : 'vacancies' }}</small></div></article>
+      <article class="kpi"><span class="ic b"><mat-icon>hourglass_top</mat-icon></span><div><b>{{ k.awaiting_first_review }}</b><span>Awaiting review</span><small>{{ k.in_review }} under review now</small></div></article>
+      <article class="kpi"><span class="ic c"><mat-icon>record_voice_over</mat-icon></span><div><b>{{ fmt(k.interview_rate, '%') }}</b><span>Reach interview</span><small>{{ k.interviewing }} interviewing now</small></div></article>
+      <article class="kpi"><span class="ic d"><mat-icon>check_circle</mat-icon></span><div><b>{{ k.approved }}</b><span>Approved</span><small>{{ fmt(k.approval_rate, '%') }} of applicants</small></div></article>
+      <article class="kpi"><span class="ic e"><mat-icon>cancel</mat-icon></span><div><b>{{ k.rejected }}</b><span>Rejected</span><small>{{ fmt(k.rejection_rate, '%') }} of applicants</small></div></article>
+      <article class="kpi"><span class="ic f"><mat-icon>schedule</mat-icon></span><div><b>{{ fmt(k.avg_days_to_decision) }}<em *ngIf="k.avg_days_to_decision !== null"> d</em></b><span>To first decision</span><small>median {{ fmt(k.median_days_to_decision) }} days</small></div></article>
+    </div>
+
+    <div class="grid2">
+      <!-- ============ funnel ============ -->
+      <section class="card">
+        <h2>Hiring funnel</h2>
+        <p class="sub">How many applicants reached each stage.</p>
+        <div class="fn" *ngFor="let f of funnelRows(); trackBy: trackKey">
+          <div class="fn-top"><strong>{{ f.label }}</strong><span>{{ f.count }}</span></div>
+          <div class="bar"><i [style.width.%]="f.pctAll" [style.background]="f.color"></i></div>
+          <small>{{ f.pctAll }}% of applicants<ng-container *ngIf="f.pctPrev !== null"> · {{ f.pctPrev }}% of the previous stage</ng-container></small>
+        </div>
+      </section>
+
+      <!-- ============ pipeline now ============ -->
+      <section class="card">
+        <h2>Where candidates are now</h2>
+        <p class="sub">Current status of everyone in this period.</p>
+        <div class="donut-row">
+          <app-mini-chart type="donut" [slices]="pipelineSlices" ariaLabel="Candidates by current status" emptyText="No candidates"></app-mini-chart>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============ trend ============ -->
+    <section class="card">
+      <h2>Applications over time <small>{{ granLabel }}</small></h2>
+      <p class="sub">New applications, and candidates approved.</p>
+      <app-mini-chart type="line" [series]="trend" ariaLabel="Applications and approvals over time" emptyText="No activity in this period"></app-mini-chart>
+      <div class="legend"><span><i style="background:#0a66c2"></i>Applications</span><span><i style="background:#16a34a"></i>Approved</span></div>
+    </section>
+
+    <div class="grid2">
+      <!-- ============ AI ============ -->
+      <section class="card">
+        <h2>AI evaluation</h2>
+        <p class="sub">{{ data.ai.evaluated }} of {{ k.total }} candidates evaluated ({{ fmt(data.ai.evaluated_pct, '%') }}). The AI only advises: people decide.</p>
+        <div class="ai-top">
+          <span class="ring" [ngClass]="scoreClass(data.ai.avg_score)" [style.--p]="data.ai.avg_score || 0"><b>{{ fmt(data.ai.avg_score) }}</b><small>avg</small></span>
+          <div class="ai-facts">
+            <span><b>{{ data.ai.overridden }}</b> reviewed or adjusted by a recruiter</span>
+            <span><b>{{ k.total - data.ai.evaluated }}</b> not evaluated yet</span>
+          </div>
+        </div>
+        <app-mini-chart type="donut" [slices]="aiSlices" ariaLabel="AI recommendations" emptyText="No AI evaluations yet"></app-mini-chart>
+      </section>
+
+      <!-- ============ interviews ============ -->
+      <section class="card">
+        <h2>Interviews</h2>
+        <p class="sub">Scheduled and completed interviews for these candidates.</p>
+        <div class="iv-grid">
+          <div><b>{{ data.interviews.total }}</b><span>Total</span></div>
+          <div><b>{{ data.interviews.upcoming }}</b><span>Upcoming</span></div>
+          <div><b>{{ data.interviews.completed }}</b><span>Completed</span></div>
+          <div><b>{{ data.interviews.cancelled }}</b><span>Cancelled</span></div>
+          <div><b>{{ fmt(data.interviews.avg_score) }}</b><span>Avg score</span></div>
+          <div><b>{{ data.interviews.pass }}/{{ data.interviews.hold }}/{{ data.interviews.fail }}</b><span>Pass / hold / fail</span></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============ by vacancy ============ -->
+    <section class="card">
+      <h2>By vacancy</h2>
+      <p class="sub">Click a vacancy to open its candidates.</p>
+
+      <div class="tablewrap" *ngIf="!isMobile">
+        <table class="vt">
+          <thead><tr><th>Vacancy</th><th class="n">Applicants</th><th class="n">Review</th><th class="n">Interview</th><th class="n">Approved</th><th class="n">Rejected</th><th class="n">Approval</th><th class="n">AI avg</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let v of data.by_vacancy; trackBy: trackKey">
+              <td><button type="button" class="link" (click)="openJob(v.transNo)">{{ v.job_name }}</button><small>{{ v.transNo }} · {{ v.status }}</small></td>
+              <td class="n"><b>{{ v.applicants }}</b></td><td class="n">{{ v.review }}</td><td class="n">{{ v.interview }}</td><td class="n">{{ v.approved }}</td><td class="n">{{ v.rejected }}</td>
+              <td class="n">{{ fmt(v.approval_rate, '%') }}</td>
+              <td class="n"><span class="mini" [ngClass]="scoreClass(v.avg_ai_score)">{{ fmt(v.avg_ai_score) }}</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="vcards" *ngIf="isMobile">
+        <article class="vc" *ngFor="let v of data.by_vacancy; trackBy: trackKey" (click)="openJob(v.transNo)">
+          <div class="vc-top"><strong>{{ v.job_name }}</strong><span class="mini" [ngClass]="scoreClass(v.avg_ai_score)">AI {{ fmt(v.avg_ai_score) }}</span></div>
+          <small>{{ v.transNo }} · {{ v.status }}</small>
+          <div class="vc-nums"><div><b>{{ v.applicants }}</b><span>Applied</span></div><div><b>{{ v.review }}</b><span>Review</span></div><div><b>{{ v.interview }}</b><span>Interview</span></div><div><b>{{ v.approved }}</b><span>Approved</span></div><div><b>{{ v.rejected }}</b><span>Rejected</span></div></div>
+        </article>
+      </div>
+    </section>
+
+  </ng-container>
+</section>

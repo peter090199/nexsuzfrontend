@@ -30,7 +30,7 @@
         <div class="client-action">
           <button mat-flat-button
             [color]="users.follow_status === 'accepted'? 'accent': users.follow_status === 'pending'? 'warn': 'primary'"
-            *ngIf="currentUserCode !== users.code"
+            *ngIf="currentUserCode != users.code"
             (click)="AddConnect(users.code, users.fullname, users.follow_status, users.id)">
             <mat-icon *ngIf="users.follow_status === 'not_following'">person_add</mat-icon>
             <mat-icon *ngIf="users.follow_status === 'pending'" class="hourglass-animated">
@@ -75,7 +75,7 @@
           <button
             mat-flat-button
             [color]="person.follow_status === 'accepted' ? 'accent' : person.follow_status === 'pending' ? 'warn' : 'primary'"
-            *ngIf="currentUserCode !== person.code && person.follow_status"
+            *ngIf="currentUserCode != person.code && person.follow_status"
             (click)="AddConnect(person.code, person.fullname, person.follow_status, person.id)">
             
             <!-- Icons -->
@@ -104,7 +104,7 @@
           <button
             mat-flat-button
             [color]="person.follow_status === 'accepted' ? 'accent' : person.follow_status === 'pending' ? 'warn' : 'primary'"
-            *ngIf="currentUserCode !== person.code && person.follow_status"
+            *ngIf="currentUserCode != person.code && person.follow_status"
             (click)="AddConnect(person.code, person.fullname, person.follow_status, person.id)">
             
             <!-- Icons -->

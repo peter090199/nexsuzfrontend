@@ -65,7 +65,6 @@ export class SubmenuComponent implements OnInit {
         if (res.success === true) {
           this.dataSource.data = res.submenus;
           this.roles = res.submenus;
-          console.log(this.roles)
         } else {
           // this.notificationsService.toastrError('Failed to load submenus.');
         }
@@ -106,7 +105,6 @@ export class SubmenuComponent implements OnInit {
 
   
   onTransNoClick(transNo: string): void {
-    console.log('Selected TransNo:', transNo);
     // Fetch submenu data based on transNo if needed
     // this.getSubMenuData(transNo);
   }
@@ -118,7 +116,6 @@ export class SubmenuComponent implements OnInit {
       data: submenu
     });
 
-      console.log(submenu)
      // return;
       
     dialogRef.afterClosed().subscribe(result => {
@@ -129,11 +126,9 @@ export class SubmenuComponent implements OnInit {
   }
   onRowClick(row: any): void {
     this.selectedRow = row; // Set the selected row when clicked
-    console.log('Selected Row:', row);
   }
 
   deletex(row: any): void {
-    console.log('Deleting row:', row);
     // Implement additional delete functionality if necessary
   }
 
@@ -144,7 +139,6 @@ export class SubmenuComponent implements OnInit {
     dialogConfig.autoFocus = true;
     dialogConfig.width = '600px';
     dialogConfig.data = this.selectedRow;
-    console.log(this.selectedRow)
     const dialogRef = this.dialog.open(SubmenuUIComponent, dialogConfig);
 
     dialogRef.afterClosed().subscribe(result => {

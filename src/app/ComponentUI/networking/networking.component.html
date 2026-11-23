@@ -1,8 +1,48 @@
-<!-- My Network: clean light layout, main column on the LEFT and the invitations rail on the RIGHT -->
+<!-- My Network: left sidebar | center feed | right promo -->
 <section class="mynet">
+
+  <!-- LEFT: Manage my network -->
+  <aside class="mynet-left" aria-label="Manage my network">
+    <nav class="panel manage">
+      <h2 class="panel-title">Manage my network</h2>
+      <a class="manage-item" routerLink="../network">
+        <mat-icon>person_add</mat-icon>
+        <span>Invitations</span>
+        <span class="count" *ngIf="peopleInvites?.length">{{ peopleInvites.length }}</span>
+      </a>
+      <a class="manage-item" routerLink="../network">
+        <mat-icon>group</mat-icon>
+        <span>People you may know</span>
+        <span class="count" *ngIf="cnt">{{ cnt }}</span>
+      </a>
+      <a class="manage-item" routerLink="../search">
+        <mat-icon>travel_explore</mat-icon>
+        <span>Find people</span>
+      </a>
+      <a class="manage-item" *appFeature="FEATURE.MESSAGING_ACCESS" routerLink="../message">
+        <mat-icon>chat_bubble_outline</mat-icon>
+        <span>Messages</span>
+      </a>
+      <a class="manage-item" routerLink="../profile">
+        <mat-icon>account_circle</mat-icon>
+        <span>My profile</span>
+      </a>
+    </nav>
+  </aside>
+
+  <!-- CENTER -->
   <main class="mynet-main">
     <div *ngIf="isLoading" class="spinner-wrapper">
-      <mat-spinner diameter="40"></mat-spinner>
+      <app-nx-loader text="Loading your network…"></app-nx-loader>
+    </div>
+
+    <div class="panel" *ngIf="!isLoading">
+      <h2 class="panel-title">
+        <span>Invitations <span class="count-pill" *ngIf="peopleInvites?.length">{{ peopleInvites.length }}</span></span>
+      </h2>
+      <div class="list-wrapper invites">
+        <app-invites></app-invites>
+      </div>
     </div>
 
     <div class="panel" *ngIf="!isLoading">
@@ -20,14 +60,24 @@
     </div>
   </main>
 
-  <!-- RAIL (right): invitations to answer -->
-  <aside class="mynet-side" aria-label="Invitations">
-    <div class="panel side-panel">
-      <h2 class="panel-title"><mat-icon>mail</mat-icon> Invitations</h2>
-      <div class="list-wrapper">
-        <div class="grid">
-          <app-invites></app-invites>
-        </div>
+  <!-- RIGHT: promo -->
+  <aside class="mynet-right" aria-label="Promotions">
+    <div class="panel promo">
+      <div class="promo-cover"></div>
+      <div class="promo-body">
+        <mat-icon class="promo-icon">rocket_launch</mat-icon>
+        <h3>Grow your network</h3>
+        <p>Connect with professionals and recruiters to unlock more opportunities.</p>
+        <a class="pill-btn" routerLink="../search">Find people</a>
+      </div>
+    </div>
+
+    <div class="panel promo promo-alt">
+      <div class="promo-body">
+        <mat-icon class="promo-icon">work_outline</mat-icon>
+        <h3>Looking for a job?</h3>
+        <p>Browse open positions that match your profile.</p>
+        <a class="pill-btn ghost" routerLink="../jobs">Explore jobs</a>
       </div>
     </div>
   </aside>

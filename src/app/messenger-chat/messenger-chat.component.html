@@ -1,5 +1,4 @@
 <div class="msgr" [class.chat-open]="chatOpen">
-
   <!-- ============================== LEFT: conversations ============================== -->
   <aside class="msgr-side" aria-label="Conversations">
     <header class="side-head">
@@ -181,7 +180,7 @@
           <button type="button" mat-icon-button class="emoji-btn" [class.on]="emojiOpen" (click)="toggleEmoji()" aria-label="Emoji" aria-haspopup="dialog"
             [attr.aria-expanded]="emojiOpen"><mat-icon>sentiment_satisfied_alt</mat-icon></button>
 
-          <textarea #composerInput class="input" rows="1" [(ngModel)]="draft" (input)="resizeComposer()" (keydown)="onKeydown($event)"
+          <textarea #composerInput class="input" rows="1" [(ngModel)]="draft" (input)="resizeComposer()" (focus)="onComposerFocus()" (keydown)="onKeydown($event)"
             [maxlength]="maxLength" placeholder="Aa" aria-label="Write a message"></textarea>
 
           <button type="button" class="send" (click)="send()" [disabled]="!canSend" aria-label="Send message"><mat-icon>send</mat-icon></button>

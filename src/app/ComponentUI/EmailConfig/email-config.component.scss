@@ -1,0 +1,43 @@
+@import '../SubscriptionManagement/sub-shared';
+
+.panel { overflow: visible; padding-bottom: 4px; }
+.panel > .panel-head { margin-bottom: 4px; }
+
+.status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 16px; }
+.stat .val.small { font-size: 15px; }
+.stat.last-error { grid-column: span 1; }
+.err-text { font-size: 12px !important; font-weight: 600; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.stat > div:last-child { min-width: 0; }
+
+.state.info { background: #eaf3fc; color: #00407a; border: 1px solid #c5ddf4; }
+.state.warn { background: #fff4e0; color: #8a5300; border: 1px solid #f4d9a8; }
+.state code, .state b { word-break: break-word; }
+.state span { flex: 1; }
+
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 16px; padding: 14px 18px 0; }
+.grid .span-2 { grid-column: 1 / -1; }
+.grid mat-form-field { width: 100%; }
+
+.inline-hint { display: flex; align-items: center; gap: 6px; margin: 0; padding: 0 18px 6px; font-size: 12px; color: $muted; mat-icon { font-size: 16px; width: 16px; height: 16px; } }
+
+.actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 8px 18px 16px; .spacer { flex: 1; }
+  button mat-icon { margin-right: 4px; } }
+.panel > mat-progress-bar { margin: 0 18px 12px; width: auto; }
+
+.result { display: flex; align-items: center; gap: 8px; margin: 0 18px 16px; padding: 10px 12px; border-radius: 10px; font-size: 13px; word-break: break-word;
+  span { flex: 1; } &.ok { background: #e8f6ee; color: $ok; } &.bad { background: #fdecec; color: $bad; } }
+
+.test-row { display: flex; align-items: flex-start; gap: 12px; padding: 14px 18px 8px; flex-wrap: wrap;
+  mat-form-field { flex: 1 1 280px; max-width: 460px; } button { height: 52px; } }
+
+@media (max-width: 760px) {
+  .grid { grid-template-columns: 1fr; padding: 12px 12px 0; }
+  .actions { padding: 8px 12px 14px; button { flex: 1 1 100%; } .spacer { display: none; } }
+  .status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .stat.last-error { grid-column: 1 / -1; }
+  .test-row { padding: 12px 12px 8px; button { width: 100%; } mat-form-field { max-width: none; } }
+  .result { margin: 0 12px 14px; }
+}
+@media (max-width: 420px) { .status-grid { grid-template-columns: 1fr; } }
+
+.wait { display: flex; align-items: center; gap: 8px; margin: 6px 2px 14px; font-size: 13px; color: $muted; mat-icon { font-size: 18px; width: 18px; height: 18px; } &.inset { margin: 0 18px 14px; } }

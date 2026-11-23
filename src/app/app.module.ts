@@ -8,7 +8,7 @@ import { ImageCropperDialogComponent } from './ComponentSharedUI/ImageCropper/im
 import { ReactionButtonComponent } from './ComponentSharedUI/Reactions/reaction-button/reaction-button.component';
 import { ReactionSummaryComponent } from './ComponentSharedUI/Reactions/reaction-summary/reaction-summary.component';
 import { PostCommentsComponent } from './ComponentSharedUI/Comments/post-comments/post-comments.component';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient, HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { ToastrModule } from 'ngx-toastr';
 import { AppRoutingModule } from './app-routing.module';
@@ -30,6 +30,7 @@ import { TermsModalComponent } from './TermsModal/terms-modal/terms-modal.compon
 import { PrivacyComponent } from './TermsModal/privacy/privacy.component';
 import { SecurityRolesComponent } from './ComponentUI/system/security-roles/security-roles.component';
 import { UsersComponent } from './ComponentUI/system/users/users.component';
+import { DeleteUserDialogComponent } from './ComponentUI/system/users/delete-user-dialog.component';
 import { ChatUIComponent } from './chat-ui/chat-ui.component';
 import { RoleComponent } from './ComponentUI/system/role/role.component';
 import { HomeUIComponent } from './ComponentUI/home/home-ui/home-ui.component';
@@ -128,16 +129,36 @@ import { RecruitersComponent } from './ComponentUI/recruiters/recruiters.compone
 import { PostUploadVideosComponent } from './ComponentSharedUI/Public/post-upload-videos/post-upload-videos.component';
 import { JobViewDetailsComponent } from './ComponentUI/job-posting/job-view-details/job-view-details.component';
 import { UserResumeUIComponent } from './ComponentSharedUI/Resume/user-resume-ui/user-resume-ui.component';
+import { ResumeManagerComponent } from './ComponentSharedUI/Resume/resume-manager/resume-manager.component';
+import { CvImportDialogComponent } from './ComponentSharedUI/Resume/cv-import-dialog/cv-import-dialog.component';
 import { AppliedStatusDialogComponent } from './ComponentUI/jobs/applied-status-dialog/applied-status-dialog.component';
 import { ClientDashboardComponent } from './ComponentUI/dashboard/client-dashboard/client-dashboard.component';
 import { AdminDashboardComponent } from './ComponentUI/dashboard/admin-dashboard/admin-dashboard.component';
 import { SideBarPanelComponent } from './Navigation/Client/side-bar-panel/side-bar-panel.component';
 import { MatIconModule } from '@angular/material/icon';
 import { CandidatesComponent } from './ComponentUI/Client/candidates/candidates.component';
+import { JobCandidatesComponent } from './ComponentUI/Client/job-candidates/job-candidates.component';
+import { ReportsComponent } from './ComponentUI/Client/reports/reports.component';
+import { CandidateReviewDialogComponent } from './ComponentUI/Client/job-candidates/candidate-review-dialog.component';
+import { CandidateDecisionDialogComponent } from './ComponentUI/Client/job-candidates/candidate-decision-dialog.component';
+import { EvaluationSettingsDialogComponent } from './ComponentUI/Client/job-candidates/evaluation-settings-dialog.component';
 import { MatDialogModule } from '@angular/material/dialog';
 import { InterviewsComponent } from './ComponentUI/Client/interviews/interviews.component';
 import { PublicPostComponent } from './ComponentUI/Feeds/public-post/public-post.component';
+import { JobPreviewComponent } from './ComponentSharedUI/job-preview/job-preview.component';
+import { DragDropModule } from '@angular/cdk/drag-drop';
+import { MiniChartComponent } from './ComponentSharedUI/mini-chart/mini-chart.component';
+import { BlockButtonComponent } from './ComponentSharedUI/block-button/block-button.component';
+import { PersonCardComponent } from './ComponentSharedUI/person-card/person-card.component';
+import { NxLoaderComponent, NxTopLoaderComponent } from './ComponentSharedUI/nx-loader/nx-loader.component';
+import { LoadingInterceptor } from './services/Global/loading.interceptor';
+import { FeatureLockInterceptor } from './services/Global/feature-lock.interceptor';
+import { AppFeatureDirective } from './directives/app-feature.directive';
+import { JobSectionsComponent } from './ComponentSharedUI/job-sections/job-sections.component';
+import { JobThemeDirective } from './ComponentSharedUI/job-sections/job-theme.directive';
+import { JobTemplatesSettingsComponent } from './ComponentUI/profile/settings/job-templates-settings/job-templates-settings.component';
 import { AccountTypePlanComponent } from './ComponentSharedUI/account-type-plan/account-type-plan.component';
+import { AssignPlanDialogComponent } from './ComponentSharedUI/account-type-plan/assign-plan-dialog/assign-plan-dialog.component';
 import { AppLogoComponent } from './ComponentSharedUI/app-logo/app-logo.component';
 import { AccountManagementComponent } from './ComponentUI/account-management/account-management.component';
 import { UserPlanComponent } from './ComponentUI/AccountManagement/user-plan/user-plan.component';
@@ -148,6 +169,19 @@ import { FeaturesPlanUIComponent } from './ComponentUI/AccountManagement/user-pl
 import { FeaturesPlanListComponent } from './ComponentUI/AccountManagement/features-plan-list/features-plan-list.component';
 import { FeaturesPlanListUIComponent } from './ComponentUI/AccountManagement/features-plan-list-ui/features-plan-list-ui.component';
 import { UpdatePlanUIComponent } from './ComponentUI/AccountManagement/user-plan/update-plan-ui/update-plan-ui.component';
+import { SubPageHeaderComponent } from './ComponentUI/SubscriptionManagement/shared/sub-page-header.component';
+import { SubscriptionPlansComponent } from './ComponentUI/SubscriptionManagement/subscription-plans/subscription-plans.component';
+import { FeatureManagementComponent } from './ComponentUI/SubscriptionManagement/feature-management/feature-management.component';
+import { PlanFeatureAssignmentComponent } from './ComponentUI/SubscriptionManagement/plan-feature-assignment/plan-feature-assignment.component';
+import { UserSubscriptionMonitoringComponent } from './ComponentUI/SubscriptionManagement/user-subscription-monitoring/user-subscription-monitoring.component';
+import { SubscriptionReportsComponent } from './ComponentUI/SubscriptionManagement/subscription-reports/subscription-reports.component';
+import { PlanDialogComponent } from './ComponentUI/SubscriptionManagement/dialogs/plan-dialog.component';
+import { FeatureDialogComponent } from './ComponentUI/SubscriptionManagement/dialogs/feature-dialog.component';
+import { ResetDataDialogComponent } from './ComponentUI/DatabaseAdmin/reset-data-dialog.component';
+import { EmailConfigComponent } from './ComponentUI/EmailConfig/email-config.component';
+import { DatabaseAdminComponent } from './ComponentUI/DatabaseAdmin/database-admin.component';
+import { PlanUsersDialogComponent } from './ComponentUI/SubscriptionManagement/dialogs/plan-users-dialog.component';
+import { SubscriberDialogComponent } from './ComponentUI/SubscriptionManagement/dialogs/subscriber-dialog.component';
 import { FeaturesPlanUI2Component } from './ComponentUI/AccountManagement/user-plan/features-plan-ui2/features-plan-ui2.component';
 import { CheckOutUIComponent } from './ComponentUI/AccountManagement/user-plan/check-out-ui/check-out-ui.component';
 import { UpgradeRequiredComponent } from './ComponentSharedUI/account-type-plan/upgrade-required/upgrade-required.component';
@@ -176,6 +210,7 @@ export function HttpLoaderFactory(http: HttpClient) {
     SettingsConfirmDialogComponent,
     MessageToastComponent,
     AutoHideOnScrollDirective,
+    AppFeatureDirective,
     ImgFallbackDirective,
     ImageLightboxComponent,
     ImageCropperDialogComponent,
@@ -193,6 +228,7 @@ export function HttpLoaderFactory(http: HttpClient) {
     PrivacyComponent,
     SecurityRolesComponent,
     UsersComponent,
+    DeleteUserDialogComponent,
     ChatUIComponent,
     RoleComponent,
     HomeUIComponent,
@@ -285,14 +321,31 @@ export function HttpLoaderFactory(http: HttpClient) {
     PostUploadVideosComponent,
     JobViewDetailsComponent,
     UserResumeUIComponent,
+    ResumeManagerComponent,
+    CvImportDialogComponent,
     AppliedStatusDialogComponent,
     ClientDashboardComponent,
     AdminDashboardComponent,
     SideBarPanelComponent,
     CandidatesComponent,
+    JobCandidatesComponent,
+    ReportsComponent,
+    CandidateReviewDialogComponent,
+    CandidateDecisionDialogComponent,
+    EvaluationSettingsDialogComponent,
     InterviewsComponent,
     PublicPostComponent,
     AccountTypePlanComponent,
+    BlockButtonComponent,
+    PersonCardComponent,
+    NxLoaderComponent,
+    NxTopLoaderComponent,
+    JobSectionsComponent,
+    JobThemeDirective,
+    JobTemplatesSettingsComponent,
+    MiniChartComponent,
+    JobPreviewComponent,
+    AssignPlanDialogComponent,
     AppLogoComponent,
     AccountManagementComponent,
     UserPlanComponent,
@@ -304,6 +357,19 @@ export function HttpLoaderFactory(http: HttpClient) {
     FeaturesPlanListUIComponent,
     UpdatePlanUIComponent,
     FeaturesPlanUI2Component,
+    SubPageHeaderComponent,
+    SubscriptionPlansComponent,
+    FeatureManagementComponent,
+    PlanFeatureAssignmentComponent,
+    UserSubscriptionMonitoringComponent,
+    SubscriptionReportsComponent,
+    PlanDialogComponent,
+    FeatureDialogComponent,
+    SubscriberDialogComponent,
+    PlanUsersDialogComponent,
+    DatabaseAdminComponent,
+    EmailConfigComponent,
+    ResetDataDialogComponent,
     CheckOutUIComponent,
     UpgradeRequiredComponent,
     AdvancedSearchComponent,
@@ -322,6 +388,7 @@ export function HttpLoaderFactory(http: HttpClient) {
     BrowserAnimationsModule,
     AppRoutingModule,
     MaterialModule,
+    DragDropModule,
     HttpClientModule,
     ReactiveFormsModule,
     MatSidenavModule,
@@ -341,7 +408,9 @@ export function HttpLoaderFactory(http: HttpClient) {
   ],
  providers: [
     CookieService,
-    DatePipe
+    DatePipe,
+    { provide: HTTP_INTERCEPTORS, useClass: LoadingInterceptor, multi: true },
+    { provide: HTTP_INTERCEPTORS, useClass: FeatureLockInterceptor, multi: true }
   ],
   bootstrap: [AppComponent]
 })

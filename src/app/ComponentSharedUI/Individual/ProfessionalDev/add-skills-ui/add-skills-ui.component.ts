@@ -64,7 +64,6 @@ export class AddSkillsUIComponent {
       next: (res) => {
         if (res.success == true) {
           this.skillsCtrl = res.data;
-          console.log(this.skillsCtrl)
         } else {
           this.alert.toastrWarning(res.message);
         }
@@ -135,7 +134,6 @@ export class AddSkillsUIComponent {
 
   save(): void {
   const skills = this.skills.map(skill => ({ skills: skill })); // ✅ key should be 'skills'
-  console.log(skills);
 
   this.cvServices.saveSkills(skills).subscribe({
     next: (res) => {

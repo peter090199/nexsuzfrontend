@@ -161,7 +161,6 @@ export class FeaturesPlanListUIComponent implements OnInit {
       feature_name: this.featureForm.value.feature_name
     };
 
-    console.log('Saving feature with payload:', payload);
     this.userPlanService.saveFeature(payload)
       .subscribe({
         next: (res: any) => {

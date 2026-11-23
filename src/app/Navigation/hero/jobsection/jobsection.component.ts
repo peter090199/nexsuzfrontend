@@ -6,6 +6,8 @@ import { JobListService } from 'src/app/services/Jobs/job-list.service';
 import { SharedRoutinesService } from 'src/app/services/Function/shared-routines.service';
 import { ImagesService } from 'src/app/services/images/images.service';
 import { SearchService } from 'src/app/services/search.service';
+import { NotificationsService } from 'src/app/services/Global/notifications.service';
+import { ProfileService } from 'src/app/services/Profile/profile.service';
 
 interface Job {
   transNo: string;
@@ -29,6 +31,9 @@ interface Person {
   profession: string;
   image: string;
   isOnline: boolean;
+  cover?: string | null;
+  follow_status?: string;
+  follow_id?: number | null;
 }
 
 type SearchType = 'jobs' | 'people';
@@ -74,6 +79,8 @@ export class JobsectionComponent implements OnInit {
     private sharedService: ImagesService,
     private sharedRoutineService: SharedRoutinesService,
      private jobServices: JobListService,
+    private alert: NotificationsService,
+    private profile: ProfileService,
   ) { }
 
   ngOnInit(): void {
@@ -239,6 +246,12 @@ export class JobsectionComponent implements OnInit {
     });
   }
 
+  /** profile link for the card (guests have none, so the card does nothing for them) */
+  profileLink(person: Person): any[] | null {
+    const role = this.authService.isLoggedIn() ? sessionStorage.getItem('role') : null;
+    return role ? ['/' + role, 'profile', person.code] : null;
+  }
+
   selectPerson(person: Person): void {
     const role = this.authService.isLoggedIn() ? sessionStorage.getItem('role') : null;
     if (!role) return;
@@ -290,8 +303,74 @@ export class JobsectionComponent implements OnInit {
       skills: p.skills ?? 'No skills listed',
       profession: p.profession ?? '',
       image: p.photo_pic ? this.sharedService.cleanImageUrl(p.photo_pic) : this.placeholderImg,
-      isOnline: !!p.is_online
+      isOnline: !!p.is_online,
+      cover: p.coverphoto ? this.sharedService.cleanImageUrl(p.coverphoto) : null,
+      follow_status: p.follow_status,
+      follow_id: p.id ?? null
     };
+  }
+
+  /** same follow / cancel / unfollow flow as "people you may know" */
+  AddConnect(person: Person): void {
+    if (!person?.code) {
+      this.alert.toastrWarning('⚠️ No user code provided.');
+      return;
+    }
+
+    let confirmMessage = '';
+    let successAction = '';
+    switch (person.follow_status) {
+      case 'not_following':
+        confirmMessage = 'Send a follow request to this user?';
+        successAction = 'Follow request sent.';
+        break;
+      case 'pending':
+        confirmMessage = 'Cancel your pending follow request?';
+        successAction = 'Follow request canceled.';
+        break;
+      case 'accepted':
+        confirmMessage = 'Unfollow this user?';
+        successAction = 'Unfollowed successfully.';
+        break;
+      default:
+        return;
+    }
+
+    this.alert.popupWarning(person.fullname, confirmMessage).then((result) => {
+      if (!result.value) return;
+
+      const action$ = person.follow_status === 'accepted'
+        ? this.profile.Unfollow(person.follow_id ?? 0)
+        : this.profile.AddFollow(String(person.code));
+
+      action$.subscribe({
+        next: (res: any) => {
+          if (res.status === true || res.success === true) {
+            this.alert.toastrSuccess(successAction);
+            const status = res.follow_status || 'not_following';
+            const update = (list: Person[]) => list.map(p => p.code === person.code ? { ...p, follow_status: status } : p);
+            this.onlinePeople = update(this.onlinePeople);
+            this.offlinePeople = update(this.offlinePeople);
+            this.filteredOnlinePeople = update(this.filteredOnlinePeople);
+            this.filteredOfflinePeople = update(this.filteredOfflinePeople);
+          } else {
+            this.alert.toastrError(res.message || 'Action failed.');
+          }
+        },
+        error: (err: any) => {
+          this.alert.toastrError(err.error?.message || 'Something went wrong.');
+        }
+      });
+    });
+  }
+
+  /** after blocking someone, take them out of the lists at once */
+  removeBlocked(code: any): void {
+    const keep = (list: Person[]) => list.filter(p => String(p.code) !== String(code));
+    this.onlinePeople = keep(this.onlinePeople);
+    this.offlinePeople = keep(this.offlinePeople);
+    this.filteredOnlinePeople = keep(this.filteredOnlinePeople);
+    this.filteredOfflinePeople = keep(this.filteredOfflinePeople);
   }
 
   private getTypeClass(type?: string): string {

@@ -1,0 +1,64 @@
+<div class="js" [class.two]="layout === 'two_column'" [class.side]="layout === 'sidebar'">
+
+  <div class="js-main">
+    <ng-container *ngFor="let s of main; trackBy: trackKey">
+      <ng-container *ngTemplateOutlet="sectionTpl; context: { $implicit: s }"></ng-container>
+    </ng-container>
+  </div>
+
+  <aside class="js-side" *ngIf="side.length">
+    <ng-container *ngFor="let s of side; trackBy: trackKey">
+      <ng-container *ngTemplateOutlet="sectionTpl; context: { $implicit: s }"></ng-container>
+    </ng-container>
+  </aside>
+
+</div>
+
+<ng-template #sectionTpl let-s>
+  <section class="jt-sec" [attr.data-sec]="s.key" [class.questions]="s.key === 'questions'">
+    <h3>{{ s.label }}</h3>
+
+    <ng-container [ngSwitch]="s.key">
+
+      <p *ngSwitchCase="'summary'">{{ job.job_about }}</p>
+
+      <p class="pre" *ngSwitchCase="'responsibilities'">{{ job.job_description }}</p>
+
+      <ng-container *ngSwitchCase="'qualifications'">
+        <p class="pre" *ngIf="job.qualification">{{ job.qualification }}</p>
+        <p *ngIf="legacy && job.education"><strong>Education:</strong> {{ job.education }}</p>
+        <ng-container *ngIf="job.preferred_qualifications">
+          <h4>Nice to have</h4>
+          <p class="pre">{{ job.preferred_qualifications }}</p>
+        </ng-container>
+      </ng-container>
+
+      <p *ngSwitchCase="'education'">{{ job.education }}</p>
+
+      <div class="skills" *ngSwitchCase="'skills'">
+        <span class="skill" *ngFor="let k of skills; trackBy: trackIdx">{{ k }}</span>
+      </div>
+
+      <p class="pre" *ngSwitchCase="'benefits'">{{ job.benefits }}</p>
+
+      <ng-container *ngSwitchCase="'questions'">
+        <p class="muted"><ng-container *ngIf="job.allow_cv !== false">A CV (PDF) is required. </ng-container>You will be asked:</p>
+        <ol>
+          <li *ngFor="let q of questions; trackBy: trackIdx">
+            <div class="q-text">{{ q.question_text || 'Question' }}<span class="req" *ngIf="q.is_required !== false" aria-label="required"> *</span></div>
+            <ng-container [ngSwitch]="q.question_type">
+              <ul class="opts" *ngSwitchCase="'multiple_choice'">
+                <li *ngFor="let o of q.options; trackBy: trackIdx"><span class="radio"></span>{{ o }}</li>
+              </ul>
+              <div class="fake" *ngSwitchCase="'yes_no'">Yes / No</div>
+              <div class="fake tall" *ngSwitchCase="'long_text'">Long answer</div>
+              <div class="fake" *ngSwitchCase="'numeric'">Number</div>
+              <div class="fake" *ngSwitchDefault>Short answer</div>
+            </ng-container>
+          </li>
+        </ol>
+      </ng-container>
+
+    </ng-container>
+  </section>
+</ng-template>

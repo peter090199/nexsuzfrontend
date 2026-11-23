@@ -1,0 +1,169 @@
+<app-sub-page-header title="Email Configuration" section="System"
+    subtitle="Set up the SMTP server the app uses to send email. Changes apply immediately, with no restart and no .env editing."></app-sub-page-header>
+
+<mat-progress-bar *ngIf="busy === 'load'" mode="indeterminate"></mat-progress-bar>
+<p class="wait" *ngIf="busy === 'load' && slow" role="status"><mat-icon>hourglass_top</mat-icon> {{ waitText }}</p>
+<div class="state error" *ngIf="loadError" role="alert"><mat-icon>error_outline</mat-icon> {{ loadError }}
+    <button mat-button (click)="load()">Retry</button></div>
+
+<ng-container *ngIf="view as v">
+
+    <!-- ===== status ===== -->
+    <div class="status-grid" aria-label="Email status">
+        <div class="stat" [class.ok]="enabled" [class.bad]="!enabled">
+            <div class="ico"><mat-icon>{{ enabled ? 'mark_email_read' : 'unsubscribe' }}</mat-icon></div>
+            <div><div class="val small">{{ enabled ? 'Enabled' : 'Disabled' }}</div><div class="lbl">Email service</div></div>
+        </div>
+        <div class="stat" [ngClass]="connectionState.cls === 'ok' ? 'ok' : connectionState.cls === 'bad' ? 'bad' : ''">
+            <div class="ico"><mat-icon>{{ connectionState.cls === 'ok' ? 'lan' : connectionState.cls === 'bad' ? 'portable_wifi_off' : 'help_outline' }}</mat-icon></div>
+            <div><div class="val small">{{ connectionState.label }}</div><div class="lbl">SMTP connection</div></div>
+        </div>
+        <div class="stat" [ngClass]="configState.cls === 'ok' ? 'ok' : 'warn'">
+            <div class="ico"><mat-icon>{{ configState.cls === 'ok' ? 'task_alt' : 'edit_note' }}</mat-icon></div>
+            <div><div class="val small">{{ configState.label }}</div><div class="lbl">Configuration</div></div>
+        </div>
+        <div class="stat">
+            <div class="ico"><mat-icon>schedule</mat-icon></div>
+            <div><div class="val small">{{ v.status.last_test_at ? (v.status.last_test_at | date:'MMM d, h:mm a') : 'Never' }}</div><div class="lbl">Last connection test</div></div>
+        </div>
+        <div class="stat">
+            <div class="ico"><mat-icon>forward_to_inbox</mat-icon></div>
+            <div><div class="val small">{{ v.status.last_success_at ? (v.status.last_success_at | date:'MMM d, h:mm a') : 'None yet' }}</div><div class="lbl">Last successful email</div></div>
+        </div>
+        <div class="stat last-error" [class.bad]="!!v.status.last_error">
+            <div class="ico"><mat-icon>{{ v.status.last_error ? 'error_outline' : 'check_circle_outline' }}</mat-icon></div>
+            <div><div class="val small err-text">{{ v.status.last_error || 'No errors' }}</div><div class="lbl">Last error</div></div>
+        </div>
+    </div>
+
+    <div class="state info" *ngIf="v.source === 'env'" role="status">
+        <mat-icon>info</mat-icon>
+        <span>No configuration is saved yet, so the server's <code>.env</code> mail settings ({{ v.env_fallback.host }}:{{ v.env_fallback.port }},
+            {{ v.env_fallback.username }}) are in use. Enter the values below and save to manage them here.</span>
+    </div>
+    <div class="state warn" *ngIf="!enabled" role="alert">
+        <mat-icon>warning_amber</mat-icon>
+        <span>The email service is disabled. <b>No emails are being sent</b>, including sign-up activation and password reset emails.</span>
+    </div>
+
+    <!-- ===== form ===== -->
+    <form class="panel" [formGroup]="form" (ngSubmit)="submit()" autocomplete="off" novalidate>
+        <div class="panel-head">
+            <h2>SMTP settings</h2>
+            <span class="pill" [ngClass]="configState.cls">{{ configState.label }}</span>
+        </div>
+
+        <div class="grid">
+            <mat-form-field appearance="outline">
+                <mat-label>Mail driver</mat-label>
+                <input matInput value="SMTP" readonly aria-readonly="true">
+                <mat-icon matSuffix>lock</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+                <mat-label>Provider</mat-label>
+                <mat-select formControlName="provider" (selectionChange)="onProvider($event.value)">
+                    <mat-option *ngFor="let p of providers" [value]="p.id">{{ p.p.label }}</mat-option>
+                </mat-select>
+                <mat-hint>{{ providerNote }}</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="span-2">
+                <mat-label>SMTP host</mat-label>
+                <input matInput formControlName="host" placeholder="smtp.example.com" autocapitalize="off" spellcheck="false" required>
+                <mat-error *ngIf="form.get('host')?.hasError('required')">SMTP host is required</mat-error>
+                <mat-error *ngIf="form.get('host')?.hasError('pattern')">Enter a host name only, such as smtp.example.com</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+                <mat-label>SMTP port</mat-label>
+                <input matInput type="number" formControlName="port" min="1" max="65535" required>
+                <mat-error>Enter a port between 1 and 65535</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+                <mat-label>Encryption</mat-label>
+                <mat-select formControlName="encryption">
+                    <mat-option value="ssl">SSL (usually port 465)</mat-option>
+                    <mat-option value="tls">TLS / STARTTLS (usually port 587)</mat-option>
+                    <mat-option value="none">None</mat-option>
+                </mat-select>
+                <mat-hint *ngIf="form.value.encryption === 'none'">Credentials are sent unencrypted. Avoid this on the internet.</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+                <mat-label>SMTP username</mat-label>
+                <input matInput formControlName="username" autocomplete="off" autocapitalize="off" spellcheck="false" required>
+                <mat-error>SMTP username is required</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+                <mat-label>SMTP password</mat-label>
+                <input matInput [type]="showPassword ? 'text' : 'password'" formControlName="password" autocomplete="new-password"
+                    [placeholder]="hasPassword ? '•••••••• saved. Leave blank to keep' : 'Enter the password'">
+                <button mat-icon-button matSuffix type="button" (click)="showPassword = !showPassword"
+                    [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'" [attr.aria-pressed]="showPassword">
+                    <mat-icon>{{ showPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+                </button>
+                <mat-hint>{{ hasPassword ? 'Stored encrypted. It is never shown again.' : 'Required the first time.' }}</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+                <mat-label>From email</mat-label>
+                <input matInput type="email" formControlName="from_address" autocapitalize="off" required>
+                <mat-error *ngIf="form.get('from_address')?.hasError('required')">From email is required</mat-error>
+                <mat-error *ngIf="form.get('from_address')?.hasError('email')">Enter a valid email address</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+                <mat-label>From name</mat-label>
+                <input matInput formControlName="from_name" required>
+                <mat-error>From name is required</mat-error>
+            </mat-form-field>
+        </div>
+
+        <p class="inline-hint" *ngIf="!canSubmit && form.touched">
+            <mat-icon>info</mat-icon> {{ !hasPassword && !form.value.password ? 'Enter the SMTP password to continue.' : 'Fix the highlighted fields to continue.' }}
+        </p>
+
+        <div class="actions">
+            <button mat-flat-button color="primary" type="submit" [disabled]="working || !canSubmit || (saved && !dirty)">
+                <mat-icon>{{ saved ? 'update' : 'save' }}</mat-icon>
+                {{ busy === 'save' ? 'Verifying and saving…' : (saved ? 'Update Configuration' : 'Save Configuration') }}
+            </button>
+            <button mat-stroked-button type="button" (click)="testConnection()" [disabled]="working">
+                <mat-icon>lan</mat-icon> {{ busy === 'connection' ? 'Testing…' : 'Test SMTP Connection' }}
+            </button>
+            <span class="spacer"></span>
+            <button mat-stroked-button type="button" (click)="toggleService()" [disabled]="working" [color]="enabled ? 'warn' : 'primary'">
+                <mat-icon>{{ enabled ? 'toggle_off' : 'toggle_on' }}</mat-icon>
+                {{ busy === 'toggle' ? 'Working…' : (enabled ? 'Disable Email Service' : 'Enable Email Service') }}
+            </button>
+            <button mat-button type="button" (click)="resetToDefault()" [disabled]="working || !saved">
+                <mat-icon>restart_alt</mat-icon> {{ busy === 'reset' ? 'Resetting…' : 'Reset to Default Settings' }}
+            </button>
+        </div>
+        <mat-progress-bar *ngIf="working && busy !== 'load'" mode="indeterminate"></mat-progress-bar>
+        <p class="wait inset" *ngIf="working && busy !== 'load' && slow" role="status"><mat-icon>hourglass_top</mat-icon> {{ waitText }}</p>
+
+        <div class="result" *ngIf="lastResult" [class.ok]="lastResult.ok" [class.bad]="!lastResult.ok" role="status">
+            <mat-icon>{{ lastResult.ok ? 'check_circle' : 'error_outline' }}</mat-icon><span>{{ lastResult.text }}</span>
+            <button mat-icon-button type="button" (click)="lastResult = null" aria-label="Dismiss"><mat-icon>close</mat-icon></button>
+        </div>
+    </form>
+
+    <!-- ===== test email ===== -->
+    <section class="panel">
+        <div class="panel-head"><h2>Send a test email</h2></div>
+        <div class="test-row">
+            <mat-form-field appearance="outline">
+                <mat-label>Send to</mat-label>
+                <input matInput type="email" [(ngModel)]="testTo" name="testTo" placeholder="you@example.com" (keyup.enter)="sendTestEmail()" autocomplete="off">
+                <mat-hint>{{ dirty ? 'Uses the unsaved values in the form above.' : 'Uses the saved settings.' }}</mat-hint>
+            </mat-form-field>
+            <button mat-flat-button color="primary" type="button" (click)="sendTestEmail()" [disabled]="working || !testTo.trim()">
+                <mat-icon>send</mat-icon> {{ busy === 'email' ? 'Sending…' : 'Send Test Email' }}
+            </button>
+        </div>
+    </section>
+</ng-container>

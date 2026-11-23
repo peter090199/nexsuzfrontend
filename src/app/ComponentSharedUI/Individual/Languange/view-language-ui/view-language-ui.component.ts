@@ -55,7 +55,6 @@ removelanguage(id: number): void {
 }
 
   removelanguagexx(id: number) {
-    console.log(id)
         this.languageService.deleteLanguage(id).subscribe({
       next: (res) => {
         if (res.success == true) {

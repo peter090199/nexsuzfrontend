@@ -577,3 +577,150 @@ mat-divider {
     font-size: 15px;
   }
 }
+
+/* =========================================================
+   JOB DETAIL (modern)
+   ========================================================= */
+.jd { display: flex; flex-direction: column; font-family: Verdana, Geneva, Tahoma, sans-serif; animation: fadeInUp .3s ease; }
+.jd-back { display: none; align-self: flex-start; margin: -6px 0 6px -8px; }
+.jd-head { display: flex; gap: 16px; align-items: center; }
+.jd-logo { flex: none; width: 72px; height: 72px; border-radius: 14px; object-fit: cover; background: #eef2f8; border: 1px solid #e3eaf4; }
+.jd-title { min-width: 0; }
+.jd-title h1 { margin: 0; font-size: 22px; line-height: 1.25; font-weight: 700; overflow-wrap: anywhere; color: var(--nexsuz-text); }
+.jd-co { margin: 4px 0 0; font-size: 14px; color: #34476a; text-align: left; }
+.jd-posted { margin: 3px 0 0; font-size: 12px; color: var(--nexsuz-muted); text-align: left; }
+
+.jd-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.jd-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px 5px 9px; border-radius: 999px; background: #eef4fb; color: #1d4e89; font-size: 12px; }
+.jd-chip mat-icon { font-size: 16px; width: 16px; height: 16px; line-height: 16px; }
+
+.jd-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 16px; }
+.fact { display: flex; gap: 10px; align-items: center; padding: 11px 14px; border: 1px solid #e3eaf4; border-radius: 12px; background: #fafcff; min-width: 0; }
+.fact mat-icon { color: #0a66c2; flex: none; }
+.fact small { display: block; font-size: 11px; color: var(--nexsuz-muted); text-transform: uppercase; letter-spacing: .04em; }
+.fact strong { display: block; font-size: 13px; overflow-wrap: anywhere; }
+.fact.warn { border-color: #f4dba5; background: #fff9ec; }
+.fact.warn mat-icon { color: #b26a00; }
+
+.jd-closed, .jd-soon { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 10px 14px; border-radius: 10px; font-size: 13px; }
+.jd-closed { background: #fdecea; border: 1px solid #f5c2bd; color: #8a1c13; }
+.jd-soon { background: #fff7e6; border: 1px solid #f4dba5; color: #7a5200; }
+
+.jd-actions { display: flex; gap: 10px; margin: 18px 0 6px; padding: 10px 0; background: #fff; }
+.jd-actions .apply-btn { flex: 1 1 auto; min-height: 48px; border-radius: 12px; font-size: 15px; font-weight: 700; letter-spacing: .01em; box-shadow: 0 4px 12px rgba(48, 113, 224, .25); }
+.jd-actions .apply-btn mat-icon { margin-right: 6px; }
+.jd-actions .apply-btn[disabled] { box-shadow: none; opacity: .55; }
+.jd-actions .save-toggle { min-height: 48px; border-radius: 12px; padding: 0 20px; }
+.jd-actions .save-toggle.is-saved { color: #d81b60; border-color: #f3b4cb; background: #fff4f8; }
+
+.jd-sec { padding-top: 18px; margin-top: 14px; border-top: 1px solid #eef2f8; }
+.jd-sec h2 { margin: 0 0 8px; font-size: 16px; font-weight: 700; }
+.jd-sec h3 { margin: 12px 0 4px; font-size: 13px; color: #5b6b88; }
+.jd-sec p { margin: 0 0 8px; font-size: 14px; line-height: 1.7; text-align: left; overflow-wrap: anywhere; color: #263655; }
+.jd-sec p.pre { white-space: pre-line; }
+.jd-skills { display: flex; flex-wrap: wrap; gap: 8px; }
+.jd-skills span { padding: 5px 13px; border-radius: 999px; border: 1px solid #cfdcee; background: #f6f9fd; font-size: 12.5px; }
+.jd-rec { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid #e3eaf4; border-radius: 12px; color: inherit; text-decoration: none; font-weight: 600; font-size: 14px; }
+.jd-rec:hover { background: #f4f8fd; }
+.jd-rec .chev { margin-left: auto; color: #8a96ab; }
+.jd-rec-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex: none; border: 1px solid #e3eaf4; }
+
+@media (max-width: 992px) {
+  .jd-back { display: inline-flex; }
+}
+@media (max-width: 576px) {
+  .jd-head { gap: 12px; align-items: flex-start; }
+  .jd-logo { width: 56px; height: 56px; border-radius: 12px; }
+  .jd-title h1 { font-size: 18px; }
+  .jd-facts { grid-template-columns: 1fr 1fr; }
+  /* the Apply button stays reachable while reading a long description */
+  .jd-actions { position: sticky; bottom: 0; z-index: 5; margin: 14px -12px 0; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid #e3eaf4; box-shadow: 0 -4px 14px rgba(0, 65, 130, .08); }
+  .jd-actions .apply-btn { min-height: 50px; }
+  .jd-actions .save-toggle { padding: 0 14px; min-width: 0; }
+}
+
+/* =========================================================
+   DESKTOP: LinkedIn-style split view
+   The page itself does not scroll. The job list (left) and the job details (right) each scroll on their own.
+   (Shell: 72px top bar + 24px page padding top and bottom = 120px.)
+   ========================================================= */
+@media (min-width: 993px) {
+  .jobs-container {
+    grid-template-columns: minmax(300px, 400px) minmax(0, 1fr);
+    gap: 16px;
+    height: calc(100vh - 72px - 48px);
+    height: calc(100dvh - 72px - 48px);
+    min-height: 0;
+    overflow: hidden;
+    padding: 0;
+    background: transparent;
+  }
+
+  .jobs-container > .jobs-sidebar,
+  .jobs-container > .job-details-sidebar {
+    height: 100%;
+    min-height: 0;
+    min-width: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;      /* scrolling one pane never scrolls the other or the page */
+    scrollbar-width: thin;
+    border-radius: 14px;
+    background: #fff;
+    border: 1px solid #e6eaf1;
+    box-shadow: 0 2px 8px rgba(20, 40, 80, .07);
+  }
+
+  .jobs-container > .jobs-sidebar { padding: 0 12px 12px; }
+  .jobs-container > .jobs-sidebar > h3 {
+    position: sticky; top: 0; z-index: 3;
+    margin: 0 -12px 4px; padding: 16px 16px 12px;
+    background: #fff; border-bottom: 1px solid #eef2f8;
+    font-size: 16px; font-weight: 700;
+  }
+
+  .jobs-container > .job-details-sidebar { display: block; padding: 20px 24px; }
+  .jd-actions { position: sticky; top: -20px; z-index: 4; margin: 14px -24px 6px; padding: 10px 24px; border-bottom: 1px solid #eef2f8; }
+
+  .job-details-section { overflow-y: visible; }   /* the pane scrolls, not an inner box */
+}
+
+/* Apply / Save buttons: normal width (sized to their label), not stretched across the row */
+.jd-actions { align-items: center; justify-content: flex-start; flex-wrap: wrap; }
+.jd-actions .apply-btn { flex: 0 0 auto; width: auto; min-width: 140px; padding: 0 28px; min-height: 44px; }
+.jd-actions .save-toggle { flex: 0 0 auto; width: auto; min-height: 44px; }
+@media (max-width: 576px) {
+  .jd-actions .apply-btn { min-width: 0; padding: 0 22px; min-height: 44px; }
+}
+
+/* =====================================================================
+   Template theme for the job details (only when the job has a template: .jt is set by nxJobTheme)
+   ===================================================================== */
+.jd.jt { font-family: var(--jt-font); color: var(--jt-text); background: var(--jt-surface); border-radius: var(--jt-radius); }
+.jd.jt.jt-bgs-soft { background: color-mix(in srgb, var(--jt-primary) 6%, var(--jt-surface)); }
+.jd.jt.jt-bgs-gradient { background: linear-gradient(180deg, var(--jt-surface), var(--jt-bg)); }
+
+.jd.jt .jd-head { padding: 4px 0; }
+.jd.jt.jt-hdr-gradient .jd-head, .jd.jt.jt-hdr-solid .jd-head { padding: 16px; border-radius: var(--jt-radius); color: #fff; }
+.jd.jt.jt-hdr-gradient .jd-head { background: linear-gradient(120deg, var(--jt-primary), var(--jt-accent)); }
+.jd.jt.jt-hdr-solid .jd-head { background: var(--jt-primary); }
+.jd.jt.jt-hdr-gradient .jd-title h1, .jd.jt.jt-hdr-solid .jd-title h1,
+.jd.jt.jt-hdr-gradient .jd-co, .jd.jt.jt-hdr-solid .jd-co,
+.jd.jt.jt-hdr-gradient .jd-posted, .jd.jt.jt-hdr-solid .jd-posted { color: #fff; }
+.jd.jt .jd-title h1 { color: var(--jt-text); }
+
+.jd.jt .jd-chip { background: color-mix(in srgb, var(--jt-primary) 10%, var(--jt-surface)); color: var(--jt-primary); }
+.jd.jt .fact { background: color-mix(in srgb, var(--jt-primary) 4%, var(--jt-surface)); border-color: color-mix(in srgb, var(--jt-text) 12%, transparent); border-radius: calc(var(--jt-radius) * .8); }
+.jd.jt .fact mat-icon { color: var(--jt-primary); }
+.jd.jt .jd-actions { background: var(--jt-surface); }
+
+/* apply button: filled | outline | soft, square | rounded | pill */
+.jd.jt .jd-actions .apply-btn { border-radius: var(--jt-btn-radius); background: var(--jt-primary) !important; color: #fff !important; border: 2px solid var(--jt-primary); box-shadow: none; }
+.jd.jt.jt-btn-outline .jd-actions .apply-btn { background: transparent !important; color: var(--jt-primary) !important; }
+.jd.jt.jt-btn-soft .jd-actions .apply-btn { background: color-mix(in srgb, var(--jt-primary) 14%, var(--jt-surface)) !important; color: var(--jt-primary) !important; border-color: transparent; }
+.jd.jt .jd-actions .save-toggle { border-radius: var(--jt-btn-radius); }
+
+.jd.jt .jd-sec { border-color: color-mix(in srgb, var(--jt-text) 12%, transparent); }
+.jd.jt .jd-sec h2 { color: var(--jt-primary); }
+.jd.jt .jd-sec p, .jd.jt .jd-co { color: inherit; }
+.jd.jt .jd-themed { margin-top: 6px; }

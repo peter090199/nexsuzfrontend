@@ -1,0 +1,90 @@
+:host { display: block; min-width: 0; }
+
+/* ---------- card ---------- */
+.pc {
+  position: relative; overflow: hidden; height: 100%; box-sizing: border-box;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  padding: 16px 14px 16px; background: #fff;
+  border: 1px solid #e6eaf1; border-radius: 16px; box-shadow: 0 2px 8px rgba(20, 40, 80, .07);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.pc::before {
+  content: ''; position: absolute; inset: 0 0 auto 0; height: 56px; z-index: 0;
+  background: linear-gradient(120deg, #0a66c2, #7a5af8); opacity: .9;
+}
+.pc > * { position: relative; z-index: 1; }
+.pc:hover { transform: translateY(-3px); box-shadow: 0 10px 26px rgba(20, 40, 80, .14); border-color: #c5d6ea; }
+
+/* ---------- avatar ---------- */
+.pc-avatar { position: relative; width: 80px; height: 80px; margin: 12px auto 6px; flex: none; }
+.pc-avatar a, .pc-avatar-btn { display: block; width: 100%; height: 100%; border-radius: 50%; cursor: pointer; outline: 0; }
+.pc-avatar a:focus-visible, .pc-avatar-btn:focus-visible { box-shadow: 0 0 0 3px rgba(10, 102, 194, .35); }
+.pc-img { width: 100%; height: 100%; display: block; object-fit: cover; border-radius: 50%; background: #eaf3fc; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(20, 40, 80, .15); box-sizing: border-box; }
+.pc-letter { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #eaf3fc; color: #0a66c2; font-size: 28px; font-weight: 700; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(20, 40, 80, .15); box-sizing: border-box; }
+.pc-dot { position: absolute; right: 3px; bottom: 3px; width: 14px; height: 14px; border-radius: 50%; background: #b8c0cc; border: 2px solid #fff; }
+.pc-dot.online { background: #22c55e; }
+
+/* ---------- text ---------- */
+.pc-name { max-width: 100%; margin: 6px 0 2px; font-size: 16px; font-weight: 700; color: #1b2a4a; text-decoration: none; overflow-wrap: anywhere; cursor: pointer; }
+.pc-name:hover { color: #0a66c2; text-decoration: underline; }
+.pc-prof { margin: 0 0 4px; max-width: 100%; font-size: 13px; color: #6b7a99; overflow-wrap: anywhere; }
+.pc-label {
+  margin: 0 0 8px; max-width: 100%; font-size: 12px; color: #9aa3b5; line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere;
+}
+
+/* ---------- actions ---------- */
+.pc-actions { margin-top: auto; padding-top: 6px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.pc-btn { width: auto; min-width: 0; padding: 0 16px; border-radius: 999px; font-size: 13px; font-weight: 700; text-transform: none; line-height: 1.4; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+.pc-btn span { white-space: nowrap; }
+.pc-btn mat-icon { font-size: 18px; width: 18px; height: 18px; line-height: 18px; }
+.pc-btn[color="primary"] { background: #0a66c2; color: #fff; }
+.pc-btn[color="accent"] { background: #fff; color: #057642; border: 1px solid #057642; }
+.pc-btn[color="warn"] { background: #fff; color: #6b7a99; border: 1px solid #e6eaf1; }
+.pc-spin { animation: pc-spin 1.5s linear infinite; }
+@keyframes pc-spin { to { transform: rotate(360deg); } }
+
+/* ---------- skeleton ---------- */
+.pc-skeleton { gap: 10px; }
+.sk { background: linear-gradient(90deg, #eef1f6 25%, #f8fafc 50%, #eef1f6 75%); background-size: 200% 100%; animation: pc-shimmer 1.4s infinite; border-radius: 8px; }
+.sk-avatar { width: 70px; height: 70px; border-radius: 50%; margin-top: 14px; }
+.sk-line { height: 12px; width: 70%; }
+.sk-line.short { width: 45%; }
+.sk-btn { height: 32px; width: 80%; border-radius: 999px; margin-top: auto; }
+@keyframes pc-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* ---------- phones ---------- */
+@media (max-width: 599.98px) {
+  .pc { padding: 12px 10px; border-radius: 14px; }
+  .pc::before { height: 44px; }
+  .pc-avatar { width: 64px; height: 64px; margin-top: 10px; }
+  .pc-name { font-size: 14px; }
+  .pc-btn { width: auto; padding: 0 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pc { transition: none; } .pc:hover { transform: none; }
+  .sk, .pc-spin { animation: none; }
+}
+
+/* =====================================================================
+   Responsive card width: fills its grid cell, but never stretches into a huge card
+   ===================================================================== */
+:host { width: 100%; max-width: 280px; margin-left: auto; margin-right: auto; justify-self: center; }
+.pc { width: 100%; min-width: 0; max-width: 100%; }
+
+/* two per row on phones: use the whole cell */
+@media (max-width: 599.98px) { :host { max-width: none; } }
+/* single column on very small screens: a comfortable card, centred */
+@media (max-width: 359.98px) { :host { max-width: 320px; } }
+/* big screens: slightly wider cards */
+@media (min-width: 1600px) { :host { max-width: 300px; } }
+
+/* cover photo: fills the strip behind the avatar */
+.pc > .pc-cover { position: absolute; inset: 0 0 auto 0; width: 100%; height: 64px; object-fit: cover; z-index: 0; display: block; background: #dbe7f6; }
+.pc:has(> .pc-cover)::before { height: 64px; opacity: 1; }
+.pc > .pc-cover ~ .pc-avatar { margin-top: 20px; }
+@media (max-width: 599.98px) {
+  .pc > .pc-cover { height: 50px; }
+  .pc:has(> .pc-cover)::before { height: 50px; }
+  .pc > .pc-cover ~ .pc-avatar { margin-top: 16px; }
+}

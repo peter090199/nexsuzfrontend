@@ -85,7 +85,6 @@ export class AddEmploymentUiComponent implements OnInit {
       date_completed: this.datePipe.transform(item.date_completed, 'yyyy-MM-dd')
     }));
 
-    console.log('🚀 Sending payload:', payload);
 
     this.loading = true;
 

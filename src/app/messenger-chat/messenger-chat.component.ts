@@ -124,7 +124,8 @@ export class MessengerChatComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     public routines: SharedRoutinesService,
     private prefs: NotificationPrefsService,
-    private delivery: NotificationDeliveryService
+    private delivery: NotificationDeliveryService,
+    private host: ElementRef<HTMLElement>
   ) { }
 
   /** unread counts are shown only when the user wants unread badges (Settings > Notifications) */
@@ -132,6 +133,7 @@ export class MessengerChatComponent implements OnInit, OnDestroy {
 
   // =================================================================== lifecycle
   ngOnInit(): void {
+    this.watchVisualViewport();
     this.auth.getData().subscribe({
       next: (me: any) => {
         this.myUserId = me?.id ?? null;
@@ -150,9 +152,49 @@ export class MessengerChatComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.unwatchVisualViewport();
     this.delivery.activeChatUserId = null;
     this.subs.unsubscribe();
     this.dialogRef?.close();
+  }
+
+  // =================================================================== on-screen keyboard (phones)
+  // The chat is pinned to the VISIBLE part of the screen, so the message box is never hidden behind the keyboard
+  // (iPhone Safari does not shrink the page when the keyboard opens; Android Chrome does).
+  private vv: VisualViewport | null = typeof window !== 'undefined' ? (window.visualViewport || null) : null;
+  private lastVvHeight = 0;
+  private readonly onViewportChange = (): void => {
+    const vv = this.vv;
+    const el = this.host.nativeElement;
+    if (!vv) { return; }
+    el.style.setProperty('--vvh', Math.round(vv.height) + 'px');
+    el.style.setProperty('--vvt', Math.round(vv.offsetTop) + 'px');
+    const keyboard = window.innerHeight - vv.height > 120;      // the keyboard is taking space
+    el.classList.toggle('kb-open', keyboard);
+    if (Math.abs(vv.height - this.lastVvHeight) > 40) {
+      this.lastVvHeight = vv.height;
+      if (this.selected) { setTimeout(() => this.scrollToBottom(false), 60); }   // keep the newest message in view
+    }
+  };
+
+  private watchVisualViewport(): void {
+    if (!this.vv) { return; }
+    this.vv.addEventListener('resize', this.onViewportChange);
+    this.vv.addEventListener('scroll', this.onViewportChange);
+    this.onViewportChange();
+  }
+
+  private unwatchVisualViewport(): void {
+    this.vv?.removeEventListener('resize', this.onViewportChange);
+    this.vv?.removeEventListener('scroll', this.onViewportChange);
+  }
+
+  /** tapping the message box: after the keyboard opens, make sure the box and the newest message are on screen */
+  onComposerFocus(): void {
+    setTimeout(() => {
+      this.composerInput?.nativeElement.scrollIntoView({ block: 'nearest' });
+      this.scrollToBottom(false);
+    }, 300);
   }
 
   // =================================================================== conversation list

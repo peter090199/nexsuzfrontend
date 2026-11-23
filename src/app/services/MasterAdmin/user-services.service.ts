@@ -33,8 +33,26 @@ export class UserServicesService   {
     return new HttpParams().set('desc_code', 'top_navigation');
   }
   getUsers(): Observable<any> {
-    const headers = this.createHeaders(); 
+    const headers = this.createHeaders();
     return this.http.get<any>(`${_url}getUsers`, { headers });
+  }
+
+  /** Activate ('A') or deactivate ('I') an account. DEF-MASTERADMIN only: the API checks the role. */
+  setUserStatus(code: number | string, status: 'A' | 'I'): Observable<any> {
+    return this.http.patch<any>(`${_url}users/${code}/status`, { status }, { headers: this.createHeaders() });
+  }
+
+  /** What deleting this account would remove (read-only). DEF-MASTERADMIN only. */
+  deleteUserPreview(code: number | string): Observable<any> {
+    return this.http.get<any>(`${_url}users/${code}/delete-preview`, { headers: this.createHeaders() });
+  }
+
+  /**
+   * Delete an account and everything it created. DEF-MASTERADMIN only; the API also needs the admin's password and the
+   * account's email typed back, and takes a safety backup first.
+   */
+  deleteUser(code: number | string, body: { password: string; confirm: string; delete_files: boolean }): Observable<any> {
+    return this.http.request<any>('DELETE', `${_url}users/${code}`, { body, headers: this.createHeaders() });
   }
 
   saveSubmenu(data: any): Observable<any> {

@@ -21,6 +21,12 @@ export class SignUpUIComponent implements OnInit {
   isloading: boolean = false;
   passwordVisible: boolean = false;
 
+  /** What each sign-up tab creates. statuscode 0 / 1 are what the API maps to these roles. */
+  readonly accountTypes = {
+    individual: { role: 'DEF-USERS', title: 'Individual account', icon: 'person', blurb: 'For job seekers and professionals: build your profile and CV, apply to jobs and grow your network.' },
+    company: { role: 'DEF-CLIENT', title: 'Company account', icon: 'business_center', blurb: 'For recruiters and employers: post jobs, review candidates and hire.' },
+  };
+
   selectedOption: string | undefined;
   professions: { label: string, value: string }[] = [];
   isLoadingIndividual: boolean = false;
@@ -143,8 +149,13 @@ export class SignUpUIComponent implements OnInit {
   togglePasswordVisibility() {
     this.passwordVisible = !this.passwordVisible;
   }
+  /** After a successful sign-up: the landing page, Home section (/#home-section). The old /homepage route no longer exists. */
+  goToHome(): void {
+    this.router.navigate(['/'], { fragment: 'home-section' });
+  }
+
   refreshHomePage() {
-    this.router.navigate(['/homepage']).then(() => {
+    this.router.navigate(['/'], { fragment: 'home-section' }).then(() => {
       window.location.reload();
     });
   }
@@ -290,10 +301,22 @@ export class SignUpUIComponent implements OnInit {
 
   onSubmitIndividual(): void {
     if (this.userForm.invalid) return;
+
+    // Validate eligibility BEFORE showing the loading state, so it can never get stuck on.
+    if (this.selectedOption === 'I am below 18 years old') {
+      this.isLoadingIndividual = false;
+      this.notifyService.toastrWarning('I am below 18 years old. You are not eligible!');
+      return;
+    }
+    if (this.selectedOption !== 'I am over 18 years old') {
+      this.isLoadingIndividual = false;
+      this.notifyService.toastrWarning('Please select your age option.');
+      return;
+    }
+
     this.isLoadingIndividual = true;
 
-
-    if (this.selectedOption === 'I am over 18 years old') {
+    {
 
       if (this.userForm.valid) {
         const formData = this.userForm.getRawValue();
@@ -316,7 +339,7 @@ export class SignUpUIComponent implements OnInit {
               if (returnUrl && returnUrl.startsWith('/')) {
                 this.router.navigate(['/signin'], { queryParams: { returnUrl } });
               } else {
-                this.router.navigateByUrl("/homepage");
+                this.goToHome();
               }
               this.isloading = false;
             }
@@ -327,21 +350,16 @@ export class SignUpUIComponent implements OnInit {
             }
           },
           error: (err) => {
+            this.isloading = false;
+            this.isLoadingIndividual = false;
             this.notifyService.toastrInfo(err.message);
           },
         });
 
       }
       else {
-        this.notifyService.toastrWarning("Your below 18 years old!");
-
+        this.isLoadingIndividual = false;
       }
-
-
-    } else if (this.selectedOption === 'I am below 18 years old') {
-      this.notifyService.toastrWarning('I am below 18 years old. You are not eligible!');
-    } else {
-      this.notifyService.toastrWarning('Unknown option selected.');
     }
 
   }
@@ -363,7 +381,7 @@ export class SignUpUIComponent implements OnInit {
             this.isLoadingCompany = false;
             this.notifyService.toastPopUp(res.message);
             this.companyForm.reset();
-            this.router.navigateByUrl("/homepage");
+            this.goToHome();
             this.isloading = false;
           }
           else {
@@ -373,14 +391,15 @@ export class SignUpUIComponent implements OnInit {
           }
         },
         error: (err) => {
+          this.isloading = false;
+          this.isLoadingCompany = false;
           this.notifyService.toastrInfo(err.message);
         },
       });
 
     }
     else {
-      this.notifyService.toastrWarning("Your below 18 years old!");
-
+      this.isLoadingCompany = false;
     }
 
 

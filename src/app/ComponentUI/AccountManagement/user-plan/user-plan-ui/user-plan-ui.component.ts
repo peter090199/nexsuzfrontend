@@ -102,8 +102,8 @@ export class UserPlanUIComponent implements OnInit {
               this.alert.toastrError(res.message);
             }
           },
-          error: () => {
-            this.alert.toastrError('Update failed');
+          error: (err: any) => {
+            this.alert.toastrError(err?.error?.message || 'Update failed');
           }
         });
 
@@ -121,8 +121,8 @@ export class UserPlanUIComponent implements OnInit {
             this.dialogRef.close(true);
           }
         },
-        error: (res: any) => {
-          this.alert.toastrWarning(res.message || 'Creation failed');
+        error: (err: any) => {
+          this.alert.toastrWarning(err?.error?.message || 'Creation failed');
         }
       });
   }

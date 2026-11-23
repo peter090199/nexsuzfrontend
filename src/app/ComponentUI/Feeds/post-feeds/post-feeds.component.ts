@@ -284,7 +284,6 @@ export class PostFeedsComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.newPostSubscription || this.newPostSubscription.closed) {
       this.echoService.listenToPosts();
       this.newPostSubscription = this.echoService.newPost$.subscribe(post => {
-        console.log('🆕 New post received:', post);
         this.newPostsQueue.unshift(post);
         this.newPostsAvailable = true; // matches the template
       });
@@ -326,7 +325,6 @@ export class PostFeedsComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (hasNewPosts) {
       this.newPostsAvailable = true;
-      console.log('🔔 New posts detected!');
     }
   }
 
@@ -717,12 +715,10 @@ export class PostFeedsComponent implements OnInit, AfterViewInit, OnDestroy {
   async selectReactions(postId: number, react: Reaction) {
     this.userReactions[postId] = react;
     this.isPopupVisible[postId] = false;
-    console.log(`Selected reaction for post ${postId}:`, react.label);
 
     try {
       const res: any = await this.postReactionByIdService.saveReaction(postId, react.label).toPromise();
       if (res && res.success) {
-        console.log('Reaction saved successfully');
       } else {
         console.error('Failed to save reaction:', res?.message || 'Unknown error');
       }
@@ -1176,7 +1172,6 @@ export class PostFeedsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   sendComment() {
     if (this.commentText.trim()) {
-      console.log('Comment:', this.commentText);
       this.commentText = '';
     }
   }
@@ -1214,7 +1209,6 @@ export class PostFeedsComponent implements OnInit, AfterViewInit, OnDestroy {
     const payload = { reaction };
     this.reactionService.putReactionInvidual(post_uuidOrUuid, payload).subscribe({
       next: (res) => {
-        console.log('✅ Reaction response:', res);
         this.getReactionPost_uuidOrUuid(post_uuidOrUuid);
       },
       error: () => {
@@ -1283,7 +1277,6 @@ export class PostFeedsComponent implements OnInit, AfterViewInit, OnDestroy {
     this.clientsService.getPeopleRecentActivity().subscribe({
       next: (res) => {
         this.users = res.data;
-        console.log(this.users);
         this.isLoading = false;
       },
       error: (err) => {

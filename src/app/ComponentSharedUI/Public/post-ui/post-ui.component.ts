@@ -764,7 +764,6 @@ export class PostUIComponent implements OnInit, OnDestroy {
     // 👉 Check video using your API
     this.sightService.checkVideos(file).subscribe(
       res => {
-        console.log('Sightengine response:', res);
 
         if (res.summary.action === 'reject') {
           const reasons = res.summary.reject_reason

@@ -13,3 +13,59 @@
   margin-left: 0 !important;
   padding-left: 0 !important;
 }
+
+/* =====================================================================
+   Responsive width: desktop table fills the page, phones get stacked cards
+   ===================================================================== */
+:host { display: block; width: 100%; max-width: 100%; box-sizing: border-box; }
+
+.search-div {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  width: 100%; box-sizing: border-box; margin-bottom: 12px;
+}
+.search-div mat-form-field { flex: 1 1 260px; min-width: 0; max-width: 480px; }
+.search-div button[mat-raised-button] { flex: 0 0 auto; white-space: nowrap; }
+
+mat-table { width: 100%; max-width: 100%; box-sizing: border-box; overflow-x: auto; }
+mat-header-cell, mat-cell { min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
+mat-cell img { max-width: 100%; height: auto; }
+mat-paginator { max-width: 100%; }
+
+/* tablets: allow the table to scroll sideways rather than squeeze */
+@media (max-width: 1100px) and (min-width: 768px) {
+  mat-table { overflow-x: auto; }
+  mat-header-row, mat-row { min-width: 720px; }
+  .mat-column-actions { flex: 0 0 auto; min-width: 260px; }
+}
+
+/* phones: each row becomes a labelled card */
+@media (max-width: 767.98px) {
+  .search-div { flex-direction: column; align-items: stretch; }
+  .search-div mat-form-field { max-width: none; width: 100%; flex: none; }
+  .search-div button[mat-raised-button] { width: 100%; min-height: 44px; }
+
+  mat-table { display: block; overflow: visible; background: transparent; box-shadow: none !important; }
+  mat-header-row { display: none; }
+  mat-row {
+    display: block; height: auto; min-height: 0; margin: 0 0 12px; padding: 6px 14px;
+    background: #fff; border: 1px solid #e6eaf1; border-radius: 14px; box-shadow: 0 2px 8px rgba(20, 40, 80, .07);
+  }
+  mat-cell {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+    width: 100%; min-height: 0; padding: 8px 0; border: 0; border-bottom: 1px dashed #e6eaf1;
+    text-align: right; box-sizing: border-box;
+  }
+  mat-cell:last-child { border-bottom: 0; }
+  mat-cell::before {
+    content: attr(data-label); flex: 0 0 38%; max-width: 38%; text-align: left;
+    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #6b7a99;
+  }
+  /* the actions row: buttons wrap under the label */
+  .mat-column-actions { flex-wrap: wrap; justify-content: flex-start; text-align: left; padding-left: 0 !important; }
+  .mat-column-actions::before { flex: 0 0 100%; max-width: 100%; }
+  .mat-column-actions button, .mat-column-actions a { margin: 0 4px 0 0 !important; }
+  .mat-column-actions a[mat-button] { margin-left: auto !important; }
+  mat-footer-row { display: block; text-align: center; }
+  mat-footer-cell { justify-content: center; width: 100%; }
+  mat-footer-cell::before { content: none; }
+}

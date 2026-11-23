@@ -1,0 +1,26 @@
+@import '../sub-shared';
+
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 4px; }
+.grid .panel { margin-bottom: 0; }
+.panel-head small { color: $muted; }
+
+.donut-wrap { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+.donut { width: 150px; height: 150px; border-radius: 50%; display: grid; place-items: center; flex: none;
+  .hole { width: 100px; height: 100px; border-radius: 50%; background: #fff; display: grid; place-content: center; text-align: center;
+    strong { font-size: 24px; color: $blue-900; } small { color: $muted; } } }
+.legend { list-style: none; margin: 0; padding: 0; li { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 13px; }
+  i { width: 12px; height: 12px; border-radius: 3px; } strong { margin-left: 6px; } }
+
+.bar-row { display: grid; grid-template-columns: 90px 1fr auto; align-items: center; gap: 12px; padding: 7px 0; font-size: 13px;
+  .bar { height: 10px; background: #e8eef7; border-radius: 99px; overflow: hidden; > span { display: block; height: 100%; border-radius: 99px; } }
+  .num { min-width: 80px; text-align: right; font-weight: 600; small { color: $muted; font-weight: 400; } } }
+
+.cols { display: flex; align-items: flex-end; gap: 12px; height: 180px;
+  .col { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; }
+  .b { width: 100%; max-width: 44px; background: linear-gradient(180deg, #378fe9, $blue-500); border-radius: 8px 8px 0 0; min-height: 4px; }
+  .v { font-size: 12px; font-weight: 600; color: $blue-900; } .l { font-size: 11px; color: $muted; } }
+
+.urgent { color: $bad; }
+mat-tab-group ::ng-deep .mat-tab-label { font-family: inherit; }
+
+@media (max-width: 480px) { .bar-row { grid-template-columns: 70px 1fr auto; gap: 8px; } .donut { margin: 0 auto; } }

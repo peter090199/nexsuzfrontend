@@ -49,7 +49,6 @@ export class AddEditSeminarComponent implements OnInit {
     if (this.seminarDate) {
      
       this.data.date_completed = this.formatDate(this.seminarDate);
-       console.log(this.data.date_completed)
     }
 
     this.cvServices.updateSeminar(this.data.id, this.data).subscribe({

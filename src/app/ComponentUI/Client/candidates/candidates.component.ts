@@ -76,7 +76,6 @@ export class CandidatesComponent implements OnInit, AfterViewInit {
   }
 
   viewResume(job: any) {
-    console.log('View CV', job);
   }
 
   onClickView() {

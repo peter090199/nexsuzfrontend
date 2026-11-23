@@ -1,0 +1,76 @@
+<app-sub-page-header title="Feature Management" subtitle="The catalog of features that can be assigned to plans.">
+    <button mat-flat-button color="primary" (click)="open()"><mat-icon>add</mat-icon> Add feature</button>
+</app-sub-page-header>
+
+<mat-progress-bar *ngIf="loading" mode="indeterminate"></mat-progress-bar>
+<div class="state error" *ngIf="error" role="alert">
+    <mat-icon>error_outline</mat-icon> {{ error }}
+    <button mat-button (click)="load()">Retry</button>
+</div>
+
+<ng-container *ngIf="!error">
+<div class="stats">
+    <div class="stat"><div class="ico"><mat-icon>extension</mat-icon></div>
+        <div><div class="val">{{ all.length }}</div><div class="lbl">Total features</div></div></div>
+    <div class="stat ok"><div class="ico"><mat-icon>check_circle</mat-icon></div>
+        <div><div class="val">{{ activeCount }}</div><div class="lbl">Active</div></div></div>
+    <div class="stat warn"><div class="ico"><mat-icon>block</mat-icon></div>
+        <div><div class="val">{{ all.length - activeCount }}</div><div class="lbl">Disabled</div></div></div>
+    <div class="stat"><div class="ico"><mat-icon>category</mat-icon></div>
+        <div><div class="val">{{ categoryCount }}</div><div class="lbl">Categories</div></div></div>
+</div>
+
+<div class="panel">
+    <div class="toolbar">
+        <mat-form-field appearance="outline" floatLabel="never">
+            <mat-icon matPrefix>search</mat-icon>
+            <input matInput [(ngModel)]="search" (ngModelChange)="filterChanged()" placeholder="Search name or key">
+            <button mat-icon-button matSuffix *ngIf="search" (click)="search = ''; filterChanged()" aria-label="Clear search"><mat-icon>close</mat-icon></button>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="small">
+            <mat-label>Category</mat-label>
+            <mat-select [(ngModel)]="category" (selectionChange)="filterChanged()">
+                <mat-option value="all">All categories</mat-option>
+                <mat-option *ngFor="let c of categories" [value]="c">{{ c }}</mat-option>
+            </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="small">
+            <mat-label>Status</mat-label>
+            <mat-select [(ngModel)]="status" (selectionChange)="filterChanged()">
+                <mat-option value="all">All</mat-option>
+                <mat-option value="active">Active</mat-option>
+                <mat-option value="inactive">Disabled</mat-option>
+            </mat-select>
+        </mat-form-field>
+    </div>
+
+    <div class="table-wrap">
+        <table class="sub-table">
+            <thead>
+                <tr><th>Feature</th><th>Key</th><th>Category</th><th class="hide-md">Type</th><th class="hide-md">Used in plans</th><th>Status</th><th class="actions">Actions</th></tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let f of paged">
+                    <td data-label="Feature">
+                        <div class="who"><div class="av"><mat-icon>{{ f.icon || 'star' }}</mat-icon></div>
+                            <div><strong>{{ f.name }}</strong><small>{{ f.description }}</small></div></div>
+                    </td>
+                    <td data-label="Key"><code>{{ f.key }}</code></td>
+                    <td data-label="Category"><span class="pill info">{{ f.category }}</span></td>
+                    <td data-label="Type" class="hide-md">{{ f.value_type === 'limit' ? 'Numeric limit' : 'On / off' }}</td>
+                    <td data-label="Plans" class="hide-md">{{ f.plans_count || 0 }} plans</td>
+                    <td data-label="Status"><span class="pill" [ngClass]="f.active ? 'ok' : 'muted'">{{ f.active ? 'Active' : 'Disabled' }}</span></td>
+                    <td class="actions">
+                        <button mat-icon-button matTooltip="Edit" (click)="open(f)"><mat-icon>edit</mat-icon></button>
+                        <button mat-icon-button [matTooltip]="f.active ? 'Disable' : 'Enable'" (click)="toggle(f)" [disabled]="busyId === f.id">
+                            <mat-icon>{{ f.active ? 'toggle_on' : 'toggle_off' }}</mat-icon></button>
+                    </td>
+                </tr>
+                <tr *ngIf="!loading && !filtered.length"><td class="empty" colspan="7">No features match your filters.</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <mat-paginator [length]="filtered.length" [pageSize]="pageSize" [pageIndex]="pageIndex"
+        [pageSizeOptions]="[6, 12, 24]" (page)="onPage($event)" showFirstLastButtons></mat-paginator>
+</div>
+</ng-container>

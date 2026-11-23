@@ -10,6 +10,7 @@ import { AuthService } from './services/auth.service';
 import { EchoService } from './services/echo.service';
 import { SigInService } from './services/signIn/sig-in.service';
 import { NavThemeService } from './services/nav-theme.service';
+import { AppearanceService } from './services/appearance.service';
 import { SubscriptionService } from './services/AccountPlan/subscription.service';
 import { FeatureService } from './services/AccountPlan/feature.service';
 import { UpgradeRequiredComponent } from './ComponentSharedUI/account-type-plan/upgrade-required/upgrade-required.component';
@@ -54,6 +55,7 @@ export class AppComponent implements OnInit {
     private authService: AuthService,
     private echoService: EchoService,
     private navTheme: NavThemeService,       // applies the user's navigation bar colour everywhere
+    private appearance: AppearanceService,   // applies the user's page colour, font and text size everywhere
     private logoutServices: SigInService,
     private subscriptionService: SubscriptionService,
     private featureService: FeatureService,
@@ -61,6 +63,7 @@ export class AppComponent implements OnInit {
     private router: Router
   ) {
 
+    this.appearance.init();
     this.translate.addLangs(['en', 'fr']);
     this.translate.setDefaultLang('en');
   }
@@ -133,31 +136,9 @@ export class AppComponent implements OnInit {
   }
 
   loadFeatures(): void {
-    this.subscriptionService.myFeatures().subscribe({
-      next: (res: any) => {
-        console.log('Features:', res);
-        if (res && res.success === true) {
-          this.featureService.set(res.features || []);
-          // Stop redirect timer
-          this.stopUpgradePopup();
-        } else {
-          // No active subscription
-          this.featureService.set([]);
-          this.startUpgradePopup();
-        }
-      },
-      error: (err: any) => {
-        this.featureService.set([]);
-        if (
-          err.status === 403 ||
-          err.status === 404 ||
-          err.status === 401 ||
-          err.error?.message === 'No active subscription found.'
-        ) {
-          this.startUpgradePopup();
-        }
-      }
-    });
+    // one central answer for job seekers and recruiters (the service never limits anyone else and refreshes itself)
+    this.stopUpgradePopup();      // never force the subscription page; plan-limited actions ask to upgrade when used
+    this.featureService.refresh();
   }
 
   loadUserID(): void {
@@ -179,7 +160,9 @@ export class AppComponent implements OnInit {
     this.logoutServices.logout().subscribe({
       next: () => {
         sessionStorage.clear();
+        const remembered = localStorage.getItem('nexsuz_remembered_email'); // "Remember me" email survives logout
         localStorage.clear();
+        if (remembered) localStorage.setItem('nexsuz_remembered_email', remembered);
         localStorage.setItem(
           'showWebsiteChat',
           'false'

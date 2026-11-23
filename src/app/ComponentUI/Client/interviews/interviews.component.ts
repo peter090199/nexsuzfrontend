@@ -93,7 +93,6 @@ export class InterviewsComponent implements OnInit {
 
   /** View CV */
   openResumeDialog(job: any): void {
-    console.log('View CV:', job);
   }
 
   /** Placeholder popup */

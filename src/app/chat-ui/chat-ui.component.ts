@@ -24,11 +24,9 @@ export class ChatUIComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    console.log('✅ Listening for real-time messages...');
 
     // Listen for real-time messages from Pusher
     this.pusherService.bindEvent('my-event', (data: { message: string }) => {
-      console.log('📩 New message received:', data);
 
       if (data?.message) {
         this.messages.push({ text: data.message, sender: 'other' });
@@ -44,7 +42,6 @@ export class ChatUIComponent implements OnInit, OnDestroy {
 
     this.http.post(this.apiUrl, messageData).subscribe({
       next: (response) => {
-        console.log('✅ Message sent:', response);
         this.messages.push({ text: this.message, sender: 'self' });
         this.message = ''; // Clear input after sending
       },
@@ -55,6 +52,5 @@ export class ChatUIComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     // Unbind event when component is destroyed
    // this.pusherService.unbindEvent('my-event');
-    console.log('❌ Pusher event unbound.');
   }
 }

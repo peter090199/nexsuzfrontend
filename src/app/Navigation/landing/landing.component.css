@@ -604,3 +604,120 @@ header.scrolled mat-toolbar {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* =====================================================================
+   Account icon (shown only when signed in)
+   ===================================================================== */
+.acct-btn { flex: none; width: 40px; height: 40px; padding: 0; margin-left: 8px; border: 2px solid transparent; border-radius: 50%; cursor: pointer; overflow: hidden;
+  background: linear-gradient(135deg, #0a66c2, #7a5af8); color: #fff; font: inherit; font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(20, 40, 80, .2); transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+.acct-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(20, 40, 80, .28); border-color: #fff; }
+.acct-btn:focus-visible { outline: 3px solid rgba(10, 102, 194, .45); outline-offset: 2px; }
+.acct-btn img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.acct-btn.mobile { margin: 0 4px 0 auto; }
+.acct-actions { display: flex; flex-direction: column; gap: 8px; }
+.acct-actions button { justify-content: flex-start; } .acct-actions mat-icon { margin-right: 8px; }
+
+::ng-deep .acct-menu.mat-menu-panel { min-width: 260px; max-width: 92vw; border-radius: 14px; }
+::ng-deep .acct-head { display: flex; align-items: center; gap: 12px; padding: 14px 16px 12px; border-bottom: 1px solid #eef2f8; margin-bottom: 4px; }
+::ng-deep .acct-avatar { flex: none; width: 44px; height: 44px; border-radius: 50%; overflow: hidden; background: linear-gradient(135deg, #0a66c2, #7a5af8); color: #fff; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+::ng-deep .acct-avatar img { width: 100%; height: 100%; object-fit: cover; }
+::ng-deep .acct-who { display: flex; flex-direction: column; min-width: 0; }
+::ng-deep .acct-who strong { font-size: 14px; color: #1b2a4a; overflow-wrap: anywhere; }
+::ng-deep .acct-who small { font-size: 12px; color: #6b7a99; }
+@media (prefers-reduced-motion: reduce) { .acct-btn { transition: none; } .acct-btn:hover { transform: none; } }
+
+/* =====================================================================
+   Mobile header: logo on the left, [account icon] [menu] together on the far right
+   ===================================================================== */
+.acct-btn.mobile { margin: 0 0 0 auto; }              /* this one takes the free space ...  */
+.acct-btn.mobile + .menu-toggle { margin-left: 0; }   /* ... so the menu button sits right next to it */
+mat-toolbar { gap: 8px; }
+mat-toolbar app-app-logo { flex: 0 1 auto; min-width: 0; }
+
+@media (max-width: 480px) {
+  .acct-btn { width: 36px; height: 36px; font-size: 13px; }
+  .acct-btn.mobile { margin-right: 2px; }
+}
+@media (min-width: 960px) { .acct-btn.mobile { display: none; } }
+/* the account menu never runs off the screen edge */
+::ng-deep .acct-menu.mat-menu-panel { max-width: min(300px, calc(100vw - 16px)); }
+
+
+/* =====================================================================
+   MOBILE SIDE MENU: modern dark drawer
+   ===================================================================== */
+.mobile-sidebar {
+  width: min(340px, 88vw);
+  background: radial-gradient(120% 60% at 0% 0%, rgba(122, 90, 248, .32), transparent 55%),
+              radial-gradient(90% 50% at 100% 100%, rgba(10, 102, 194, .38), transparent 60%),
+              linear-gradient(180deg, #0a1f3d 0%, #0b2c57 55%, #08254a 100%) !important;
+  color: #e6eefa;
+  border-radius: 20px 0 0 20px;
+  box-shadow: -12px 0 40px rgba(4, 18, 40, .45);
+}
+::ng-deep .mobile-sidebar .mat-drawer-inner-container { display: flex; flex-direction: column; overflow: hidden; }
+@media (max-width: 480px) { .mobile-sidebar { width: min(340px, 88vw); } }
+
+.dr { display: flex; flex-direction: column; height: 100%; min-height: 0; font-family: Verdana, Geneva, Tahoma, sans-serif; }
+.dr-head { flex: none; display: flex; align-items: center; gap: 8px; padding: 16px 14px 12px 18px; }
+.dr-spacer { flex: 1; }
+.dr-close { flex: none; width: 40px; height: 40px; border: 1px solid rgba(255, 255, 255, .16); border-radius: 12px; background: rgba(255, 255, 255, .08); color: #fff; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: background .15s ease, transform .12s ease; }
+.dr-close:hover { background: rgba(255, 255, 255, .16); } .dr-close:active { transform: scale(.94); }
+
+/* account / welcome card */
+.dr-card { flex: none; margin: 4px 14px 8px; padding: 14px; border-radius: 16px; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .12); display: flex; align-items: center; gap: 12px; backdrop-filter: blur(6px); }
+.dr-avatar { flex: none; width: 46px; height: 46px; border-radius: 50%; overflow: hidden; background: linear-gradient(135deg, #0a66c2, #7a5af8); color: #fff; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px rgba(255, 255, 255, .3); }
+.dr-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dr-who { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.dr-who strong { font-size: 14px; color: #fff; overflow-wrap: anywhere; } .dr-who small { font-size: 12px; color: #9fb7d8; }
+.dr-go { flex: none; width: 38px; height: 38px; border: 0; border-radius: 50%; background: linear-gradient(135deg, #0a66c2, #7a5af8); color: #fff; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(10, 102, 194, .45); }
+.dr-welcome { flex-direction: column; align-items: flex-start; gap: 4px; background: linear-gradient(135deg, rgba(10, 102, 194, .35), rgba(122, 90, 248, .3)); }
+.dr-welcome strong { font-size: 15px; color: #fff; } .dr-welcome small { font-size: 12.5px; color: #cfe0f6; line-height: 1.4; }
+
+/* links */
+.dr-nav { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .25) transparent; }
+.dr-label { padding: 8px 8px 4px; font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: rgba(156, 201, 251, .65); }
+.dr-link { display: flex; align-items: center; gap: 12px; padding: 10px 10px; border-radius: 14px; text-decoration: none; color: #e6eefa; font-size: 14.5px; font-weight: 600; transition: background .18s ease, box-shadow .18s ease; }
+.dr-ico { flex: none; width: 38px; height: 38px; border-radius: 11px; background: rgba(255, 255, 255, .09); display: inline-flex; align-items: center; justify-content: center; transition: background .18s ease; }
+.dr-ico mat-icon { font-size: 21px; width: 21px; height: 21px; line-height: 21px; color: #cfe0f6; }
+.dr-text { flex: 1; }
+.dr-chev { flex: none; color: rgba(255, 255, 255, .35); font-size: 20px; width: 20px; height: 20px; line-height: 20px; }
+.dr-link:hover { background: rgba(255, 255, 255, .08); }
+.dr-link.active { background: linear-gradient(90deg, rgba(10, 102, 194, .6), rgba(122, 90, 248, .38)); color: #fff; box-shadow: 0 6px 18px rgba(10, 102, 194, .3), inset 0 0 0 1px rgba(255, 255, 255, .12); }
+.dr-link.active .dr-ico { background: rgba(255, 255, 255, .18); } .dr-link.active .dr-ico mat-icon { color: #fff; } .dr-link.active .dr-chev { color: #fff; }
+.dr-link:focus-visible, .dr-btn:focus-visible, .dr-close:focus-visible, .dr-go:focus-visible { outline: 2px solid #70b5f9; outline-offset: 2px; }
+
+/* pinned actions */
+.dr-foot { flex: none; display: flex; flex-direction: column; gap: 10px; padding: 12px 14px calc(16px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid rgba(255, 255, 255, .1); background: rgba(4, 18, 40, .25); }
+.dr-btn { min-height: 46px; border-radius: 14px; font: inherit; font-size: 14.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: transform .12s ease, box-shadow .15s ease, background .15s ease; }
+.dr-btn mat-icon { font-size: 20px; width: 20px; height: 20px; line-height: 20px; }
+.dr-btn.ghost { background: rgba(255, 255, 255, .08); color: #fff; border: 1px solid rgba(255, 255, 255, .22); }
+.dr-btn.ghost:hover { background: rgba(255, 255, 255, .16); }
+.dr-btn.solid { background: linear-gradient(135deg, #0a66c2, #7a5af8); color: #fff; border: 0; box-shadow: 0 8px 20px rgba(10, 102, 194, .4); }
+.dr-btn:active { transform: scale(.98); }
+
+@media (prefers-reduced-motion: reduce) { .dr-link, .dr-ico, .dr-btn, .dr-close { transition: none; } }
+
+
+/* =====================================================================
+   Desktop header: logo left, ALL menu links truly centered, actions right
+   (three equal-weight zones, so the links sit in the middle of the page whatever the logo / buttons widths are)
+   ===================================================================== */
+@media (min-width: 960px) {
+  mat-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; column-gap: 16px; }
+  mat-toolbar > app-app-logo { justify-self: start; }
+  .desktop-nav { display: contents; flex: none; }
+  .nav-spacer { display: none; }
+
+  .nav-links { grid-column: 2; display: flex; align-items: center; justify-content: center; gap: clamp(2px, 1vw, 12px); flex-wrap: nowrap; white-space: nowrap; }
+  .nav-right { grid-column: 3; justify-self: end; display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .nav-right .nav-actions { margin-right: 0; }
+  .nav-right .acct-btn { margin-left: 0; }
+}
+/* narrower laptops: tighter link padding so the centered row still fits */
+@media (min-width: 960px) and (max-width: 1180px) {
+  .nav-links a { padding: 8px 8px; font-size: .9rem; }
+  .nav-right .btn-signin, .nav-right .btn-signup { padding: 0 12px; }
+}

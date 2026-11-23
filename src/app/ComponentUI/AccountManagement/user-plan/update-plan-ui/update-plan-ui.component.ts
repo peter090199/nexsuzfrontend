@@ -1,9 +1,13 @@
 import { Component, Inject, OnInit } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormControl, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { UserPlanService } from 'src/app/services/AccountPlan/user-plan.service';
 import { SharedRoutinesService } from 'src/app/services/Function/shared-routines.service';
 import { NotificationsService } from 'src/app/services/Global/notifications.service';
+
+function noBlank(c: AbstractControl): ValidationErrors | null {
+  return typeof c.value === 'string' && c.value.length > 0 && !c.value.trim() ? { blank: true } : null;
+}
 
 @Component({
   selector: 'app-update-plan-ui',
@@ -43,9 +47,9 @@ export class UpdatePlanUIComponent implements OnInit {
   ngOnInit(): void {
 
     this.featureForm = this.fb.group({
-      feature_name: ['', Validators.required],
-      feature_code: [{ value: '', disabled: false }, Validators.required],
-      feature_value: ['', Validators.required]
+      feature_name: ['', [Validators.required, noBlank]],
+      feature_code: [{ value: '', disabled: false }, [Validators.required, noBlank]],
+      feature_value: ['', [Validators.required, noBlank, Validators.maxLength(500)]]
     });
 
     if (this.data?.fid) {
@@ -75,6 +79,16 @@ export class UpdatePlanUIComponent implements OnInit {
     }
   }
 
+  private trimmedValue(): any {
+    const v = this.featureForm.getRawValue();
+    return {
+      ...v,
+      feature_name: (v.feature_name || '').trim(),
+      feature_code: (v.feature_code || '').trim(),
+      feature_value: (v.feature_value || '').trim()
+    };
+  }
+
   save(): void {
     if (this.featureForm.invalid) {
       this.featureForm.markAllAsTouched();
@@ -82,7 +96,7 @@ export class UpdatePlanUIComponent implements OnInit {
     }
 
     const payload = {
-      ...this.featureForm.getRawValue(),
+      ...this.trimmedValue(),
       plan_id: this.data.planId,
       plan_name: this.data.plan_name
     };
@@ -108,7 +122,7 @@ export class UpdatePlanUIComponent implements OnInit {
     this.isLoading = true;
 
     const payload = {
-      ...this.featureForm.getRawValue(),
+      ...this.trimmedValue(),
       fid: this.selectedFeature.fid,
       recordStatus: this.selectedFeature.recordStatus
     };

@@ -1,21 +1,78 @@
-<section class="connections-section" *ngIf="peopleList.length > 0">
-  <h3 class="section-title">People Connected</h3>
+<section class="people-tab">
 
-  <div class="connections-grid">
-    <div class="connection-card" *ngFor="let person of peopleList">
-      <div class="avatar-container">
-        <img [src]="person.profilePic || 'assets/images/default.png'" alt="{{ person.fullName }}" class="avatar-img">
-        <!-- Online/Offline Dot -->
-        <span class="status-dot" [ngClass]="person.isConnected ? 'online' : 'offline'"></span>
-      </div>
-      <div class="connection-info">
-        <h4>{{ person.fullName }}</h4>
-        <p>{{ person.location }}</p>
-        <button mat-flat-button
-                color="{{ person.isConnected ? 'accent' : 'primary' }}">
-          {{ person.isConnected ? 'Connected' : 'Connect' }}
-        </button>
+  <!-- search -->
+  <label class="people-search">
+    <mat-icon>search</mat-icon>
+    <input type="search" placeholder="Search people, names, skills..." [value]="searchText"
+      (input)="onSearch($any($event.target).value)" aria-label="Search people" />
+  </label>
+
+  <!-- loading -->
+  <div class="pc-grid" *ngIf="isLoading" aria-busy="true" aria-label="Loading people">
+    <app-person-card *ngFor="let s of [1,2,3,4]" [skeleton]="true"></app-person-card>
+  </div>
+
+  <p class="result-count" *ngIf="!isLoading && total">
+    {{ total }} {{ total === 1 ? 'person' : 'people' }}<ng-container *ngIf="searchText"> for "{{ searchText }}"</ng-container>
+  </p>
+
+  <div class="people-panel" *ngIf="!isLoading && total > 0">
+
+    <div *ngIf="online.length > 0">
+      <h4 class="people-section-title"><span class="status-dot online"></span> Online ({{ online.length }})</h4>
+      <div class="pc-grid">
+        <ng-container *ngFor="let person of online">
+          <ng-container *ngTemplateOutlet="personCard; context: { $implicit: person, status: 'online' }"></ng-container>
+        </ng-container>
       </div>
     </div>
+
+    <div *ngIf="offline.length > 0">
+      <h4 class="people-section-title"><span class="status-dot offline"></span> Offline ({{ offline.length }})</h4>
+      <div class="pc-grid">
+        <ng-container *ngFor="let person of offline">
+          <ng-container *ngTemplateOutlet="personCard; context: { $implicit: person, status: 'offline' }"></ng-container>
+        </ng-container>
+      </div>
+    </div>
+
   </div>
+
+  <ng-template #personCard let-person let-status="status">
+    <app-person-card
+      [name]="person.fullname"
+      [photo]="person.image"
+      [cover]="person.cover"
+      [profession]="person.profession"
+      [label]="person.skills"
+      [online]="status === 'online'"
+      [status]="person.follow_status"
+      [showActions]="canAct && ownCode !== '' + person.code"
+      [code]="person.code"
+      [roleCode]="person.role_code"
+      [link]="profileLink(person)"
+      (connect)="connect(person)"
+      (blocked)="removeBlocked(person.code)">
+    </app-person-card>
+  </ng-template>
+
+  <!-- empty / error -->
+  <div class="state-box" *ngIf="!isLoading && !failed && total === 0">
+    <mat-icon>{{ searchText ? 'person_search' : 'group_off' }}</mat-icon>
+    <h3>{{ searchText ? 'No people found' : 'No connections yet' }}</h3>
+    <p>{{ searchText ? 'Try another name, profession or skill.' : 'People who connect with this company will appear here.' }}</p>
+  </div>
+
+  <div class="state-box error" *ngIf="!isLoading && failed" role="alert">
+    <mat-icon>error_outline</mat-icon>
+    <h3>We couldn't load the people.</h3>
+    <button mat-stroked-button type="button" (click)="load(1)">Retry</button>
+  </div>
+
+  <div class="load-more" *ngIf="!isLoading && !searchText && hasMore">
+    <button mat-stroked-button type="button" (click)="loadMore()" [disabled]="isLoadingMore">
+      {{ isLoadingMore ? 'Loading...' : 'Load more' }}
+    </button>
+  </div>
+
 </section>

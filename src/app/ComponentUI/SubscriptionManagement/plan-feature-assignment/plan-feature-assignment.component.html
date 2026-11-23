@@ -1,0 +1,83 @@
+<app-sub-page-header title="Plan Feature Assignment" subtitle="Choose which features each plan includes and set numeric limits.">
+    <button mat-stroked-button (click)="cancel()" [disabled]="!dirty || saving"><mat-icon>undo</mat-icon> Cancel</button>
+    <button mat-flat-button color="primary" (click)="save()" [disabled]="!dirty || saving"><mat-icon>save</mat-icon> {{ saving ? 'Saving…' : 'Save changes' }}</button>
+</app-sub-page-header>
+
+<mat-progress-bar *ngIf="loading || saving" mode="indeterminate"></mat-progress-bar>
+<div class="state error" *ngIf="error" role="alert">
+    <mat-icon>error_outline</mat-icon> {{ error }}
+    <button mat-button (click)="loadPlan()">Retry</button>
+</div>
+
+<div class="panel">
+    <div class="toolbar">
+        <mat-form-field appearance="outline" class="small plan-select">
+            <mat-label>Plan</mat-label>
+            <mat-select [value]="planId" (selectionChange)="onSelect($event.value, sel)" #sel>
+                <mat-option *ngFor="let p of plans" [value]="p.planId">{{ p.plan_name }}{{ p.recordStatus === 'active' ? '' : ' (inactive)' }}</mat-option>
+            </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" floatLabel="never">
+            <mat-icon matPrefix>search</mat-icon>
+            <input matInput [(ngModel)]="search" placeholder="Search features">
+            <button mat-icon-button matSuffix *ngIf="search" (click)="search = ''" aria-label="Clear search"><mat-icon>close</mat-icon></button>
+        </mat-form-field>
+        <span class="spacer"></span>
+        <span class="pill info">{{ enabledDraft }} of {{ features.length }} enabled</span>
+        <span class="pill warn" *ngIf="dirty">Unsaved changes</span>
+        <button mat-button (click)="enableAll(true)">Enable all</button>
+        <button mat-button (click)="enableAll(false)">Disable all</button>
+    </div>
+    <p class="hint">Higher plans also inherit the features of lower plans, so a feature enabled on Free is available on every plan above it.</p>
+
+    <div class="table-wrap">
+        <table class="sub-table">
+            <thead>
+                <tr><th>Feature</th><th>Category</th><th>Enabled</th><th>Limit</th><th>Unlimited</th></tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let f of visible" [class.off]="!f.active">
+                    <td data-label="Feature">
+                        <strong>{{ f.name }}</strong> <code>{{ f.key }}</code>
+                        <span class="pill muted tiny" *ngIf="!f.active">Feature disabled</span>
+                    </td>
+                    <td data-label="Category"><span class="pill info">{{ f.category }}</span></td>
+                    <td data-label="Enabled">
+                        <mat-slide-toggle [checked]="row(f).enabled" [disabled]="!f.active" (change)="setEnabled(f, $event.checked)"
+                            [attr.aria-label]="'Enable ' + f.name"></mat-slide-toggle>
+                    </td>
+                    <td data-label="Limit">
+                        <input class="limit" type="number" min="0" placeholder="—"
+                            [disabled]="f.value_type !== 'limit' || !row(f).enabled || row(f).unlimited"
+                            [value]="row(f).unlimited ? '' : (row(f).limit ?? '')" (input)="setLimit(f, $any($event.target).value)"
+                            [attr.aria-label]="'Limit for ' + f.name">
+                    </td>
+                    <td data-label="Unlimited">
+                        <mat-checkbox [checked]="row(f).unlimited" [disabled]="f.value_type !== 'limit' || !row(f).enabled"
+                            (change)="setUnlimited(f, $event.checked)" [attr.aria-label]="'Unlimited ' + f.name"></mat-checkbox>
+                    </td>
+                </tr>
+                <tr *ngIf="!loading && !visible.length"><td class="empty" colspan="5">No features match your search.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-head"><h2>Overview — all plans</h2></div>
+    <div class="table-wrap">
+        <table class="sub-table overview">
+            <thead>
+                <tr><th>Feature</th><th *ngFor="let p of plans" class="c">{{ p.plan_name }}</th></tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let f of features">
+                    <td data-label="Feature">{{ f.name }}</td>
+                    <td *ngFor="let p of plans" class="c" [attr.data-label]="p.plan_name">
+                        <mat-icon [class.yes]="isEnabled(p.planId, f)">{{ isEnabled(p.planId, f) ? 'check_circle' : 'remove' }}</mat-icon>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

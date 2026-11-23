@@ -1,0 +1,71 @@
+// Shared look for the five Subscription Management pages.
+$blue-900: #002a57; $blue-700: #004182; $blue-500: #0a66c2; $blue-100: #eaf3fc;
+$border: #e3e9f3; $muted: #6b7a99; $text: #1b2a4a;
+$ok: #1b8a4b; $warn: #e08a00; $bad: #c62828;
+
+:host { display: block; padding: 24px; max-width: 100%; box-sizing: border-box; overflow-x: hidden; }
+* { box-sizing: border-box; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.stat {
+  display: flex; align-items: center; gap: 14px; padding: 16px; background: #fff; border: 1px solid $border;
+  border-radius: 14px; box-shadow: 0 1px 3px rgba(16, 24, 40, .05);
+  .ico { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: $blue-100; color: $blue-500; flex: none; }
+  .val { font-size: 22px; font-weight: 700; color: $blue-900; line-height: 1.1; }
+  .lbl { font-size: 12px; color: $muted; margin-top: 2px; }
+  &.ok .ico { background: #e8f6ee; color: $ok; }
+  &.warn .ico { background: #fff4e0; color: $warn; }
+  &.bad .ico { background: #fdecec; color: $bad; }
+}
+
+.panel { background: #fff; border: 1px solid $border; border-radius: 14px; box-shadow: 0 1px 3px rgba(16, 24, 40, .05); margin-bottom: 20px; overflow: hidden; }
+.panel-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 14px 18px; border-bottom: 1px solid $border;
+  h2 { margin: 0; font-size: 15px; color: $blue-900; } }
+.panel-body { padding: 18px; }
+
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid $border;
+  .mat-form-field { flex: 1 1 200px; min-width: 0; max-width: 340px; }
+  .mat-form-field.small { flex: 0 1 170px; }
+  .spacer { flex: 1; } }
+
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap;
+  &::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  &.ok { background: #e8f6ee; color: $ok; } &.bad { background: #fdecec; color: $bad; }
+  &.warn { background: #fff4e0; color: #a86400; } &.info { background: $blue-100; color: $blue-700; }
+  &.muted { background: #eef1f6; color: $muted; } }
+
+.table-wrap { overflow-x: auto; }
+.sub-table { width: 100%; border-collapse: collapse; font-size: 13px; color: $text;
+  th { text-align: left; padding: 12px 16px; font-size: 11px; letter-spacing: .5px; text-transform: uppercase; color: $muted; background: #f8fafd; border-bottom: 1px solid $border; white-space: nowrap; }
+  td { padding: 12px 16px; border-bottom: 1px solid #eef2f8; vertical-align: middle; word-break: break-word; }
+  tbody tr:hover { background: #f5f9ff; }
+  .actions { text-align: right; white-space: nowrap; }
+  .empty { text-align: center; color: $muted; padding: 32px; } }
+
+.who { display: flex; align-items: center; gap: 10px;
+  .av { width: 34px; height: 34px; border-radius: 50%; background: $blue-100; color: $blue-700; display: grid; place-items: center; font-weight: 700; font-size: 12px; flex: none; }
+  small { display: block; color: $muted; } }
+
+.meter { height: 6px; background: #e8eef7; border-radius: 99px; overflow: hidden; min-width: 70px;
+  > span { display: block; height: 100%; background: $blue-500; border-radius: 99px; } }
+
+@media (max-width: 991px) { :host { padding: 16px; } .hide-md { display: none; } }
+
+// Phone: tables become stacked cards.
+@media (max-width: 640px) {
+  :host { padding: 12px; }
+  .hide-md { display: revert; }
+  .sub-table, .sub-table tbody, .sub-table tr, .sub-table td { display: block; width: 100%; }
+  .sub-table thead { display: none; }
+  .sub-table tr { margin: 10px; width: auto; border: 1px solid $border; border-radius: 12px; padding: 6px 12px; }
+  .sub-table td { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px dashed #eef2f8; text-align: right; }
+  .sub-table td::before { content: attr(data-label); font-size: 11px; font-weight: 600; text-transform: uppercase; color: $muted; text-align: left; flex: 0 0 38%; }
+  .sub-table td:last-child { border-bottom: none; justify-content: flex-end; }
+  .sub-table td:last-child::before { content: none; }
+  .toolbar .mat-form-field, .toolbar .mat-form-field.small { flex-basis: 100%; max-width: none; }
+}
+
+// Loading / error states shared by every page.
+.state { display: flex; align-items: center; gap: 8px; padding: 14px 16px; border-radius: 12px; margin-bottom: 16px; font-size: 13px;
+  &.error { background: #fdecec; color: $bad; border: 1px solid #f5c2c2; button { margin-left: auto; } } }
+mat-progress-bar { margin-bottom: 12px; border-radius: 99px; }

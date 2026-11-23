@@ -1,50 +1,57 @@
-<div class="login-container">
-    <mat-card class="login-card">
-      <div class="left-panel">
-        <div class="logo-container">
-          <img src="assets/images/logo2.png" alt="Exsuz Logo" class="logo" />
-          <h2 style="margin-top: 3px;">exsuz</h2>
-        </div>
-        <h2 style="text-align: left;">Activate Code</h2>
+<main class="activate-page">
+  <section class="activate-card" aria-labelledby="activate-title">
+
+    <!-- the logo is a light mark made for the gradient header, so it sits on a gradient tile -->
+    <div class="brand" aria-hidden="true"><app-app-logo></app-app-logo></div>
+    <h1 id="activate-title">Activate your account</h1>
+
+    <!-- normal case: the link from the email carries the address -->
+    <ng-container *ngIf="email; else missingEmail">
+      <p class="sub">Enter the activation code we emailed to</p>
+      <p class="email-chip" [attr.title]="email"><mat-icon aria-hidden="true">mail</mat-icon><span>{{ email }}</span></p>
+
+      <form [formGroup]="activationForm" (ngSubmit)="onSubmit()" novalidate>
+        <label class="field-label" for="activation-code">Activation code</label>
+        <input id="activation-code" class="code-input" type="text" formControlName="code"
+          placeholder="Enter your code" autocomplete="one-time-code" inputmode="text"
+          autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="64"
+          [attr.aria-invalid]="activationForm.get('code')?.invalid && activationForm.get('code')?.touched"
+          aria-describedby="activation-code-help" />
+        <p id="activation-code-help" class="field-help"
+          [class.field-error]="activationForm.get('code')?.invalid && activationForm.get('code')?.touched"
+          [attr.role]="activationForm.get('code')?.invalid && activationForm.get('code')?.touched ? 'alert' : null">
+          {{ activationForm.get('code')?.invalid && activationForm.get('code')?.touched
+            ? 'Activation code is required.'
+            : 'Copy it from the email. Upper and lower case letters matter.' }}
+        </p>
+
+        <button class="primary-btn" type="submit" [disabled]="isLoading || activationForm.invalid" aria-label="Activate account">
+          <mat-spinner *ngIf="isLoading" diameter="20" color="accent"></mat-spinner>
+          <span>{{ isLoading ? 'Activating…' : 'Activate account' }}</span>
+        </button>
+      </form>
+
+      <div class="divider" role="separator"><span>Didn't get the email?</span></div>
+
+      <button class="ghost-btn" type="button" (click)="resend()" [disabled]="resending || cooldown > 0">
+        <mat-icon aria-hidden="true">{{ cooldown > 0 ? 'schedule' : 'forward_to_inbox' }}</mat-icon>
+        <span>{{ resending ? 'Sending…' : (cooldown > 0 ? 'Resend available in ' + cooldown + 's' : 'Resend activation email') }}</span>
+      </button>
+      <p class="tiny">Check your spam folder too. A new email replaces the old code.</p>
+    </ng-container>
+
+    <!-- the link had no email in it (it was cut or typed by hand) -->
+    <ng-template #missingEmail>
+      <div class="notice" role="alert">
+        <mat-icon aria-hidden="true">link_off</mat-icon>
+        <p>This activation link is missing your email address. Open the link from your activation email again, or sign in to continue.</p>
       </div>
-  
-      <mat-card-content>
-        <mat-progress-bar *ngIf="isLoading" mode="indeterminate" color="primary"></mat-progress-bar>
-  
-        <form [formGroup]="activationForm" (ngSubmit)="onSubmit()">
-          <mat-form-field appearance="standard" class="full-width">
-            <mat-label>Activation Code</mat-label>
-            <mat-icon matPrefix>pin</mat-icon>
-            <input
-              matInput
-              placeholder="Enter your activation code"
-              type="text"
-              formControlName="code"
-              required
-            />
-            <mat-error *ngIf="activationForm.get('code')?.hasError('required')">
-              Activation code is required.
-            </mat-error>
-          </mat-form-field>
-  
-          <button
-            mat-raised-button
-            color="primary"
-            class="signin-button"
-            [disabled]="isLoading || activationForm.invalid"
-            type="submit"
-            aria-label="Send Activation Code"
-          >
-            Activate
-          </button>
-        </form>
-      </mat-card-content>
-  
-      <mat-card-footer>
-        <div class="links">
-          <a routerLink="/" aria-label="Back to Home">Back to home</a>
-        </div>
-      </mat-card-footer>
-    </mat-card>
-  </div>
-  
+    </ng-template>
+
+    <nav class="links" aria-label="Other pages">
+      <a routerLink="/signin">Sign in</a>
+      <span aria-hidden="true">·</span>
+      <a routerLink="/">Back to home</a>
+    </nav>
+  </section>
+</main>

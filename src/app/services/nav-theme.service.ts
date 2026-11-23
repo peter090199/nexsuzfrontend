@@ -22,7 +22,7 @@ export interface NavSwatch { name: string; color: string | null; }
 export class NavThemeService implements OnDestroy {
   readonly swatches: NavSwatch[] = [
     { name: 'Standard', color: null },
-    { name: 'NEXSUZ navy', color: '#004182' },
+    { name: 'NEXSUZ navy', color: '#0863be' },
     { name: 'Blue', color: '#0a66c2' },
     { name: 'Green', color: '#1b8a4b' },
     { name: 'Purple', color: '#6a1b9a' },

@@ -23,14 +23,12 @@ export class PusherService {
   
   listenToEvents(callback: (data: any) => void) {
     this.channel.bind('my-event', (data: any) => {
-      console.log('📩 Event Received:', data);
       callback(data);
     });
   }
 
   listenForNotifications(callback: (data: any) => void) {
     this.channel.bind('my-event', (data: any) => {
-      console.log('📩 Event Received:', data);
       callback(data);
     });
   }

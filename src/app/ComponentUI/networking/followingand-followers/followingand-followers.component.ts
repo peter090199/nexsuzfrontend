@@ -45,7 +45,6 @@ export class FollowingandFollowersComponent implements OnInit {
 
   onHover(code: string): void {
     this.hoveredCode = code;
-    console.log('Hovered code:', code);
   }
 
 
@@ -55,7 +54,6 @@ AddConnect(code: any): void {
     return;
   }
 
-  console.log('Sending PUT for code:', code);
 
   this.clientsService.acceptFollowRequest(code).subscribe({
     next: (res:any) => {

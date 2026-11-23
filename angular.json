@@ -39,7 +39,10 @@
             ],
             "allowedCommonJsDependencies": [
               "nsfwjs",
-              "@tensorflow/tfjs"
+              "@tensorflow/tfjs",
+              "canvg",
+              "raf",
+              "core-js"
             ]
           },
           "configurations": {

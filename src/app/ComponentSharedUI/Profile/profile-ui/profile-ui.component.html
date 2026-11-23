@@ -49,16 +49,26 @@
           <div class="identity">
             <h1>{{ profiles.fname }} {{ profiles.lname }}</h1>
             <p class="headline" *ngIf="profiles.profession">{{ profiles.profession }}</p>
-            <p class="loc" *ngIf="profiles.current_state || profiles.current_location">
+            <p class="loc" *ngIf="profiles.role_code !== 'DEF-MASTERADMIN' && (profiles.current_state || profiles.current_location)">
               <mat-icon>location_on</mat-icon>
               {{ profiles.current_state ? profiles.current_state + (profiles.current_location ? ', ' : '') : '' }}{{ profiles.current_location }}
             </p>
           </div>
 
           <div class="button-gap">
+            <app-block-button *ngIf="canActOnProfile" [role]="profiles?.role_code" [code]="code" [name]="(profiles?.fname || '') + ' ' + (profiles?.lname || '')" variant="button" (blocked)="onBlocked()"></app-block-button>
+            <!-- your uploaded CV / resume, detected by the API (only ever sent for your own profile) -->
+            <a *ngIf="profiles?.resume?.has_resume" class="resume-chip"
+              [routerLink]="['/' + sharedRoutines.getRole(), 'settings']" [queryParams]="{ section: 'resume' }"
+              [attr.title]="'Manage your resumes'">
+              <mat-icon>description</mat-icon>
+              <span>{{ profiles.resume.default?.name }}</span>
+              <small>{{ profiles.resume.count > 1 ? '· default of ' + profiles.resume.count : '· uploaded' }}</small>
+            </a>
             <button *ngIf="profiles?.btnCurriculum === 1" mat-flat-button color="primary"
               (click)="feature.can('CREATE_RESUME') ? UserCV() : sharedRoutines.openUpgradeModal()">
-              <mat-icon>description</mat-icon> New Curriculum Vitae
+              <mat-icon>{{ profiles.cv_mode === 'upload' ? 'upload_file' : 'description' }}</mat-icon>
+              {{ profiles.cv_mode === 'upload' ? (profiles.resume?.has_resume ? 'Manage CV / resume' : 'Upload CV / resume') : 'New Curriculum Vitae' }}
             </button>
 
             <button mat-flat-button [color]="
@@ -67,7 +77,7 @@
                   : followStatus === 'pending'
                   ? 'warn'
                   : 'primary'
-              " *ngIf="currentUserCode !== code" (click)="AddFollow(code, profiles, followStatus)">
+              " *ngIf="canActOnProfile && feature.allows(FEATURE.NETWORK_FEED)" (click)="AddFollow(code, profiles, followStatus)">
 
               <mat-icon [ngSwitch]="followStatus">
                 <ng-container *ngSwitchCase="'accepted'">check_circle</ng-container>
@@ -114,9 +124,15 @@
         </section>
 
 
+        <!-- Admin / master admin accounts have no CV -->
+        <section class="nx-card no-cv" *ngIf="profiles?.cv_available === false">
+          <h2 class="nx-card-title"><mat-icon>admin_panel_settings</mat-icon> Staff account</h2>
+          <p class="about">This is an administrator account. Administrator accounts do not have a CV.</p>
+        </section>
+
         <!-- CV sections (LinkedIn style: stacked cards in the main column) -->
         <!-- Work experience -->
-        <section class="nx-card">
+        <section class="nx-card" *ngIf="profiles?.cv_available !== false">
           <h2 class="nx-card-title"><mat-icon>work</mat-icon> Experience</h2>
           <ng-container *ngIf="profiles?.lines?.employment?.length > 0; else noData">
             <article class="entry" *ngFor="let job of profiles.lines.employment">
@@ -132,7 +148,7 @@
         </section>
 
         <!-- Education -->
-        <section class="nx-card">
+        <section class="nx-card" *ngIf="profiles?.cv_available !== false">
           <h2 class="nx-card-title"><mat-icon>school</mat-icon> Education</h2>
           <ng-container *ngIf="profiles?.lines?.education?.length > 0; else noData">
             <article class="entry" *ngFor="let education of profiles.lines.education">
@@ -148,7 +164,7 @@
         </section>
 
         <!-- Skills -->
-        <section class="nx-card">
+        <section class="nx-card" *ngIf="profiles?.cv_available !== false">
           <h2 class="nx-card-title"><mat-icon>bolt</mat-icon> Skills</h2>
           <div class="chips" *ngIf="profiles?.lines?.skills?.length > 0; else noData">
             <span class="nx-badge" *ngFor="let skill of profiles.lines.skills">{{ skill.skills }}</span>
@@ -156,7 +172,7 @@
         </section>
 
         <!-- Trainings -->
-        <section class="nx-card">
+        <section class="nx-card" *ngIf="profiles?.cv_available !== false">
           <h2 class="nx-card-title"><mat-icon>model_training</mat-icon> Trainings</h2>
           <ng-container *ngIf="profiles?.lines?.training?.length > 0; else noData">
             <article class="entry" *ngFor="let training of profiles.lines.training">
@@ -171,7 +187,7 @@
         </section>
 
         <!-- Seminars -->
-        <section class="nx-card">
+        <section class="nx-card" *ngIf="profiles?.cv_available !== false">
           <h2 class="nx-card-title"><mat-icon>groups</mat-icon> Seminars</h2>
           <ng-container *ngIf="profiles?.lines?.seminar?.length > 0; else noData">
             <article class="entry" *ngFor="let seminar of profiles.lines.seminar">
@@ -186,7 +202,7 @@
         </section>
 
         <!-- Certificates -->
-        <section class="nx-card">
+        <section class="nx-card" *ngIf="profiles?.cv_available !== false">
           <h2 class="nx-card-title"><mat-icon>workspace_premium</mat-icon> Certificates</h2>
           <ng-container *ngIf="profiles?.lines?.certificate?.length > 0; else noData">
             <article class="entry" *ngFor="let certificates of profiles.lines.certificate">
