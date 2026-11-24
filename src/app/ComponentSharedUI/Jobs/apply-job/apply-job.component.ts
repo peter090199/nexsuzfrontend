@@ -363,6 +363,7 @@ import { SharedRoutinesService } from 'src/app/services/Function/shared-routines
 import { UserResumeService, UserResume } from 'src/app/services/user-resume.service';
 import { FeatureService } from 'src/app/services/AccountPlan/feature.service';
 import { FEATURE } from 'src/app/services/AccountPlan/feature-access.map';
+import { CountryDial, PhoneSplit, buildCountryDials, cleanPhone, countryLabel, dialDigits, splitPhone, tidyNational, withoutRepeatedDial } from './phone-split';
 
 @Component({
   selector: 'app-apply-job',
@@ -389,6 +390,9 @@ export class ApplyJobComponent implements OnInit, OnDestroy {
   countryCodes: { label: string; value: string }[] = [];
   countryControl: FormControl = new FormControl('');
   filteredCountryCodes!: Observable<{ label: string; value: string }[]>;
+  /** the country list with ISO, dial code and name: what the profile's phone number is matched against */
+  countryDials: CountryDial[] = [];
+  private phoneMatched = false;
 
   private _onDestroy = new Subject<void>();
 
@@ -427,7 +431,7 @@ export class ApplyJobComponent implements OnInit, OnDestroy {
 
     this.loadCountryCodes();
     this.loadProfile();
-    this.loadDefaultResume();
+    this.loadSavedResumes();
 
     if (this.transNo) {
       this.fetchJobPosting(this.transNo);
@@ -526,6 +530,7 @@ export class ApplyJobComponent implements OnInit, OnDestroy {
             email: profile.email ?? '',
             phone_number: profile.contact_no ?? ''
           });
+          this.matchProfilePhone();          // splits it into country code + number as soon as the country list is also here
         }
       },
       error: (err: any) => {
@@ -550,6 +555,8 @@ export class ApplyJobComponent implements OnInit, OnDestroy {
           label: `${code} (+${dial})`,
           value: `+${dial}`
         }));
+        this.countryDials = buildCountryDials(res.phones, res.names);
+        this.matchProfilePhone();
       },
       error: (err: any) => {
         this.countryCodes = [];
@@ -575,38 +582,103 @@ export class ApplyJobComponent implements OnInit, OnDestroy {
       this.personalForm.patchValue({
         country_code: found.value.replace('+', '')
       });
+      this.tidyPhone();           // the number may repeat the code or start with a trunk 0
     }
   }
 
   // =========================
+  // COUNTRY CODE + PHONE NUMBER THAT MATCH
+  // =========================
+  /**
+   * The profile keeps one string ("+639171234567", "09171234567"). Split it once, when both the profile and the country list have loaded:
+   * the country shows in the code selector and the number box holds only the national number, so the two always agree.
+   */
+  private matchProfilePhone(): void {
+    if (this.phoneMatched || !this.profiles || !this.countryDials.length) { return; }
+    this.phoneMatched = true;
+    const raw = this.profiles.contact_no;
+    if (!raw) { return; }
+    this.applyPhone(splitPhone(String(raw), this.countryDials, this.profiles.home_country || this.profiles.current_location));
+  }
+
+  private applyPhone(s: PhoneSplit): void {
+    if (s.country) {
+      this.personalForm.patchValue({ country_code: s.country.dial });
+      this.countryControl.setValue(countryLabel(s.country), { emitEvent: false });
+    }
+    this.personalForm.patchValue({ phone_number: s.national });
+  }
+
+  /**
+   * Make the two fields agree. An international number typed or pasted in the phone box ("+63 917 123 4567") moves its code to the
+   * selector; a repeated country code and a trunk "0" are dropped. Runs when the box loses focus, when a country is chosen, and
+   * once more just before the application is sent.
+   */
+  tidyPhone(): void {
+    const raw = String(this.personalForm.get('phone_number')?.value ?? '');
+    if (!raw.trim()) { return; }
+    const cc = String(this.personalForm.get('country_code')?.value ?? '');
+    const cleaned = cleanPhone(raw);
+
+    if (cleaned.startsWith('+') && this.countryDials.length) {
+      const s = splitPhone(cleaned, this.countryDials, this.profiles?.home_country || this.profiles?.current_location);
+      if (s.country) { this.applyPhone(s); return; }
+    }
+    const digits = tidyNational(withoutRepeatedDial(cleaned.replace(/\D/g, ''), cc), cc);
+    if (digits !== raw) { this.personalForm.patchValue({ phone_number: digits }); }
+  }
+  // =========================
   // FILE UPLOAD
   // =========================
-  // ---- the resume saved in Settings > Resume / CV (the default one is used unless a different file is chosen) ----
-  defaultResume: UserResume | null = null;
-  useDefaultResume = false;
-  /** the default resume is a Word file: it cannot go with an application, so a PDF is asked for */
-  defaultResumeIsWord = false;
+  // ---- the CVs saved in Settings > Resume / CV: exactly ONE is chosen for this application (or a new PDF is uploaded instead) ----
+  /** every saved CV, the default first (the API's order) */
+  savedResumes: UserResume[] = [];
+  /** the saved CV chosen for this application; null when a new PDF was picked (or nothing yet) */
+  selectedResumeId: number | null = null;
+  resumesLoading = false;
+  /** the CV being opened right now (its buttons wait) */
+  openingResumeId: number | null = null;
 
-  private loadDefaultResume(): void {
-    // saved resumes are a plan feature: without it there is nothing to load (and the API would refuse), so the applicant uploads a PDF
+  get selectedResume(): UserResume | null { return this.savedResumes.find(r => r.id === this.selectedResumeId) || null; }
+
+  /** only a PDF can be sent with an application (the API refuses a Word file too) */
+  canSend(r: UserResume): boolean { return r.type === 'pdf'; }
+
+  /** what the Review step shows for the CV */
+  get reviewCv(): string {
+    if (this.selectedResume) { return `${this.selectedResume.name} (saved CV)`; }
+    if (this.selectedFile) { return `${this.selectedFile.name} (new upload)`; }
+    return 'No CV selected';
+  }
+
+  sizeText(bytes: number): string {
+    if (!bytes) { return ''; }
+    return bytes >= 1048576 ? (bytes / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(bytes / 1024)) + ' KB';
+  }
+
+  private loadSavedResumes(): void {
+    // saved CVs are a plan feature: without it there is nothing to load (and the API would refuse), so the applicant uploads a PDF
     if (!this.planFeatures.allows(FEATURE.CREATE_RESUME)) { return; }
+    this.resumesLoading = true;
     this.resumeSvc.list().subscribe({
       next: (res) => {
-        const d = (res?.data || []).find(r => r.is_default) || null;
-        // only a PDF can be sent to a recruiter: a Word default is not used (the server refuses it too)
-        this.defaultResumeIsWord = !!d && d.type !== 'pdf';
-        this.defaultResume = d && d.type === 'pdf' ? d : null;
-        if (this.defaultResume && !this.selectedFile) { this.applyDefaultResume(); }
+        this.resumesLoading = false;
+        this.savedResumes = res?.data || [];
+        // the default is chosen to start with (a Word default can't be sent, so the first PDF is); the applicant can pick any other
+        const start = this.savedResumes.find(r => r.is_default && this.canSend(r)) || this.savedResumes.find(r => this.canSend(r)) || null;
+        if (start && !this.selectedFile && this.selectedResumeId === null) { this.chooseResume(start.id); }
       },
-      error: () => { /* no saved resume (or offline): the applicant simply uploads one */ }
+      error: () => { this.resumesLoading = false; /* no saved CV (or offline): the applicant simply uploads one */ }
     });
   }
 
-  private applyDefaultResume(): void {
-    if (!this.defaultResume) { return; }
-    this.useDefaultResume = true;
+  /** choose ONE saved CV: a file picked for upload is dropped, so only one CV goes with the application */
+  chooseResume(id: number): void {
+    const r = this.savedResumes.find(x => x.id === id);
+    if (!r || !this.canSend(r)) { return; }
+    this.selectedResumeId = id;
     this.selectedFile = null;
-    this.resumeName = this.defaultResume.name;
+    this.resumeName = r.name;
     this.fileError = null;
     const c = this.imageForm.get('resume');
     c?.clearValidators();
@@ -614,8 +686,33 @@ export class ApplyJobComponent implements OnInit, OnDestroy {
     c?.updateValueAndValidity();
   }
 
-  /** go back to the saved default after choosing a different file */
-  switchToDefaultResume(): void { this.applyDefaultResume(); }
+  /** open a saved CV in a new tab. It is fetched with the sign-in header from the API of the current environment (local or production). */
+  previewResume(r: UserResume): void { this.openResume(r, false); }
+
+  downloadResume(r: UserResume): void { this.openResume(r, true); }
+
+  private openResume(r: UserResume, download: boolean): void {
+    if (this.openingResumeId !== null) { return; }
+    this.openingResumeId = r.id;
+    this.resumeSvc.file(r.id).subscribe({
+      next: blob => {
+        this.openingResumeId = null;
+        const url = URL.createObjectURL(blob);
+        if (!download && r.type === 'pdf') {
+          window.open(url, '_blank', 'noopener');
+        } else {
+          const a = document.createElement('a');
+          a.href = url; a.download = r.name; a.rel = 'noopener';
+          document.body.appendChild(a); a.click(); a.remove();
+        }
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      },
+      error: () => {
+        this.openingResumeId = null;
+        this.notificationService.toastrError('The CV could not be opened. It may have been removed.');
+      }
+    });
+  }
 
   onUploadResume(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
@@ -629,7 +726,7 @@ export class ApplyJobComponent implements OnInit, OnDestroy {
     this.fileError = null;
     this.selectedFile = file;
     this.resumeName = file.name;
-    this.useDefaultResume = false;
+    this.selectedResumeId = null;                 // a new PDF replaces the saved CV chosen before: one CV per application
     if (this.allowCv) { this.imageForm.get('resume')?.setValidators(Validators.required); }
 
     this.imageForm.patchValue({ resume: file });
@@ -743,18 +840,20 @@ export class ApplyJobComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (this.allowCv && !this.selectedFile && !this.useDefaultResume) {
-      this.notificationService.toastrError('Please upload your resume.');
+    if (this.allowCv && !this.selectedFile && this.selectedResumeId === null) {
+      this.notificationService.toastrError('Select one of your saved CVs or upload a PDF.');
       return;
     }
     if (!this.areAllQuestionsAnswered()) {
       this.notificationService.toastrError('Please answer all questions.');
       return;
     }
+    this.tidyPhone();
     this.loading = true;
     const formData = new FormData();
+    // exactly ONE CV: the new PDF, or the id of one saved CV (the API uses that CV's own file and checks it is yours)
     if (this.selectedFile) { formData.append('resume_pdf', this.selectedFile); }
-    else if (this.useDefaultResume && this.allowCv) { formData.append('use_default_resume', '1'); }
+    else if (this.selectedResumeId !== null && this.allowCv) { formData.append('resume_id', String(this.selectedResumeId)); }
     formData.append('job_name', this.job?.job_name || '');
     formData.append('email', this.personalForm.get('email')?.value || '');
     formData.append('country_code', this.personalForm.get('country_code')?.value || '');

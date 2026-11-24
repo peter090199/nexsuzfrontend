@@ -85,4 +85,23 @@ export class SecurityRolesService {
     return this.http.post(`${_url}saveAccessMenu`,data, { headers });
   }
 
+
+  // ---------- Role & permission management (DEF-MASTERADMIN only: the API enforces it) ----------
+  private admin<T = any>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, body?: any, params?: Record<string, any>): Observable<T> {
+    let httpParams = new HttpParams();
+    Object.entries(params || {}).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== '') { httpParams = httpParams.set(k, String(v)); } });
+    return this.http.request<T>(method, `${_url}security-admin/${path}`, { body, params: httpParams, headers: this.createHeaders() });
+  }
+
+  adminStats(): Observable<any> { return this.admin('GET', 'stats'); }
+  adminRoles(): Observable<any> { return this.admin('GET', 'roles'); }
+  createRole(body: { rolecode: string; description: string }): Observable<any> { return this.admin('POST', 'roles', body); }
+  updateRole(id: number, body: { rolecode: string; description: string }): Observable<any> { return this.admin('PUT', `roles/${id}`, body); }
+  deleteRole(id: number): Observable<any> { return this.admin('DELETE', `roles/${id}`); }
+  rolePermissions(id: number): Observable<any> { return this.admin('GET', `roles/${id}/permissions`); }
+  saveRolePermissions(id: number, items: any[]): Observable<any> { return this.admin('PUT', `roles/${id}/permissions`, { items }); }
+  adminUsers(q: { search?: string; role?: string; page?: number; per_page?: number }): Observable<any> { return this.admin('GET', 'users', undefined, q); }
+  assignRole(codes: (string | number)[], role_code: string): Observable<any> { return this.admin('POST', 'users/assign', { codes, role_code }); }
+  removeUserRole(code: string | number): Observable<any> { return this.admin('DELETE', `users/${code}/role`); }
+  auditLog(page = 1, per_page = 25): Observable<any> { return this.admin('GET', 'audit', undefined, { page, per_page }); }
 }

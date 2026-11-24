@@ -163,6 +163,10 @@ export class EchoService {
   // Posts
   private newPostSubject = new Subject<any>();
   newPost$ = this.newPostSubject.asObservable();
+  private announcementSubject = new Subject<any>();
+  /** an announcement was published (a signal only: ask the API what you may see) */
+  announcement$ = this.announcementSubject.asObservable();
+  private postsListening = false;
 
   constructor(private http: HttpClient) {
     // Get user ID from session
@@ -221,9 +225,15 @@ export class EchoService {
 
   // -------------------- Posts --------------------
   listenToPosts() {
+    if (this.postsListening) { return; }          // several screens call this: listen once
+    this.postsListening = true;
+    // the leading dot: these events set broadcastAs(), so Echo must not add its App.Events namespace in front of the name
     this.echo.channel('posts')
-      .listen('NewPostCreated', (e: any) => {
+      .listen('.NewPostCreated', (e: any) => {
         this.newPostSubject.next(e.post);
+      })
+      .listen('.AnnouncementPublished', (e: any) => {
+        this.announcementSubject.next(e.announcement);
       });
   }
 

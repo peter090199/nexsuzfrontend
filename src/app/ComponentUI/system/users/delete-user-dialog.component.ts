@@ -6,7 +6,7 @@ interface Step { group: string; label: string; table: string; rows: number; }
 interface Preview {
   user: { code: number; fullname: string; email: string; role_code: string };
   can_delete: boolean; reason: string | null;
-  rows_removed?: number; steps?: Step[]; others_applications?: number; jobs?: number; files?: number;
+  rows_removed?: number; rows_anonymized?: number; steps?: Step[]; others_applications?: number; jobs?: number; files?: number;
 }
 
 /**
@@ -30,7 +30,7 @@ interface Preview {
         <p class="ok-msg"><mat-icon>check_circle</mat-icon> {{ d.message }}</p>
         <ul class="facts">
           <li><b>{{ d.data.rows | number }}</b> records removed</li>
-          <li *ngIf="d.data.files"><b>{{ d.data.files }}</b> upload folder{{ d.data.files === 1 ? '' : 's' }} removed</li>
+          <li>Uploaded files are being removed from storage.</li>
           <li>Safety backup: <code>{{ d.backup.name }}</code> <small *ngIf="d.backup.reused">(made a few minutes ago)</small></li>
         </ul>
         <p class="hint">The backup is the only way to get this data back.</p>
@@ -60,14 +60,13 @@ interface Preview {
               made by other people</b> to those jobs will be deleted too.</span>
           </div>
 
-          <mat-checkbox [(ngModel)]="deleteFiles" [disabled]="working || !p.files">
-            Also delete their uploaded files ({{ p.files }} folder{{ p.files === 1 ? '' : 's' }}). Files are not in the database backup.
-          </mat-checkbox>
+          <p class="hint">Their uploaded files (CVs, photos, post and comment attachments) are removed from storage too, and cannot be restored from the database backup.
+            <ng-container *ngIf="p.rows_anonymized">{{ p.rows_anonymized }} subscription record{{ p.rows_anonymized === 1 ? ' is' : 's are' }} kept for financial records, with the person's identity removed.</ng-container></p>
 
           <div class="confirm">
             <p class="hint">A backup of the database is made first. If it fails, nothing is deleted.</p>
             <mat-form-field appearance="outline" class="w-100">
-              <mat-label>Type {{ p.user.email }} to confirm</mat-label>
+              <mat-label>Type DELETE to delete {{ p.user.fullname }} ({{ p.user.email }})</mat-label>
               <input matInput [(ngModel)]="typed" autocomplete="off" spellcheck="false" autocapitalize="off" [disabled]="working">
             </mat-form-field>
             <mat-form-field appearance="outline" class="w-100">
@@ -114,7 +113,6 @@ export class DeleteUserDialogComponent implements OnInit {
   error = '';
   typed = '';
   password = '';
-  deleteFiles = false;
 
   constructor(private users: UserServicesService, private ref: MatDialogRef<DeleteUserDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { user: { code: number | string; fullname: string } }) { }
@@ -140,16 +138,16 @@ export class DeleteUserDialogComponent implements OnInit {
     return Array.from(m.entries()).map(([name, rows]) => ({ name, rows })).filter(g => g.rows > 0);
   }
 
-  /** The email has to be typed back exactly (case aside) and a password given. */
+  /** DELETE has to be typed exactly and a password given. */
   get canDelete(): boolean {
     return !!this.preview && this.preview.can_delete && !this.working && !this.done
-      && this.typed.trim().toLowerCase() === (this.preview.user.email || '').toLowerCase() && this.password.length > 0;
+      && this.typed.trim() === 'DELETE' && this.password.length > 0;
   }
 
   remove(): void {
     if (!this.canDelete) { return; }
     this.working = true; this.error = '';
-    this.users.deleteUser(this.data.user.code, { password: this.password, confirm: this.typed.trim(), delete_files: this.deleteFiles }).subscribe({
+    this.users.deleteUser(this.data.user.code, { password: this.password, confirm: this.typed.trim() }).subscribe({
       next: r => { this.working = false; this.done = r; this.password = ''; this.typed = ''; },
       error: e => { this.working = false; this.error = this.messageOf(e, 'The account could not be deleted.'); },
     });

@@ -6,6 +6,8 @@ import { MatTableDataSource } from '@angular/material/table';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { DeleteUserDialogComponent } from './delete-user-dialog.component';
+import { AddAdminDialogComponent } from './add-admin-dialog.component';
+import { EditUserDialogComponent } from './edit-user-dialog.component';
 import { UsersUIComponent } from 'src/app/ComponentSharedUI/system/users-ui/users-ui.component';
 import { NotificationsService } from 'src/app/services/Global/notifications.service';
 import { UserServicesService } from 'src/app/services/MasterAdmin/user-services.service';
@@ -19,10 +21,14 @@ import { SharedRoutinesService } from 'src/app/services/Function/shared-routines
 export class UsersComponent implements OnInit, AfterViewInit {
   searchKey: string = '';
   placeHolder: string = 'Search';
+  private readonly baseColumns: string[] = ['photo', 'fullname', 'email', 'contactno', 'company', 'status', 'is_online'];
+  private readonly masterColumns: string[] = ['id', ...this.baseColumns, 'role_code', 'actions'];
 
-  displayedColumns: string[] = [
-    'id', 'photo', 'fullname', 'email', 'contactno', 'company', 'status', 'is_online', 'role_code', 'actions'
-  ];
+  /** The ID, Role and Actions columns exist only for DEF-MASTERADMIN (DEF-ADMIN sees the plain list). Fixed arrays, so the table doesn't re-render. */
+  get displayedColumns(): string[] {
+    return this.canManage ? this.masterColumns : this.baseColumns;
+  }
+
   dataSource = new MatTableDataSource<any>([]);
   isLoading = false;
 
@@ -58,7 +64,6 @@ export class UsersComponent implements OnInit, AfterViewInit {
   /** Why this row's Delete button is off (the API enforces the same rules), or '' when it is allowed. */
   deleteBlockedReason(user: any): string {
     if (this.isSelf(user)) { return "You can't delete your own account"; }
-    if (user?.role_code === 'DEF-ADMIN' || user?.role_code === 'DEF-MASTERADMIN') { return "Admin accounts can't be deleted here"; }
     return '';
   }
 
@@ -199,21 +204,18 @@ export class UsersComponent implements OnInit, AfterViewInit {
     });
   }
 
-  /** Edit user */
+  /** Edit an account's details. DEF-MASTERADMIN only (the API checks too); the table reloads after a save. */
   editUser(user: any): void {
-    const dialogConfig = new MatDialogConfig();
-    dialogConfig.disableClose = true;
-    dialogConfig.autoFocus = true;
-    dialogConfig.width = '600px';
-    dialogConfig.data = { user }; // pass selected user to dialog
+    if (!this.canManage) { return; }
+    this.dialog.open(EditUserDialogComponent, { width: '560px', maxWidth: '95vw', disableClose: true, autoFocus: false, data: { user } })
+      .afterClosed().subscribe(saved => { if (saved) { this.getUsers(); } });
+  }
 
-    const dialogRef = this.dialog.open(UsersUIComponent, dialogConfig);
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.getUsers(); // Refresh table after edit
-      }
-    });
+  /** Add a DEF-ADMIN account (master admin only). The table reloads when one was created. */
+  addAdmin(): void {
+    if (!this.canManage) { return; }
+    this.dialog.open(AddAdminDialogComponent, { width: '560px', maxWidth: '95vw', disableClose: true, autoFocus: false })
+      .afterClosed().subscribe(created => { if (created) { this.getUsers(); } });
   }
 
   /** Refresh table */

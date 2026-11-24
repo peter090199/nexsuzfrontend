@@ -20,6 +20,8 @@ export interface NotificationPrefs {
   friend_accepts: boolean;
   post_reactions: boolean;
   post_comments: boolean;
+  /** an administrator published an announcement */
+  announcements: boolean;
   // jobs
   job_applications: boolean;
   job_interviews: boolean;
@@ -43,6 +45,7 @@ export const DEFAULT_PREFS: NotificationPrefs = {
   friend_accepts: true,
   post_reactions: true,
   post_comments: true,
+  announcements: true,
   job_applications: true,
   job_interviews: true,
   job_status: true,

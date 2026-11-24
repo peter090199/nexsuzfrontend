@@ -51,8 +51,18 @@ export class UserServicesService   {
    * Delete an account and everything it created. DEF-MASTERADMIN only; the API also needs the admin's password and the
    * account's email typed back, and takes a safety backup first.
    */
-  deleteUser(code: number | string, body: { password: string; confirm: string; delete_files: boolean }): Observable<any> {
+  deleteUser(code: number | string, body: { password: string; confirm: string }): Observable<any> {
     return this.http.request<any>('DELETE', `${_url}users/${code}`, { body, headers: this.createHeaders() });
+  }
+
+  /** Add a DEF-ADMIN account. DEF-MASTERADMIN only: the API fixes the role and checks who is asking. */
+  addAdmin(body: { fname: string; lname: string; email: string; password: string; password_confirmation: string; contactno?: string; company?: string }): Observable<any> {
+    return this.http.post<any>(`${_url}users/admin`, body, { headers: this.createHeaders() });
+  }
+
+  /** Edit an account's contact details. DEF-MASTERADMIN only; the API never changes role, status, password or code. */
+  updateUserDetails(code: number | string, body: { fname: string; lname: string; email: string; contactno?: string; company?: string }): Observable<any> {
+    return this.http.patch<any>(`${_url}users/${code}`, body, { headers: this.createHeaders() });
   }
 
   saveSubmenu(data: any): Observable<any> {

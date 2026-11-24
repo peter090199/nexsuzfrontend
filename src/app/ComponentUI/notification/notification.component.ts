@@ -98,13 +98,14 @@ export class NotificationComponent implements OnInit {
       : a.type === 'job_application' ? ['/' + role + '/candidates']
       : a.type === 'job_interview' || a.type === 'job_status' || a.type === 'job_review' ? ['/' + role + '/applied-jobs']
       : a.type === 'friend_accept' && a.actor ? ['/' + role + '/profile', a.actor.code]
+      : a.type === 'announcement' ? ['/' + role + '/home']                       // announcements are at the top of the Home feed
       : ['/' + role + '/profile'];                                  // reactions and comments are on your own posts
     this.dialogRef?.close();
     this.router.navigate(target);
   }
 
   activityIcon(a: ActivityItem): string {
-    const icons: any = { friend_request: 'person_add', friend_accept: 'how_to_reg', reaction: 'thumb_up', comment: 'chat_bubble', job_application: 'work', job_interview: 'event', job_status: 'verified', job_review: 'rate_review' };
+    const icons: any = { announcement: 'campaign', friend_request: 'person_add', friend_accept: 'how_to_reg', reaction: 'thumb_up', comment: 'chat_bubble', job_application: 'work', job_interview: 'event', job_status: 'verified', job_review: 'rate_review' };
     return icons[a.type] || 'notifications';
   }
 

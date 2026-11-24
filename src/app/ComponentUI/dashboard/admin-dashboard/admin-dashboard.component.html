@@ -85,6 +85,9 @@
       </div>
     </div>
 
+    <!-- security overview: DEF-MASTERADMIN only (the API refuses everyone else too) -->
+    <app-security-overview *ngIf="isMaster"></app-security-overview>
+
     <div class="grid">
 
       <!-- registrations -->

@@ -57,6 +57,8 @@ export class SettingsComponent implements OnInit {
   /** userprofiles row exists (saveProfile can only update an existing row without a new photo) */
   profileExists = false;
 
+  /** CV features (CV privacy toggles, CV page links) exist for job seekers only: DEF-ADMIN, DEF-CLIENT and DEF-MASTERADMIN have no CV. */
+  get isJobSeeker(): boolean { return this.role === 'DEF-USERS'; }
   /** Administrators have no CV: they fill in their basic profile here without one. */
   get isAdminRole(): boolean { return this.role === 'DEF-ADMIN' || this.role === 'DEF-MASTERADMIN'; }
 
@@ -633,6 +635,36 @@ export class SettingsComponent implements OnInit {
       this.alert.toastrError(this.firstMessage(err?.error?.message) || 'Something went wrong while uploading the cover photo.');
     } finally {
       this.coverUploading = false;
+      event.target.value = '';
+    }
+  }
+
+  /** Profile photo for accounts without a CV page (DEF-ADMIN, DEF-MASTERADMIN, DEF-CLIENT): uploads straight from Settings. */
+  photoUploading = false;
+  async uploadProfilePhotoFile(event: any): Promise<void> {
+    const file: File | undefined = event.target.files?.[0];
+    if (!file) return;
+    if (!/^image\/(jpeg|png|gif|webp)$/.test(file.type)) { this.alert.toastrError('The photo must be a JPG, PNG, GIF or WEBP image.'); event.target.value = ''; return; }
+    if (file.size > 5 * 1024 * 1024) { this.alert.toastrError('The photo must be 5 MB or smaller.'); event.target.value = ''; return; }
+
+    const formData = new FormData();
+    formData.append('photo', file);
+    this.photoUploading = true;
+    try {
+      const res: any = await firstValueFrom(this.http.post<any>(`${_url}uploadProfilePhoto`, formData, {
+        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` }
+      }));
+      if (res.success) {
+        this.alert.toastrSuccess(res.message);
+        const u: any = await firstValueFrom(this.authService.getProfilecode());
+        this.users = { ...this.users, ...(u?.message || {}) };
+      } else {
+        this.alert.toastrError(this.firstMessage(res.message) || 'Failed to upload the profile photo');
+      }
+    } catch (err: any) {
+      this.alert.toastrError(this.firstMessage(err?.error?.message) || 'Something went wrong while uploading the profile photo.');
+    } finally {
+      this.photoUploading = false;
       event.target.value = '';
     }
   }

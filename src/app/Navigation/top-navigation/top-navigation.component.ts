@@ -132,7 +132,7 @@ export class TopNavigationComponent implements OnInit, OnDestroy {
     this.prefsSub = this.prefs.prefs$.subscribe(() => this.updateTitle(this.bellCount));
     // the server counts only the activity types switched on, so re-ask as soon as one of those switches changes
     this.prefsSub.add(this.prefs.prefs$.pipe(
-      map(p => [p.friend_requests, p.friend_accepts, p.post_reactions, p.post_comments, p.job_applications, p.job_interviews, p.job_status, p.job_reviews].join()),
+      map(p => [p.friend_requests, p.friend_accepts, p.post_reactions, p.post_comments, p.announcements, p.job_applications, p.job_interviews, p.job_status, p.job_reviews].join()),
       distinctUntilChanged(),
       skip(1)
     ).subscribe(() => this.delivery.refreshActivity()));

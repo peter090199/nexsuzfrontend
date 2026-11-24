@@ -16,4 +16,15 @@ describe('SharedRoutinesService', () => {
   it('should be created', () => {
     expect(service).toBeTruthy();
   });
+
+  it('canManageSubscriptions is true only for DEF-ADMIN and DEF-MASTERADMIN', () => {
+    const was = sessionStorage.getItem('role');
+    for (const [role, expected] of [['DEF-ADMIN', true], ['DEF-MASTERADMIN', true], ['DEF-USERS', false], ['DEF-CLIENT', false], ['DEF-SUPERADMIN', false]] as [string, boolean][]) {
+      sessionStorage.setItem('role', role);
+      expect(service.canManageSubscriptions()).withContext(role).toBe(expected);
+    }
+    sessionStorage.removeItem('role');
+    expect(service.canManageSubscriptions()).toBeFalse();
+    if (was) { sessionStorage.setItem('role', was); }
+  });
 });

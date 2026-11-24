@@ -28,9 +28,9 @@ export class AccountTypePlanComponent implements OnInit {
     private notify: NotificationsService
   ) { }
 
-  /** UI only. The Laravel API enforces DEF-MASTERADMIN on every management route. */
-  get isMasterAdmin(): boolean {
-    return this.sharedService.getisMasterAdmin();
+  /** DEF-ADMIN and DEF-MASTERADMIN manage plans. UI only: the Laravel API enforces the same on every management route. */
+  get canManagePlans(): boolean {
+    return this.sharedService.canManageSubscriptions();
   }
 
   /** Only job seekers (DEF-USERS) and recruiters (DEF-CLIENT) can subscribe; admins and master admins cannot. */
@@ -84,6 +84,23 @@ export class AccountTypePlanComponent implements OnInit {
     this.router.navigate(['/' + this.sharedService.getRole(), 'checkout', plan.planId]);
   }
 
+  /** this account's subscription summary from the server: status, price, dates, features, usage (null for admins) */
+  subscription: any | null = null;
+
+  /** "used / limit" text for one usage row */
+  usageText(u: any): string {
+    return u.unlimited ? `${u.used} used · Unlimited` : u.limit != null ? `${u.used} / ${u.limit}` : `${u.used} used`;
+  }
+
+  usagePercent(u: any): number {
+    return !u.unlimited && u.limit ? Math.min(100, Math.round((u.used / u.limit) * 100)) : 0;
+  }
+
+  /** Upgrade: jump to the plan cards (the existing checkout flow starts from a card's button). */
+  scrollToPlans(): void {
+    document.getElementById('plan-cards')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   /** set when the plan list could not be loaded (shows a message with Retry instead of an empty page) */
   loadFailed = false;
   /** plans whose "not included" features are expanded */
@@ -131,12 +148,13 @@ export class AccountTypePlanComponent implements OnInit {
 
     // job seekers and recruiters: the plans of their own account type, with features and limits exactly as the master
     // admin set them up (one call, instead of a plan list plus one request per plan)
-    if (this.canSubscribe && !this.isMasterAdmin) {
+    if (this.canSubscribe && !this.canManagePlans) {
       this.userPlanService.overview().subscribe({
         next: (res: any) => {
           this.plans = (res?.data?.plans || []).map((p: any) => ({
             ...p, recordStatus: 'active', tagmonthYear: p.billing === 'yearly' ? 'Yearly' : 'Monthly',
           }));
+          this.subscription = res?.data?.subscription || null;
           this.isLoading = false;
         },
         error: () => { this.isLoading = false; this.loadFailed = true; this.plans = []; }
@@ -146,7 +164,7 @@ export class AccountTypePlanComponent implements OnInit {
 
     // a master admin manages every plan; everyone else sees the plans for their own account type
     const audience = this.canSubscribe ? this.sharedService.getRole() : undefined;
-    this.userPlanService.getAll(this.isMasterAdmin, audience).subscribe({
+    this.userPlanService.getAll(this.canManagePlans, audience).subscribe({
       next: (res: any) => {
 
         if (!res.success) {
@@ -194,7 +212,7 @@ export class AccountTypePlanComponent implements OnInit {
   }
 
   /* =====================================
-     DEF-MASTERADMIN plan management
+     DEF-ADMIN / DEF-MASTERADMIN plan management
   ===================================== */
 
   private reloadAfter(ok: any): void {
@@ -281,7 +299,7 @@ export class AccountTypePlanComponent implements OnInit {
 
   @HostListener('document:contextmenu', ['$event'])
   onRightClick(event: MouseEvent): void {
-    if (this.isMasterAdmin) { return; }
+    if (this.canManagePlans) { return; }
     event.preventDefault();
   }
 
@@ -292,7 +310,7 @@ export class AccountTypePlanComponent implements OnInit {
   @HostListener('document:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent): void {
 
-    if (this.isMasterAdmin) { return; }
+    if (this.canManagePlans) { return; }
 
     const key = event.key.toUpperCase();
 

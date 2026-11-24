@@ -12,11 +12,12 @@
     <span>{{ loadError }}</span>
     <button mat-stroked-button color="primary" (click)="loadPosts()">Try again</button>
   </div>
-  <div class="feed-state" *ngIf="!isLoadingPosts && !loadError && !posts.length">
-    <mat-icon>forum</mat-icon>
-    <strong>No posts yet</strong>
-    <span>Share an update or connect with people to see posts here.</span>
-  </div>
+  <!-- the same card as "Start a post" (the global nx-card look), centred, and it scales from phone to desktop -->
+  <mat-card class="feed-empty nx-card" *ngIf="!isLoadingPosts && !loadError && !posts.length" role="status" data-testid="no-posts">
+    <div class="empty-icon" aria-hidden="true"><mat-icon>forum</mat-icon></div>
+    <h3>No posts yet</h3>
+    <p>Share an update or connect with people to see posts here.</p>
+  </mat-card>
 
   <mat-card *ngFor="let post of posts">
     <div class="post-header">

@@ -7,6 +7,11 @@
       </button>
     </mat-form-field>
 
+    <!-- DEF-MASTERADMIN only (the API enforces it too): opens the Add DEF-ADMIN form -->
+    <button type="button" mat-raised-button color="accent" *ngIf="canManage" data-testid="add-admin" (click)="addAdmin()">
+      <mat-icon>person_add</mat-icon> Add DEF-ADMIN
+    </button>
+
     <button type="button" mat-raised-button color="primary" (click)="viewUsers()">
       <mat-icon>refresh</mat-icon> View
     </button>
@@ -104,6 +109,12 @@
       <mat-cell *matCellDef="let user">
         <!-- Activate / Deactivate: DEF-MASTERADMIN only (the API enforces it too) -->
         <ng-container *ngIf="canManage">
+          <!-- Edit details: DEF-MASTERADMIN only (the API enforces it too) -->
+          <button mat-icon-button color="primary" class="act-btn" data-testid="edit-user" matTooltip="Edit"
+            [disabled]="busyCode === user.code" [attr.aria-label]="'Edit ' + user.fullname" (click)="editUser(user)">
+            <mat-icon>edit</mat-icon>
+          </button>
+
           <button mat-icon-button *ngIf="user.status === 'A'" color="warn" class="act-btn"
             [disabled]="isSelf(user) || busyCode === user.code"
             [matTooltip]="isSelf(user) ? 'You can\'t deactivate your own account' : 'Deactivate'"

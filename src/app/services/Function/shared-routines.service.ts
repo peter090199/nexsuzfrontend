@@ -252,6 +252,12 @@ export class SharedRoutinesService {
     return [`/${role}/profile`, user.code];
   }
 
+  /** DEF-ADMIN and DEF-MASTERADMIN manage subscriptions (plans, features, assignments, subscribers, reports). UI only: the API enforces it. */
+  canManageSubscriptions(): boolean {
+    const r = sessionStorage.getItem('role');
+    return r === 'DEF-ADMIN' || r === 'DEF-MASTERADMIN';
+  }
+
   getisMasterAdmin(): boolean {
     return sessionStorage.getItem('role') === 'DEF-MASTERADMIN';
   }

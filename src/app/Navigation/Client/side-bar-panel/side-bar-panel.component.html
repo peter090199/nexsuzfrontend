@@ -185,7 +185,7 @@
   </button>
 </mat-menu>
 <!-- ================= MOBILE TAB BAR (Ionic style): first 4 menu items + More ================= -->
-<nav class="tab-bar" *ngIf="isMobile" aria-label="Primary">
+<nav class="tab-bar" *ngIf="isMobile" aria-label="Primary" [class.behind-drawer]="sidebarOpen" [attr.aria-hidden]="sidebarOpen ? 'true' : null" data-testid="tab-bar">
   <ng-container *ngFor="let item of tabItems; trackBy: trackByItem">
     <a *ngIf="!item.submenus?.length; else tabParent" class="tab-btn" [routerLink]="item.route"
       routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" [attr.aria-label]="item.label">

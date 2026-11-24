@@ -1,0 +1,28 @@
+.sec { max-width: 1240px; }
+.sec-tabs { margin-top: 4px; }
+.sec-tabs mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+.search-div { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; margin: 14px 0 8px; }
+.grow { flex: 1 1 auto; }
+.hint { font-size: 12px; color: #6b7a99; }
+.sel { font-size: 12px; color: #0a4a94; font-weight: 600; }
+
+.table-wrap { width: 100%; overflow-x: auto; border-radius: 8px; }
+.table-wrap mat-table { min-width: 720px; }
+.no-data { justify-content: center; color: #8a96ab; }
+.hide { display: none; }
+
+.chip { display: inline-block; margin-left: 8px; font-size: 10.5px; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: #e7f6ee; color: #1b8a4b; }
+.chip.sys { background: #e8f1fb; color: #0a4a94; }
+.chip.me { background: #fff4e0; color: #8a5300; }
+.chip.role { margin-left: 0; background: #eef2f8; color: #3b4a68; }
+.chip.off { background: #fdecea; color: #b42318; }
+
+.counts { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 4px; }
+.count { display: inline-flex; align-items: baseline; gap: 8px; border: 1px solid #d5deec; background: #fff; color: #3b4a68; border-radius: 12px; padding: 8px 14px; cursor: pointer; font: inherit; font-size: 12px; transition: background-color .15s ease, border-color .15s ease; }
+.count strong { font-size: 18px; color: #14243f; }
+.count:hover { background: #f3f7fc; }
+.count.on { background: #e8f1fb; border-color: #0a66c2; color: #0a4a94; }
+
+.state.error { display: flex; align-items: center; gap: 8px; margin: 8px 0; padding: 10px 14px; border-radius: 10px; background: #fdecea; color: #b42318; font-size: 13px; }
+.aic { margin-right: 8px; color: #0a4a94; }

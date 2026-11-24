@@ -149,6 +149,7 @@ export const routes: Routes = [
     data: { roles: ['DEF-ADMIN'] },
     children: [
       { path: 'admin-dashboard', component: AdminDashboardComponent },
+      { path: 'search', component: JobsectionComponent },
       { path: 'home', component: HomeUIComponent },
       { path: 'message', component: MessagesComponent },
       { path: 'settings', component: SettingsComponent },
@@ -162,6 +163,13 @@ export const routes: Routes = [
       { path: 'clientplan', component: ClientPlanComponent },
       { path: 'plancategory', component: CategoryPlanComponent },
       { path: 'featuresplan', component: FeaturesPlanListComponent },
+      // SUBSCRIPTION MANAGEMENT
+      { path: 'subscriptionplans', component: SubscriptionPlansComponent },
+      { path: 'featuremanagement', component: FeatureManagementComponent },
+      { path: 'planfeatureassignment', component: PlanFeatureAssignmentComponent },
+      { path: 'usersubscriptionmonitoring', component: UserSubscriptionMonitoringComponent },
+      { path: 'subscriptionreports', component: SubscriptionReportsComponent },
+      { path: 'reports', component: ReportsComponent },
     ]
   },
 

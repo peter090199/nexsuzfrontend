@@ -39,7 +39,7 @@
           <strong>Complete your profile first.</strong>
           <span>These settings are saved to your profile, which you haven't created yet.</span>
         </div>
-        <button mat-flat-button color="primary" (click)="goToCV()">Complete profile</button>
+        <button mat-flat-button color="primary" *ngIf="isJobSeeker" (click)="goToCV()">Complete profile</button>
       </div>
 
       <div class="st-notice" *ngIf="!isLoading && !loadError && hasProfileToEdit && !features.allows(FEATURE.CREATE_PROFILE) && (activeSection === 'account' || activeSection === 'privacy')" role="status">
@@ -51,11 +51,11 @@
         <button mat-flat-button color="primary" type="button" (click)="select('plan')">View plans</button>
       </div>
 
-      <!-- Administrators: no CV is needed, the first save creates the basic profile -->
+      <!-- Administrators: the first save creates the basic profile -->
       <div class="st-notice" *ngIf="!isLoading && !loadError && isAdminRole && !profileExists && (activeSection === 'account' || activeSection === 'privacy')">
         <mat-icon>info_outline</mat-icon>
         <div>
-          <strong>No CV needed.</strong>
+          <strong>Complete your profile.</strong>
           <span>Fill in your details and save. Your basic profile is created the first time you save.</span>
         </div>
       </div>
@@ -201,7 +201,7 @@
 
       <!-- PRIVACY -->
       <ng-container *ngSwitchCase="'privacy'">
-        <form [formGroup]="privacyForm" (ngSubmit)="savePrivacy()">
+        <form [formGroup]="privacyForm" (ngSubmit)="savePrivacy()" *ngIf="isJobSeeker">
           <mat-card class="st-card">
             <h3 class="st-card-title">What appears on my CV</h3>
             <div class="st-toggle">
@@ -233,10 +233,19 @@
         </form>
         <mat-card class="st-card">
           <h3 class="st-card-title">Profile photos</h3>
-          <p class="st-hint">Update your profile picture from your CV page, or change your cover photo.</p>
+          <p class="st-hint" *ngIf="isJobSeeker">Update your profile picture from your CV page, or change your cover photo.</p>
+          <p class="st-hint" *ngIf="!isJobSeeker">Change your profile photo or your cover photo (JPG, PNG, GIF or WEBP, up to 5 MB).</p>
+          <!-- the pickers the two buttons open -->
+          <input #coverInput type="file" accept="image/jpeg,image/png,image/gif,image/webp" hidden (change)="uploadCoverPhoto($event)" data-testid="cover-input" />
+          <input #photoInput type="file" accept="image/jpeg,image/png,image/gif,image/webp" hidden (change)="uploadProfilePhotoFile($event)" data-testid="photo-input" />
           <div class="st-actions start">
-            <button mat-stroked-button color="primary" (click)="uploadPic()"><mat-icon>account_circle</mat-icon> Edit profile photo</button>
-            <button mat-stroked-button color="primary" (click)="coverInput.click()"><mat-icon>photo_camera</mat-icon> Change cover photo</button>
+            <button mat-stroked-button color="primary" *ngIf="isJobSeeker" (click)="uploadPic()"><mat-icon>account_circle</mat-icon> Edit profile photo</button>
+            <button mat-stroked-button color="primary" *ngIf="!isJobSeeker" (click)="photoInput.click()" [disabled]="photoUploading" data-testid="photo-btn">
+              <mat-icon>account_circle</mat-icon> {{ photoUploading ? 'Uploading…' : 'Change profile photo' }}
+            </button>
+            <button mat-stroked-button color="primary" (click)="coverInput.click()" [disabled]="coverUploading" data-testid="cover-btn">
+              <mat-icon>photo_camera</mat-icon> {{ coverUploading ? 'Uploading…' : 'Change cover photo' }}
+            </button>
           </div>
         </mat-card>
       </ng-container>
@@ -390,6 +399,14 @@
               <div class="st-toggle-text"><strong>Post comments and replies</strong><span>When someone comments on your post or replies to your comment.</span></div>
               <mat-slide-toggle color="primary" [checked]="np.post_comments" (change)="setPref('post_comments', $event.checked)" aria-label="Post comments and replies"></mat-slide-toggle>
             </div>
+            <ng-container *ngIf="!isAdminRole">
+              <mat-divider></mat-divider>
+              <div class="st-toggle">
+                <mat-icon>campaign</mat-icon>
+                <div class="st-toggle-text"><strong>Announcements</strong><span>When an administrator publishes an announcement.</span></div>
+                <mat-slide-toggle color="primary" [checked]="np.announcements" (change)="setPref('announcements', $event.checked)" aria-label="Announcements" data-testid="pref-announcements"></mat-slide-toggle>
+              </div>
+            </ng-container>
             <mat-divider></mat-divider>
             <div class="st-toggle">
               <mat-icon>work</mat-icon>

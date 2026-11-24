@@ -403,3 +403,17 @@
   .my-plan-text strong { font-size: 17px; }
   .my-plan-chip { align-self: flex-start; }
 }
+
+/* subscription details (status, dates, features, usage) */
+.my-plan-detail { margin: 12px 0 20px; padding: 16px 20px; border: 1px solid rgba(128,128,128,.25); border-radius: 12px; }
+.sub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 0 0 12px; }
+.sub-grid dt { font-size: 12px; opacity: .7; }
+.sub-grid dd { margin: 2px 0 0; font-weight: 600; }
+.sub-block h4 { margin: 12px 0 6px; font-size: 14px; }
+.sub-features { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 4px 16px; }
+.sub-features li { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.sub-features mat-icon { font-size: 18px; width: 18px; height: 18px; color: #2e7d32; }
+.sub-usage { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px; font-size: 13px; margin-bottom: 8px; }
+.sub-usage .bar { flex-basis: 100%; height: 6px; border-radius: 3px; background: rgba(128,128,128,.25); overflow: hidden; }
+.sub-usage .bar i { display: block; height: 100%; background: #1976d2; }
+.sub-upgrade { margin-top: 14px; }

@@ -296,10 +296,11 @@ export class HomeUIComponent implements OnInit, AfterViewInit, OnDestroy {
   loadRealtimePosts() {
     if (!this.newPostSubscription || this.newPostSubscription.closed) {
       this.echoService.listenToPosts();
-      this.newPostSubscription = this.echoService.newPost$.subscribe(post => {
-        this.newPostsQueue.unshift(post);
-        this.newPostsAvailable = true; // matches the template
-      });
+      this.newPostSubscription = this.echoService.newPost$.subscribe(() => this.scheduleFeedRefresh());
+    }
+    // fallback when the live connection is down: look again every minute while the tab is visible
+    if (!this.feedPoll) {
+      this.feedPoll = setInterval(() => { if (typeof document === 'undefined' || document.visibilityState === 'visible') { this.refreshFeedSilently(); } }, 60000);
     }
   }
 
@@ -463,6 +464,8 @@ export class HomeUIComponent implements OnInit, AfterViewInit, OnDestroy {
     this.photoSub?.unsubscribe();
     if (this.observer) this.observer.disconnect();
     clearInterval(this.autoSlideInterval);
+    clearInterval(this.feedPoll);
+    clearTimeout(this.feedRefreshTimer);
     clearInterval(this.scrollInterval);
     clearTimeout(this.scrollTimeout);
     clearTimeout(this.hideTimeout);
@@ -895,6 +898,59 @@ export class HomeUIComponent implements OnInit, AfterViewInit, OnDestroy {
     return `${diffInHours} hours ago`;
   }
 
+  /** One feed card from what the API returned (media URLs made absolute, UI state added). */
+  private formatFeedPost(post: any): any {
+    const normalizeUrl = (path: string) => path ? `https://api.nexsuz.com/${path.replace(/\\/g, '')}` : '';
+    return {
+      ...post,
+      expanded: false,
+      showComments: false,
+      newComment: '',
+      isSubmitting: false,
+      images: Array.isArray(post.images) ? post.images.map((img: any) => ({ ...img, path_url: normalizeUrl(img.path_url) })) : [],
+      videos: Array.isArray(post.videos) ? post.videos.map((vid: any) => ({ ...vid, path_url: normalizeUrl(vid.path_url) })) : [],
+      comments: Array.isArray(post.comments) ? post.comments : []
+    };
+  }
+
+  private silentRefreshing = false;
+  private feedRefreshTimer: any;
+  private feedPoll: any;
+
+  /**
+   * Bring the feed up to date without a reload and without the loading skeleton: ask the server what THIS viewer may see
+   * now, keep the cards already on screen (their open comments etc.), add the new ones on top and drop the ones that are
+   * gone. Nothing is taken from the live event itself, so a post the viewer may not see can never appear.
+   */
+  refreshFeedSilently(): void {
+    if (this.silentRefreshing || this.isLoading) { return; }
+    this.silentRefreshing = true;
+    this.postDataservices.getDataPostAddFollow().subscribe({
+      next: (res: any) => {
+        this.silentRefreshing = false;
+        if (!res?.success || !Array.isArray(res.data)) { return; }
+        const byId = new Map<any, any>(this.posts.map((p: any) => [p.id, p]));
+        const fresh: any[] = [];
+        this.posts = res.data.map((p: any) => {
+          const known = byId.get(p.id);
+          if (known) { return known; }
+          const card = this.formatFeedPost(p);
+          fresh.push(card);
+          return card;
+        });
+        fresh.forEach(p => p?.id && this.loadReaction(p.id));
+        if (fresh.length) { this.newPostsQueue = []; this.newPostsAvailable = false; }
+      },
+      error: () => { this.silentRefreshing = false; }
+    });
+  }
+
+  /** a burst of posts triggers one refresh */
+  private scheduleFeedRefresh(): void {
+    clearTimeout(this.feedRefreshTimer);
+    this.feedRefreshTimer = setTimeout(() => this.refreshFeedSilently(), 800);
+  }
+
   loadUserPost(page: number = 1, append: boolean = false): void {
     this.isLoading = true;
 
@@ -907,32 +963,7 @@ export class HomeUIComponent implements OnInit, AfterViewInit, OnDestroy {
           return;
         }
 
-        const normalizeUrl = (path: string) =>
-          path ? `https://api.nexsuz.com/${path.replace(/\\/g, '')}` : '';
-
-        const formattedPosts = res.data.map((post: any) => ({
-          ...post,
-          expanded: false,
-          showComments: false,
-          newComment: '',
-          isSubmitting: false,
-
-          images: Array.isArray(post.images)
-            ? post.images.map((img: any) => ({
-              ...img,
-              path_url: normalizeUrl(img.path_url)
-            }))
-            : [],
-
-          videos: Array.isArray(post.videos)
-            ? post.videos.map((vid: any) => ({
-              ...vid,
-              path_url: normalizeUrl(vid.path_url)
-            }))
-            : [],
-
-          comments: Array.isArray(post.comments) ? post.comments : []
-        }));
+        const formattedPosts = res.data.map((post: any) => this.formatFeedPost(post));
 
         // FIX: append or replace
         this.posts = append

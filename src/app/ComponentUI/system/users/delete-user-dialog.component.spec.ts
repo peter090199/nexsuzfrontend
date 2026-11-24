@@ -43,12 +43,12 @@ describe('DeleteUserDialogComponent', () => {
     expect((f.nativeElement as HTMLElement).textContent).toContain('permanently deletes');
   });
 
-  it('only enables Delete with the exact email (any case) AND a password', () => {
+  it('only enables Delete when DELETE is typed exactly AND a password is given', () => {
     const c = make().componentInstance;
     expect(c.canDelete).toBeFalse();
-    c.typed = 'someone@else.test'; c.password = 'pw';
+    c.typed = 'delete'; c.password = 'pw';
     expect(c.canDelete).toBeFalse();
-    c.typed = 'SAM@example.test'; c.password = '';
+    c.typed = 'DELETE'; c.password = '';
     expect(c.canDelete).toBeFalse();
     c.password = 'pw';
     expect(c.canDelete).toBeTrue();
@@ -56,7 +56,7 @@ describe('DeleteUserDialogComponent', () => {
 
   it('shows the reason and offers no delete for an account that cannot be deleted', () => {
     const f = make({ user: preview().user, can_delete: false, reason: "Admin and master admin accounts can't be deleted here." });
-    f.componentInstance.typed = 'sam@example.test'; f.componentInstance.password = 'pw';
+    f.componentInstance.typed = 'DELETE'; f.componentInstance.password = 'pw';
     expect(f.componentInstance.canDelete).toBeFalse();
     expect((f.nativeElement as HTMLElement).textContent).toContain("can't be deleted here");
   });
@@ -70,10 +70,10 @@ describe('DeleteUserDialogComponent', () => {
 
   it('sends the confirmation, then shows the backup and clears the secrets', () => {
     const f = make(); const c = f.componentInstance;
-    c.typed = 'sam@example.test'; c.password = 'pw'; c.deleteFiles = true;
+    c.typed = 'DELETE'; c.password = 'pw';
     c.remove();
     const req = http.expectOne(r => r.method === 'DELETE' && r.url.endsWith('users/810'));
-    expect(req.request.body).toEqual({ password: 'pw', confirm: 'sam@example.test', delete_files: true });
+    expect(req.request.body).toEqual({ password: 'pw', confirm: 'DELETE' });
     req.flush({ success: true, message: 'Sam Seeker and all of their data were deleted.', backup: { name: 'db-1.sql.gz', reused: true }, data: { rows: 40, files: 1 } });
     f.detectChanges();
     expect(c.done?.backup.name).toBe('db-1.sql.gz');
@@ -83,7 +83,7 @@ describe('DeleteUserDialogComponent', () => {
 
   it('shows the server error and stays open when the password is wrong', () => {
     const f = make(); const c = f.componentInstance;
-    c.typed = 'sam@example.test'; c.password = 'bad';
+    c.typed = 'DELETE'; c.password = 'bad';
     c.remove();
     http.expectOne(r => r.method === 'DELETE').flush({ message: 'Your password is incorrect.' }, { status: 422, statusText: 'x' });
     expect(c.error).toBe('Your password is incorrect.');

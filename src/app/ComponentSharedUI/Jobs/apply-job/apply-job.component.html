@@ -45,35 +45,49 @@
                 <form [formGroup]="imageForm" class="aj-pane">
                     <ng-template matStepLabel>CV</ng-template>
 
-                    <h2>{{ allowCv ? 'Upload your CV' : 'No CV needed' }}</h2>
-                    <p class="aj-lead" *ngIf="allowCv">A PDF the recruiter can read. This is what they review first.</p>
+                    <h2>{{ allowCv ? 'Choose your CV' : 'No CV needed' }}</h2>
+                    <p class="aj-lead" *ngIf="allowCv">Pick <strong>one</strong> CV for this application{{ savedResumes.length ? ', or upload a new PDF instead' : '' }}. The recruiter reads it first.</p>
                     <p class="aj-lead" *ngIf="!allowCv">This job does not ask for a CV. You can continue.</p>
 
                     <ng-container *ngIf="allowCv">
+                        <!-- the CVs saved in Settings > Resume / CV: exactly one can be selected -->
+                        <section class="aj-cvs" *ngIf="savedResumes.length" aria-label="Your saved CVs" data-testid="saved-cvs">
+                            <h3 class="aj-sub">Your saved CVs <small>({{ savedResumes.length }})</small></h3>
+                            <mat-radio-group class="aj-cv-list" [value]="selectedResumeId" (change)="chooseResume($event.value)" aria-label="Choose one CV for this application">
+                                <div class="aj-cv" *ngFor="let r of savedResumes" [class.selected]="r.id === selectedResumeId" [class.disabled]="!canSend(r)" [attr.data-testid]="'cv-' + r.id">
+                                    <mat-radio-button class="aj-cv-radio" color="primary" [value]="r.id" [disabled]="!canSend(r)">
+                                        <span class="aj-cv-name">{{ r.name }}</span>
+                                        <span class="aj-chip" *ngIf="r.is_default">Default</span>
+                                    </mat-radio-button>
+                                    <div class="aj-cv-acts">
+                                        <button mat-stroked-button type="button" (click)="previewResume(r)" [disabled]="openingResumeId === r.id" [attr.aria-label]="'Preview ' + r.name" data-testid="preview"><mat-icon>visibility</mat-icon><span>Preview</span></button>
+                                        <button mat-stroked-button type="button" (click)="downloadResume(r)" [disabled]="openingResumeId === r.id" [attr.aria-label]="'Download ' + r.name" data-testid="download"><mat-icon>download</mat-icon><span>Download</span></button>
+                                    </div>
+                                    <div class="aj-cv-meta">
+                                        Uploaded {{ r.created_at | date:'MMM d, y' }} · {{ sizeText(r.size) }} · {{ r.type | uppercase }}
+                                        <span class="aj-cv-warn" *ngIf="!canSend(r)">A Word file can't be sent with an application. Upload a PDF instead.</span>
+                                    </div>
+                                </div>
+                            </mat-radio-group>
+                            <p class="aj-lead aj-manage">
+                                <a [routerLink]="['/' + sharedRoutines.getRole(), 'settings']" [queryParams]="{ section: 'resume' }">Manage my CVs</a>
+                            </p>
+                        </section>
+
+                        <!-- or a new PDF for this application only: it replaces the saved CV chosen above -->
+                        <h3 class="aj-sub" *ngIf="savedResumes.length">Or upload a new PDF</h3>
                         <input #cv id="fileUpload" type="file" accept="application/pdf" hidden (change)="onUploadResume($event)" />
 
-                        <button type="button" class="aj-drop" [class.has-file]="resumeName" (click)="cv.click()">
-                            <mat-icon>{{ resumeName ? 'description' : 'upload_file' }}</mat-icon>
-                            <strong>{{ resumeName || 'Choose a PDF' }}</strong>
-                            <span>{{ useDefaultResume ? 'Your default resume. Click to upload a different one' : (resumeName ? 'Click to replace' : 'PDF only') }}</span>
+                        <button type="button" class="aj-drop" [class.has-file]="selectedFile" (click)="cv.click()" data-testid="upload-new">
+                            <mat-icon>{{ selectedFile ? 'description' : 'upload_file' }}</mat-icon>
+                            <strong>{{ selectedFile ? selectedFile.name : 'Choose a PDF' }}</strong>
+                            <span>{{ selectedFile ? 'New upload for this application only. Click to replace.' : (savedResumes.length ? 'For this application only. It replaces the CV chosen above.' : 'PDF only') }}</span>
                         </button>
 
-                        <!-- the resume saved in Settings > Resume / CV -->
-                        <p class="aj-lead" *ngIf="useDefaultResume">
-                            <mat-icon style="vertical-align:middle;font-size:18px;width:18px;height:18px">star</mat-icon>
-                            Using your default resume from Settings.
-                            <a [routerLink]="['/' + sharedRoutines.getRole(), 'settings']" [queryParams]="{ section: 'resume' }">Manage resumes</a>
-                        </p>
-                        <p class="aj-lead" *ngIf="!useDefaultResume && defaultResume">
-                            <a href="javascript:void(0)" (click)="switchToDefaultResume()">Use my default resume ({{ defaultResume.name }})</a>
-                        </p>
-                        <p class="aj-lead" *ngIf="defaultResumeIsWord">
-                            Your default resume is a Word file. Job applications need a PDF, so please upload one here.
-                        </p>
-                        <p class="aj-lead" *ngIf="!defaultResume && !defaultResumeIsWord">
-                            Tip: save a resume in
+                        <p class="aj-lead" *ngIf="!savedResumes.length && !resumesLoading">
+                            Tip: save your CVs in
                             <a [routerLink]="['/' + sharedRoutines.getRole(), 'settings']" [queryParams]="{ section: 'resume' }">Settings &rsaquo; Resume / CV</a>
-                            and it is filled in for you next time.
+                            and you can pick one here next time.
                         </p>
 
                         <p class="aj-error" *ngIf="fileError" role="alert"><mat-icon>error_outline</mat-icon> {{ fileError }}</p>
@@ -113,7 +127,7 @@
                         <mat-form-field appearance="outline" class="aj-field" *ngIf="countryCodes.length">
                             <mat-label>Country code</mat-label>
                             <input type="text" matInput [formControl]="countryControl" [matAutocomplete]="autoCountry"
-                                placeholder="Search country code" />
+                                placeholder="Search country code" data-testid="country" />
                             <mat-autocomplete #autoCountry="matAutocomplete"
                                 (optionSelected)="onCountrySelected($event.option.value)">
                                 <mat-option *ngFor="let code of filteredCountryCodes | async" [value]="code.label">{{ code.label }}</mat-option>
@@ -122,7 +136,7 @@
 
                         <mat-form-field appearance="outline" class="aj-field">
                             <mat-label>Mobile phone number</mat-label>
-                            <input matInput type="tel" formControlName="phone_number" required />
+                            <input matInput type="tel" formControlName="phone_number" required inputmode="tel" autocomplete="tel-national" (blur)="tidyPhone()" data-testid="phone" />
                         </mat-form-field>
                     </div>
 
@@ -200,7 +214,7 @@
                     <p class="aj-lead">Check everything. You can go back and change it before you send.</p>
 
                     <dl class="aj-review">
-                        <div *ngIf="allowCv"><dt>CV</dt><dd>{{ resumeName || 'Not uploaded' }}</dd></div>
+                        <div *ngIf="allowCv"><dt>CV</dt><dd data-testid="review-cv">{{ reviewCv }}</dd></div>
                         <div><dt>Email</dt><dd>{{ personalForm.get('email')?.value }}</dd></div>
                         <div><dt>Phone</dt><dd>{{ personalForm.get('country_code')?.value ? '+' + personalForm.get('country_code')?.value + ' ' : '' }}{{ personalForm.get('phone_number')?.value }}</dd></div>
                         <div *ngFor="let q of questions">

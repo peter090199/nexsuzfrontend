@@ -185,4 +185,42 @@ describe('PublicPostComponent', () => {
     });
   });
 
+  describe('"No posts yet" card', () => {
+    const card = () => (fixture.nativeElement as HTMLElement).querySelector('[data-testid="no-posts"]') as HTMLElement | null;
+    const show = (over: Partial<{ loading: boolean; error: string; posts: any[] }> = {}) => {
+      component.isLoadingPosts = over.loading ?? false;
+      component.loadError = over.error ?? '';
+      component.posts = over.posts ?? [];
+      fixture.detectChanges();
+    };
+
+    it('is a mat-card with the same look as "Start a post" (the global nx-card), with the message', () => {
+      show();
+      const c = card()!;
+      expect(c).not.toBeNull();
+      expect(c.tagName.toLowerCase()).toBe('mat-card');
+      expect(c.classList.contains('nx-card')).toBeTrue();
+      expect(c.textContent).toContain('No posts yet');
+      expect(c.textContent).toContain('Share an update or connect with people to see posts here.');
+      expect(c.getAttribute('role')).toBe('status');
+    });
+
+    it('only shows when there is nothing loading, no error and no post', () => {
+      show({ loading: true }); expect(card()).toBeNull();
+      show({ error: 'The feed could not be loaded.' }); expect(card()).toBeNull();
+      show({ posts: [{ id: 1, caption: 'hi', images: [], videos: [], status: 1, created_at: '2026-11-24 10:00:00' }] }); expect(card()).toBeNull();
+      show(); expect(card()).not.toBeNull();
+    });
+
+    it('has layout rules for tablet and phone widths and never grows wider than its column', () => {
+      const css = ((PublicPostComponent as any).ɵcmp.styles as string[]).join('\n');
+      const rules = css.slice(css.indexOf('feed-empty'));
+      expect(rules).toContain('@media (max-width: 768px)');
+      expect(rules).toContain('@media (max-width: 599.98px)');
+      expect(rules).toContain('@media (max-width: 359.98px)');
+      expect(rules).toContain('max-width: 100%');
+      expect(rules).toContain('box-sizing: border-box');
+      expect(rules).toContain('overflow-wrap: anywhere');
+    });
+  });
 });

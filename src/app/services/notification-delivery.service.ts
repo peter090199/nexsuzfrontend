@@ -22,7 +22,7 @@ export interface MessageNotice {
 
 export interface ActivityItem {
   id: string;
-  type: 'friend_request' | 'friend_accept' | 'reaction' | 'comment' | 'job_application' | 'job_interview' | 'job_status' | 'job_review';
+  type: 'friend_request' | 'friend_accept' | 'reaction' | 'comment' | 'announcement' | 'job_application' | 'job_interview' | 'job_status' | 'job_review';
   text: string;
   excerpt?: string;
   post_uuid?: string;

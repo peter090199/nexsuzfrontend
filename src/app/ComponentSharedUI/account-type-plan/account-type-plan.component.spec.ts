@@ -120,4 +120,15 @@ describe('AccountTypePlanComponent', () => {
     expect(component.loadFailed).toBeFalse();
     expect(el().querySelectorAll('.plan-box').length).toBe(1);
   });
+
+  it('DEF-ADMIN and DEF-MASTERADMIN get the plan management tools; job seekers and recruiters do not', async () => {
+    const empty = () => of({ success: true, data: { plans: [] } });
+    const getAll = (r: string) => `${r}`;
+    for (const [role, manage] of [['DEF-ADMIN', true], ['DEF-MASTERADMIN', true], ['DEF-USERS', false], ['DEF-CLIENT', false]] as [string, boolean][]) {
+      TestBed.resetTestingModule();
+      await setup(role, empty());
+      expect(component.canManagePlans).withContext(getAll(role)).toBe(manage);
+      expect(el().querySelector('.admin-bar') !== null).withContext(getAll(role)).toBe(manage);
+    }
+  });
 });

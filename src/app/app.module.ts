@@ -29,8 +29,16 @@ import { TopNavigationComponent } from './Navigation/top-navigation/top-navigati
 import { TermsModalComponent } from './TermsModal/terms-modal/terms-modal.component';
 import { PrivacyComponent } from './TermsModal/privacy/privacy.component';
 import { SecurityRolesComponent } from './ComponentUI/system/security-roles/security-roles.component';
+import { SecurityOverviewComponent } from './ComponentUI/dashboard/security-overview/security-overview.component';
+import { AnnouncementsComponent } from './ComponentSharedUI/announcements/announcements.component';
+import { AnnouncementDialogComponent } from './ComponentSharedUI/announcements/announcement-dialog.component';
+import { RoleFormDialogComponent } from './ComponentUI/system/security-roles/role-form-dialog.component';
+import { RolePermissionsDialogComponent } from './ComponentUI/system/security-roles/role-permissions-dialog.component';
+import { AssignRoleDialogComponent } from './ComponentUI/system/security-roles/assign-role-dialog.component';
 import { UsersComponent } from './ComponentUI/system/users/users.component';
 import { DeleteUserDialogComponent } from './ComponentUI/system/users/delete-user-dialog.component';
+import { AddAdminDialogComponent } from './ComponentUI/system/users/add-admin-dialog.component';
+import { EditUserDialogComponent } from './ComponentUI/system/users/edit-user-dialog.component';
 import { ChatUIComponent } from './chat-ui/chat-ui.component';
 import { RoleComponent } from './ComponentUI/system/role/role.component';
 import { HomeUIComponent } from './ComponentUI/home/home-ui/home-ui.component';
@@ -227,8 +235,16 @@ export function HttpLoaderFactory(http: HttpClient) {
     TermsModalComponent,
     PrivacyComponent,
     SecurityRolesComponent,
+    SecurityOverviewComponent,
+    AnnouncementsComponent,
+    AnnouncementDialogComponent,
+    RoleFormDialogComponent,
+    RolePermissionsDialogComponent,
+    AssignRoleDialogComponent,
     UsersComponent,
     DeleteUserDialogComponent,
+    AddAdminDialogComponent,
+    EditUserDialogComponent,
     ChatUIComponent,
     RoleComponent,
     HomeUIComponent,

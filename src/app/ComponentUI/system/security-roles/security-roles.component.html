@@ -1,81 +1,166 @@
-<section class="section">
-  <!-- Search & Refresh -->
-  <div class="search-div">
-    <mat-form-field appearance="standard" floatLabel="never">
-      <input matInput [(ngModel)]="searchKey" [placeholder]="placeHolder" (keyup)="applyFilter()" autocomplete="off" />
-      <button mat-icon-button matSuffix aria-label="Clear" *ngIf="searchKey" (click)="clearSearch()">
-        <mat-icon>close</mat-icon>
-      </button>
-    </mat-form-field>
+<section class="section sec">
+  <mat-tab-group animationDuration="0ms" (selectedIndexChange)="onTab($event)" class="sec-tabs">
 
-    <button mat-button color="accent" (click)="fetchSecurityRoles()">
-      <mat-icon>refresh</mat-icon> Refresh
-    </button>
-  </div>
+    <!-- ===================== ROLES ===================== -->
+    <mat-tab>
+      <ng-template mat-tab-label><mat-icon>admin_panel_settings</mat-icon>&nbsp;Roles</ng-template>
 
-  <!-- Table -->
-  <mat-table [dataSource]="dataSource" class="mat-elevation-z4" matSort>
-    <!-- ID -->
-    <ng-container matColumnDef="id">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>Id</mat-header-cell>
-      <mat-cell *matCellDef="let element">{{ element.id }}</mat-cell>
-    </ng-container>
+      <div class="search-div">
+        <mat-form-field appearance="standard" floatLabel="never">
+          <input matInput [(ngModel)]="roleSearch" placeholder="Search roles" (keyup)="applyRoleFilter()" autocomplete="off" aria-label="Search roles" />
+          <button mat-icon-button matSuffix aria-label="Clear" *ngIf="roleSearch" (click)="clearRoleSearch()"><mat-icon>close</mat-icon></button>
+        </mat-form-field>
+        <button mat-button color="accent" (click)="loadRoles()"><mat-icon>refresh</mat-icon> Refresh</button>
+        <span class="grow"></span>
+        <button mat-flat-button color="primary" (click)="addRole()" data-testid="add-role"><mat-icon>add</mat-icon> Add role</button>
+      </div>
 
-    <!-- Rolecode -->
-    <ng-container matColumnDef="rolecode">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>Rolecode</mat-header-cell>
-      <mat-cell *matCellDef="let element">{{ element.rolecode }}</mat-cell>
-    </ng-container>
+      <div class="state error" *ngIf="rolesError" role="alert"><mat-icon>error_outline</mat-icon> {{ rolesError }} <button mat-button (click)="loadRoles()">Retry</button></div>
 
-    <!-- Description -->
-    <ng-container matColumnDef="description">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>Description</mat-header-cell>
-      <mat-cell *matCellDef="let element">{{ element.description }}</mat-cell>
-    </ng-container>
+      <div class="table-wrap">
+        <mat-table [dataSource]="roles" class="mat-elevation-z4" matSort #rolesSort="matSort">
+          <ng-container matColumnDef="rolecode">
+            <mat-header-cell *matHeaderCellDef mat-sort-header>Role</mat-header-cell>
+            <mat-cell *matCellDef="let r"><strong>{{ r.rolecode }}</strong><span class="chip sys" *ngIf="r.is_system" matTooltip="System role: can't be deleted or renamed">System</span></mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="description">
+            <mat-header-cell *matHeaderCellDef mat-sort-header>Description</mat-header-cell>
+            <mat-cell *matCellDef="let r">{{ r.description }}</mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="users_count">
+            <mat-header-cell *matHeaderCellDef mat-sort-header>Users</mat-header-cell>
+            <mat-cell *matCellDef="let r"><span matTooltip="{{ r.active_users }} active">{{ r.users_count }}</span></mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="permissions_count">
+            <mat-header-cell *matHeaderCellDef mat-sort-header>Modules</mat-header-cell>
+            <mat-cell *matCellDef="let r">{{ r.permissions_count }}</mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="created_by">
+            <mat-header-cell *matHeaderCellDef mat-sort-header>Created by</mat-header-cell>
+            <mat-cell *matCellDef="let r">{{ r.created_by }}</mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
+            <mat-cell *matCellDef="let r">
+              <button mat-icon-button color="primary" matTooltip="Edit role" [attr.aria-label]="'Edit ' + r.rolecode" (click)="editRole(r)" data-testid="edit-role"><mat-icon>edit</mat-icon></button>
+              <button mat-icon-button color="primary" matTooltip="Permissions" [attr.aria-label]="'Permissions of ' + r.rolecode" (click)="editPermissions(r)" data-testid="role-permissions"><mat-icon>security</mat-icon></button>
+              <button mat-icon-button color="warn" [disabled]="!!deleteBlockedReason(r)" [matTooltip]="deleteBlockedReason(r) || 'Delete role'"
+                [attr.aria-label]="'Delete ' + r.rolecode" (click)="deleteRole(r)" data-testid="delete-role"><mat-icon>delete</mat-icon></button>
+            </mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="noData">
+            <mat-footer-cell *matFooterCellDef colspan="6" class="no-data">{{ rolesLoading ? 'Loading…' : 'No roles found' }}</mat-footer-cell>
+          </ng-container>
 
-    <!-- Created By -->
-    <ng-container matColumnDef="created_by">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>Created By</mat-header-cell>
-      <mat-cell *matCellDef="let element">{{ element.created_by }}</mat-cell>
-    </ng-container>
+          <mat-header-row *matHeaderRowDef="roleColumns"></mat-header-row>
+          <mat-row *matRowDef="let row; columns: roleColumns"></mat-row>
+          <mat-footer-row *matFooterRowDef="['noData']" [ngClass]="{ hide: roles.filteredData.length > 0 }"></mat-footer-row>
+        </mat-table>
+      </div>
+      <mat-progress-bar *ngIf="rolesLoading" mode="indeterminate" color="primary"></mat-progress-bar>
+      <mat-paginator #rolesPaginator [pageSize]="10" [pageSizeOptions]="pageSizeOptions" showFirstLastButtons></mat-paginator>
+    </mat-tab>
 
-    <!-- Updated By -->
-    <ng-container matColumnDef="updated_by">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>Updated By</mat-header-cell>
-      <mat-cell *matCellDef="let element">{{ element.updated_by }}</mat-cell>
-    </ng-container>
+    <!-- ===================== ASSIGNMENTS ===================== -->
+    <mat-tab>
+      <ng-template mat-tab-label><mat-icon>manage_accounts</mat-icon>&nbsp;Role assignment</ng-template>
 
-    <!-- Actions -->
-    <ng-container matColumnDef="actions">
-      <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        <button mat-icon-button color="primary" (click)="edit(element)">
-          <mat-icon>security</mat-icon>
-        </button>
-      </mat-cell>
-    </ng-container>
+      <div class="counts" *ngIf="allRoles.length" aria-label="Users per role">
+        <button type="button" class="count" *ngFor="let r of allRoles" [class.on]="userRole === r.rolecode" (click)="filterByRole(r.rolecode)"
+          [attr.aria-pressed]="userRole === r.rolecode"><strong>{{ roleCounts[r.rolecode] || 0 }}</strong><span>{{ r.rolecode }}</span></button>
+      </div>
 
-    <!-- No Data Row -->
-    <ng-container matColumnDef="noData">
-      <mat-footer-cell *matFooterCellDef colspan="6" class="no-data">
-        No data available
-      </mat-footer-cell>
-    </ng-container>
+      <div class="search-div">
+        <mat-form-field appearance="standard" floatLabel="never">
+          <input matInput [(ngModel)]="userSearch" placeholder="Search users" (keyup.enter)="searchUsers()" autocomplete="off" aria-label="Search users" />
+          <button mat-icon-button matSuffix aria-label="Search" (click)="searchUsers()"><mat-icon>search</mat-icon></button>
+        </mat-form-field>
+        <button mat-button color="accent" (click)="loadUsers()"><mat-icon>refresh</mat-icon> Refresh</button>
+        <span class="grow"></span>
+        <span class="sel" *ngIf="selected.size">{{ selected.size }} selected</span>
+        <button mat-flat-button color="primary" [disabled]="!selected.size" (click)="assign(selectedUsers)" data-testid="assign-role"><mat-icon>manage_accounts</mat-icon> Assign role</button>
+      </div>
 
-    <!-- Rows -->
-    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
+      <div class="state error" *ngIf="usersError" role="alert"><mat-icon>error_outline</mat-icon> {{ usersError }} <button mat-button (click)="loadUsers()">Retry</button></div>
 
-    <!-- Show this footer row only if no data -->
-    <mat-footer-row *matFooterRowDef="['noData']" [ngClass]="{ hide: dataSource.data.length > 0 }">
-    </mat-footer-row>
-  </mat-table>
+      <div class="table-wrap">
+        <mat-table [dataSource]="users" class="mat-elevation-z4">
+          <ng-container matColumnDef="select">
+            <mat-header-cell *matHeaderCellDef><mat-checkbox [checked]="allOnPageSelected" (change)="toggleAllOnPage($event.checked)" aria-label="Select all on this page"></mat-checkbox></mat-header-cell>
+            <mat-cell *matCellDef="let u"><mat-checkbox [checked]="isSelected(u)" [disabled]="isSelf(u)" (change)="toggle(u, $event.checked)" [attr.aria-label]="'Select ' + u.fullname"></mat-checkbox></mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="fullname">
+            <mat-header-cell *matHeaderCellDef>Name</mat-header-cell>
+            <mat-cell *matCellDef="let u">{{ u.fullname }}<span class="chip me" *ngIf="isSelf(u)">You</span></mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="email">
+            <mat-header-cell *matHeaderCellDef>Email</mat-header-cell>
+            <mat-cell *matCellDef="let u">{{ u.email }}</mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="role_code">
+            <mat-header-cell *matHeaderCellDef>Role</mat-header-cell>
+            <mat-cell *matCellDef="let u"><span class="chip role">{{ u.role_code }}</span></mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="status">
+            <mat-header-cell *matHeaderCellDef>Status</mat-header-cell>
+            <mat-cell *matCellDef="let u"><span class="chip" [class.off]="u.status !== 'A'">{{ u.status === 'A' ? 'Active' : 'Inactive' }}</span></mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
+            <mat-cell *matCellDef="let u">
+              <button mat-icon-button color="primary" [disabled]="isSelf(u)" [matTooltip]="isSelf(u) ? 'You can\'t change your own role' : 'Change role'"
+                [attr.aria-label]="'Change role of ' + u.fullname" (click)="assign([u])" data-testid="change-role"><mat-icon>swap_horiz</mat-icon></button>
+              <button mat-icon-button color="warn" *ngIf="canRemove(u)" matTooltip="Remove role (back to DEF-USERS)"
+                [attr.aria-label]="'Remove role of ' + u.fullname" (click)="removeAssignment(u)" data-testid="remove-role"><mat-icon>person_remove</mat-icon></button>
+            </mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="noData">
+            <mat-footer-cell *matFooterCellDef colspan="6" class="no-data">{{ usersLoading ? 'Loading…' : 'No users found' }}</mat-footer-cell>
+          </ng-container>
 
-  <!-- Loader -->
-  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" color="primary">
-  </mat-progress-bar>
+          <mat-header-row *matHeaderRowDef="userColumns"></mat-header-row>
+          <mat-row *matRowDef="let row; columns: userColumns"></mat-row>
+          <mat-footer-row *matFooterRowDef="['noData']" [ngClass]="{ hide: users.length > 0 }"></mat-footer-row>
+        </mat-table>
+      </div>
+      <mat-progress-bar *ngIf="usersLoading" mode="indeterminate" color="primary"></mat-progress-bar>
+      <mat-paginator [length]="usersTotal" [pageIndex]="usersPage" [pageSize]="usersPageSize" [pageSizeOptions]="[10, 25, 50]" (page)="onUsersPage($event)" showFirstLastButtons></mat-paginator>
+    </mat-tab>
 
-  <!-- Paginator -->
-  <mat-paginator class="mat-paginator-sticky" [pageSize]="10" [pageSizeOptions]="pageSizeOptions" showFirstLastButtons>
-  </mat-paginator>
+    <!-- ===================== ACTIVITY ===================== -->
+    <mat-tab>
+      <ng-template mat-tab-label><mat-icon>history</mat-icon>&nbsp;Activity</ng-template>
+      <div class="search-div"><button mat-button color="accent" (click)="loadAudit()"><mat-icon>refresh</mat-icon> Refresh</button><span class="hint">Role created, edited, deleted, assigned, removed, and permission changes.</span></div>
+      <div class="state error" *ngIf="auditError" role="alert"><mat-icon>error_outline</mat-icon> {{ auditError }} <button mat-button (click)="loadAudit()">Retry</button></div>
+      <div class="table-wrap">
+        <mat-table [dataSource]="audit" class="mat-elevation-z4">
+          <ng-container matColumnDef="created_at">
+            <mat-header-cell *matHeaderCellDef>When</mat-header-cell>
+            <mat-cell *matCellDef="let a">{{ a.created_at | date:'medium' }}</mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="action">
+            <mat-header-cell *matHeaderCellDef>Action</mat-header-cell>
+            <mat-cell *matCellDef="let a"><mat-icon class="aic">{{ actionIcon(a.action) }}</mat-icon>{{ actionLabel(a.action) }}</mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="summary">
+            <mat-header-cell *matHeaderCellDef>Details</mat-header-cell>
+            <mat-cell *matCellDef="let a">{{ a.summary }}</mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="actor_name">
+            <mat-header-cell *matHeaderCellDef>By</mat-header-cell>
+            <mat-cell *matCellDef="let a">{{ a.actor_name }}</mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="noData">
+            <mat-footer-cell *matFooterCellDef colspan="4" class="no-data">{{ auditLoading ? 'Loading…' : 'No security activity yet' }}</mat-footer-cell>
+          </ng-container>
+          <mat-header-row *matHeaderRowDef="auditColumns"></mat-header-row>
+          <mat-row *matRowDef="let row; columns: auditColumns"></mat-row>
+          <mat-footer-row *matFooterRowDef="['noData']" [ngClass]="{ hide: audit.length > 0 }"></mat-footer-row>
+        </mat-table>
+      </div>
+      <mat-progress-bar *ngIf="auditLoading" mode="indeterminate" color="primary"></mat-progress-bar>
+      <mat-paginator [length]="auditTotal" [pageIndex]="auditPage" [pageSize]="auditPageSize" [pageSizeOptions]="[10, 25, 50, 100]" (page)="onAuditPage($event)" showFirstLastButtons></mat-paginator>
+    </mat-tab>
+
+  </mat-tab-group>
 </section>

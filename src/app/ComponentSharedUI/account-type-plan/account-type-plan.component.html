@@ -1,5 +1,5 @@
 <!-- Master admin toolbar (UI only: the API re-checks the role on every change) -->
-<div class="admin-bar" *ngIf="isMasterAdmin">
+<div class="admin-bar" *ngIf="canManagePlans">
   <div class="admin-bar-text">
     <mat-icon>admin_panel_settings</mat-icon>
     <div>
@@ -20,7 +20,7 @@
 </div>
 
 <!-- DEF-USERS / DEF-CLIENT: this account's current plan -->
-<section class="my-plan" *ngIf="!isMasterAdmin && canSubscribe && !isLoading && !loadFailed" aria-label="Your current plan">
+<section class="my-plan" *ngIf="!canManagePlans && canSubscribe && !isLoading && !loadFailed" aria-label="Your current plan">
   <div class="my-plan-icon"><mat-icon>{{ sharedService.getRole() === 'DEF-CLIENT' ? 'business_center' : 'person' }}</mat-icon></div>
   <div class="my-plan-text" *ngIf="currentPlan as cur; else noCurrent">
     <small>Your current {{ audienceLabel | lowercase }} plan</small>
@@ -40,6 +40,37 @@
   </ng-template>
   <span class="my-plan-chip"><mat-icon>verified</mat-icon> {{ audienceLabel }} plans</span>
 </section>
+
+<!-- Subscription details: status, price, dates, included features, usage, upgrade -->
+<section class="my-plan-detail" *ngIf="subscription && !canManagePlans && !isLoading && !loadFailed" aria-label="Subscription details" data-testid="subscription-detail">
+  <dl class="sub-grid">
+    <div><dt>Current plan</dt><dd>{{ subscription.plan_name || 'None' }}</dd></div>
+    <div><dt>Status</dt><dd data-testid="sub-status">{{ subscription.status }}</dd></div>
+    <div><dt>Price</dt><dd>₱{{ subscription.price | number:'1.2-2' }}</dd></div>
+    <div><dt>Start date</dt><dd>{{ subscription.start_date ? (subscription.start_date | date:'mediumDate') : '—' }}</dd></div>
+    <div><dt>Expiration</dt><dd>{{ subscription.expires_at ? (subscription.expires_at | date:'mediumDate') : (subscription.is_free ? 'No expiration' : '—') }}</dd></div>
+  </dl>
+
+  <div class="sub-block" *ngIf="subscription.features?.length">
+    <h4>Included features</h4>
+    <ul class="sub-features">
+      <li *ngFor="let f of subscription.features"><mat-icon>check_circle</mat-icon> {{ f.name }}<em *ngIf="f.detail"> · {{ f.detail }}</em></li>
+    </ul>
+  </div>
+
+  <div class="sub-block" *ngIf="subscription.usage?.length">
+    <h4>Usage and limits</h4>
+    <div class="sub-usage" *ngFor="let u of subscription.usage">
+      <span>{{ u.name }}</span><strong>{{ usageText(u) }}</strong>
+      <div class="bar" *ngIf="!u.unlimited && u.limit"><i [style.width.%]="usagePercent(u)"></i></div>
+    </div>
+  </div>
+
+  <button mat-flat-button color="primary" type="button" class="sub-upgrade" *ngIf="subscription.can_upgrade" (click)="scrollToPlans()">
+    <mat-icon>upgrade</mat-icon> Upgrade plan
+  </button>
+</section>
+<div id="plan-cards"></div>
 
 <!-- Skeleton Loading -->
 <div class="plan-card" *ngIf="isLoading">
@@ -94,7 +125,7 @@
       <small class="ends" *ngIf="plan.current_end">until {{ plan.current_end | date:'mediumDate' }}</small>
     </div>
 
-    <div class="disabled-badge" *ngIf="isMasterAdmin && !isEnabled(plan)">
+    <div class="disabled-badge" *ngIf="canManagePlans && !isEnabled(plan)">
       <mat-icon>visibility_off</mat-icon> Disabled
     </div>
 
@@ -113,7 +144,7 @@
     </div>
 
     <mat-divider></mat-divider>
-    <p class="included-count" *ngIf="!isMasterAdmin && includedCount(plan)">{{ includedCount(plan) }} features included</p>
+    <p class="included-count" *ngIf="!canManagePlans && includedCount(plan)">{{ includedCount(plan) }} features included</p>
     <div class="feature-list">
       <div class="feature" *ngFor="let f of featureRows(plan)" [class.na]="!f.included">
         <mat-icon [color]="f.included ? 'primary' : null">{{ f.included ? 'check_circle' : 'remove_circle_outline' }}</mat-icon>
@@ -127,7 +158,7 @@
     </button>
 
     <!-- Regular users: checkout -->
-    <button mat-raised-button *ngIf="!isMasterAdmin && canSubscribe" [color]="plan.button_color || 'primary'" [disabled]="plan.disabled || plan.is_current"
+    <button mat-raised-button *ngIf="!canManagePlans && canSubscribe" [color]="plan.button_color || 'primary'" [disabled]="plan.disabled || plan.is_current"
       (click)="goToCheckout(plan)">
       <mat-icon [ngSwitch]="buttonLabel(plan)">
         <ng-container *ngSwitchCase="'Current Plan'">verified</ng-container>
@@ -138,8 +169,8 @@
       {{ buttonLabel(plan) }}
     </button>
 
-    <!-- DEF-MASTERADMIN: manage this plan -->
-    <div class="admin-actions" *ngIf="isMasterAdmin">
+    <!-- DEF-ADMIN / DEF-MASTERADMIN: manage this plan -->
+    <div class="admin-actions" *ngIf="canManagePlans">
       <div class="admin-meta">
         <span class="status-chip" [class.off]="!isEnabled(plan)">
           <mat-icon>{{ isEnabled(plan) ? 'toggle_on' : 'toggle_off' }}</mat-icon>

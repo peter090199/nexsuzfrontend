@@ -79,11 +79,11 @@ describe('Settings > Notifications', () => {
     flush();
   }));
 
-  it('shows every control: 6 message switches, 8 social and job switches, volume, test sound and the quick actions', fakeAsync(() => {
+  it('shows every control: 6 message switches, 9 social and job switches, volume, test sound and the quick actions', fakeAsync(() => {
     init();
-    expect(qa('mat-slide-toggle').length).toBe(14);
+    expect(qa('mat-slide-toggle').length).toBe(15);
     ['New message notifications', 'Message preview', 'Unread message badges', 'Desktop browser notifications', 'Notification popup', 'Notification sound',
-      'Friend requests', 'Friend request accepted', 'Post reactions', 'Post comments and replies',
+      'Friend requests', 'Friend request accepted', 'Post reactions', 'Post comments and replies', 'Announcements',
       'Job applications', 'Interview invites', 'Application decisions', 'Application reviews'].forEach(l => expect(toggle(l)).withContext(l).not.toBeNull());
     expect(q('mat-slider')).not.toBeNull();
     expect(button('Test sound')).toBeDefined();
@@ -101,6 +101,15 @@ describe('Settings > Notifications', () => {
     flush();
   }));
 
+  it('administrators have no Announcements switch (they write them, they are not notified)', fakeAsync(() => {
+    sessionStorage.setItem('role', 'DEF-ADMIN');
+    init();
+    expect(toggle('Announcements')).toBeNull();
+    expect(qa('mat-slide-toggle').length).toBe(14);
+    sessionStorage.removeItem('role');
+    flush();
+  }));
+
   // ------------------------------------------------------------------------ every switch
   const SWITCHES: [string, keyof NotificationPrefs, boolean][] = [
     ['New message notifications', 'messages_enabled', true],
@@ -112,6 +121,7 @@ describe('Settings > Notifications', () => {
     ['Friend request accepted', 'friend_accepts', true],
     ['Post reactions', 'post_reactions', true],
     ['Post comments and replies', 'post_comments', true],
+    ['Announcements', 'announcements', true],
     ['Job applications', 'job_applications', true],
     ['Interview invites', 'job_interviews', true],
     ['Application decisions', 'job_status', true],

@@ -154,8 +154,11 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     }));
   }
 
+  /** Shortcut buttons a DEF-ADMIN and a DEF-CLIENT do not get (the DEF-MASTERADMIN list is not filtered). */
+  private readonly HIDDEN_SHORTCUTS = ['subscriptionplans', 'featuremanagement', 'planfeatureassignment', 'featuresplan'];
+
   private buildQuickActions(): QuickAction[] {
-    return this.isMaster
+    const all = this.isMaster
       ? [
         { label: 'Manage users', icon: 'manage_accounts', route: 'user' },
         { label: 'Subscription plans', icon: 'workspace_premium', route: 'settings', query: { section: 'plan' } },
@@ -171,11 +174,19 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       ]
       : [
         { label: 'Manage users', icon: 'manage_accounts', route: 'user' },
+        // subscription management: DEF-ADMIN has the same five modules as DEF-MASTERADMIN
+        { label: 'Subscription plans', icon: 'workspace_premium', route: 'subscriptionplans' },
+        { label: 'Feature management', icon: 'extension', route: 'featuremanagement' },
+        { label: 'Plan feature assignment', icon: 'checklist', route: 'planfeatureassignment' },
+        { label: 'Subscribers', icon: 'monitoring', route: 'usersubscriptionmonitoring' },
+        { label: 'Subscription reports', icon: 'insights', route: 'subscriptionreports' },
         { label: 'Plan features', icon: 'checklist', route: 'featuresplan' },
         { label: 'Messages', icon: 'chat_bubble_outline', route: 'message' },
         { label: 'My network', icon: 'hub', route: 'network' },
         { label: 'Settings', icon: 'settings', route: 'settings' },
       ];
+    const restricted = this.role === 'DEF-ADMIN' || this.role === 'DEF-CLIENT';
+    return restricted ? all.filter(a => !this.HIDDEN_SHORTCUTS.includes(a.route)) : all;
   }
 
   // ------------------------------------------------------------------ helpers used by the template

@@ -106,3 +106,32 @@
   .aj-job { flex-direction: column; align-items: flex-start; }
   .aj-nav { flex-direction: column; }
 }
+
+/* ---------- choose one saved CV (or upload a new PDF) ---------- */
+.aj-sub { margin: 14px 0 8px; font-size: 14px; font-weight: 700; color: #1b2a4a; text-align: left; }
+.aj-sub small { font-weight: 400; color: #7a879d; }
+.aj-cv-list { display: flex; flex-direction: column; gap: 8px; }
+.aj-cv {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: center;
+  padding: 10px 12px; border: 1.5px solid #dbe7f6; border-radius: 12px; background: #fff; box-sizing: border-box; min-width: 0;
+  transition: border-color .15s ease, background .15s ease;
+}
+.aj-cv.selected { border-color: #0a66c2; background: #f3f8fe; }
+.aj-cv.disabled { opacity: .65; }
+.aj-cv-radio { min-width: 0; }
+.aj-cv-radio ::ng-deep .mdc-label, .aj-cv-radio ::ng-deep .mat-radio-label-content { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+.aj-cv-name { font-weight: 600; font-size: 13.5px; margin-right: 8px; }
+.aj-chip { font-size: 10.5px; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: #e7f6ee; color: #1b8a4b; white-space: nowrap; }
+.aj-cv-acts { display: flex; gap: 6px; }
+.aj-cv-acts button { min-width: 0; }
+.aj-cv-meta { grid-column: 1 / -1; padding-left: 40px; font-size: 12px; color: #6b7a99; overflow-wrap: anywhere; }
+.aj-cv-warn { display: block; margin-top: 2px; color: #b26a00; }
+.aj-manage { margin: 8px 0 4px; }
+
+@media (max-width: 600px) {
+  .aj-cv { grid-template-columns: minmax(0, 1fr); }
+  .aj-cv-acts { grid-column: 1; grid-row: auto; }
+  .aj-cv-acts button { flex: 1 1 0; min-height: 42px; }                     /* thumb-sized Preview and Download */
+  .aj-cv-meta { padding-left: 4px; }
+}
+@media (prefers-reduced-motion: reduce) { .aj-cv { transition: none; } }
