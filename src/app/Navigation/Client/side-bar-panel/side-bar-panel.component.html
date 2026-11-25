@@ -41,6 +41,8 @@
                 <ng-template #matIco><mat-icon>{{ materialIcon(item) }}</mat-icon></ng-template>
               </span>
               <span class="menu-label" *ngIf="!railMode">{{ item.label }}</span>
+              <span class="menu-badge" *ngIf="isInquiries(item) && inquiryUnread" [class.rail]="railMode" role="status"
+                [attr.aria-label]="inquiryUnread + ' unread inquiries'">{{ inquiryUnread > 99 ? '99+' : inquiryUnread }}</span>
             </a>
 
             <!-- SUBMENU -->
@@ -193,6 +195,7 @@
         <i *ngIf="faIcon(item); else tabMat" [class]="faIcon(item)" aria-hidden="true"></i>
         <ng-template #tabMat><mat-icon>{{ materialIcon(item) }}</mat-icon></ng-template>
         <span class="tab-badge" *ngIf="isMessageTab(item) && unreadCount">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+        <span class="tab-badge" *ngIf="isInquiries(item) && inquiryUnread">{{ inquiryUnread > 99 ? '99+' : inquiryUnread }}</span>
       </span>
       <span class="tab-label">{{ item.label }}</span>
     </a>

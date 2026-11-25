@@ -187,6 +187,9 @@ import { PlanDialogComponent } from './ComponentUI/SubscriptionManagement/dialog
 import { FeatureDialogComponent } from './ComponentUI/SubscriptionManagement/dialogs/feature-dialog.component';
 import { ResetDataDialogComponent } from './ComponentUI/DatabaseAdmin/reset-data-dialog.component';
 import { EmailConfigComponent } from './ComponentUI/EmailConfig/email-config.component';
+import { BrandLogoDirective } from './directives/brand-logo.directive';
+import { ContactInquiriesComponent } from './ComponentUI/ContactInquiries/contact-inquiries.component';
+import { BusinessInfoComponent } from './ComponentUI/BusinessInfo/business-info.component';
 import { DatabaseAdminComponent } from './ComponentUI/DatabaseAdmin/database-admin.component';
 import { PlanUsersDialogComponent } from './ComponentUI/SubscriptionManagement/dialogs/plan-users-dialog.component';
 import { SubscriberDialogComponent } from './ComponentUI/SubscriptionManagement/dialogs/subscriber-dialog.component';
@@ -385,6 +388,9 @@ export function HttpLoaderFactory(http: HttpClient) {
     PlanUsersDialogComponent,
     DatabaseAdminComponent,
     EmailConfigComponent,
+    BusinessInfoComponent,
+    ContactInquiriesComponent,
+    BrandLogoDirective,
     ResetDataDialogComponent,
     CheckOutUIComponent,
     UpgradeRequiredComponent,

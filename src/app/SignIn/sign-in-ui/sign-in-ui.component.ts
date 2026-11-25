@@ -1,3 +1,4 @@
+import { BrandingService } from 'src/app/services/Branding/branding.service';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -23,8 +24,7 @@ export class SignInUIComponent implements OnInit {
   applyTransNo: string | null = null;
   viewPeople = false;
 
-  constructor(
-    private fb: FormBuilder,
+  constructor(public branding: BrandingService, private fb: FormBuilder,
     private router: Router,
     private route: ActivatedRoute,
     private sigInService: SigInService,

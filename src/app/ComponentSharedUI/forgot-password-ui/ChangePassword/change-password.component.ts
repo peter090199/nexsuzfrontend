@@ -1,3 +1,4 @@
+import { BrandingService } from 'src/app/services/Branding/branding.service';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { SignUpService } from 'src/app/services/SignUp/sign-up.service';
@@ -17,7 +18,7 @@ export class ChangePasswordComponent implements OnInit {
   loginForm!: FormGroup; // Define the form group properly
   email: string = '';
 
-  constructor(private fb: FormBuilder, 
+  constructor(public branding: BrandingService, private fb: FormBuilder, 
               private signUpService: SignUpService,
               private notificationsService: NotificationsService,
               private dialog: MatDialog,

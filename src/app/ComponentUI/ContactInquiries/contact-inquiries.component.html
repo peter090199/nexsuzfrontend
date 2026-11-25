@@ -1,0 +1,156 @@
+<nav class="crumbs" aria-label="Breadcrumb"><span>System</span><mat-icon>chevron_right</mat-icon><b>Contact Inquiries</b>
+    <span class="count-pill" *ngIf="unread" aria-live="polite">{{ unread }} unread</span></nav>
+
+<div class="shell" [class.detail-open]="showDetail">
+
+    <!-- ================= LIST ================= -->
+    <section class="list-pane" aria-label="Inquiries">
+        <div class="list-tools">
+            <mat-form-field appearance="outline" class="search">
+                <mat-label>Search name, email, subject or message</mat-label>
+                <input matInput [ngModel]="search" (ngModelChange)="onSearch($event)" autocomplete="off" maxlength="100">
+                <mat-icon matSuffix>search</mat-icon>
+            </mat-form-field>
+            <div class="chips" role="tablist" aria-label="Filter by status">
+                <button type="button" *ngFor="let f of filters" class="chip" role="tab" [class.on]="filter === f.id" [attr.aria-selected]="filter === f.id" (click)="setFilter(f.id)">
+                    {{ f.label }} <b>{{ count(f.id) }}</b></button>
+            </div>
+            <div class="toggles">
+                <mat-slide-toggle [checked]="mine" (change)="toggleMine()">Assigned to me</mat-slide-toggle>
+                <mat-slide-toggle [checked]="archived" (change)="toggleArchived()">Archived</mat-slide-toggle>
+            </div>
+        </div>
+
+        <mat-progress-bar *ngIf="busy === 'list'" mode="indeterminate"></mat-progress-bar>
+        <div class="state error" *ngIf="listError" role="alert"><mat-icon>error_outline</mat-icon> {{ listError }}<button mat-button (click)="reload()">Retry</button></div>
+
+        <ul class="rows" *ngIf="rows.length">
+            <li *ngFor="let r of rows; trackBy: trackById" class="row" [class.unread]="r.unread" [class.active]="selected?.id === r.id" tabindex="0"
+                (click)="open(r)" (keydown.enter)="open(r)" [attr.aria-label]="(r.unread ? 'Unread. ' : '') + r.subject + ' from ' + r.name">
+                <span class="dot" *ngIf="r.unread" aria-hidden="true"></span>
+                <span class="avatar" aria-hidden="true">{{ initials(r.name) }}</span>
+                <div class="row-main">
+                    <div class="row-top"><b class="who">{{ r.name }}</b><time>{{ r.last_activity_at | date:'MMM d, h:mm a' }}</time></div>
+                    <div class="subject">{{ r.subject }}</div>
+                    <div class="preview">{{ r.preview }}</div>
+                    <div class="row-bot">
+                        <span class="badge" [ngClass]="'st-' + r.status">{{ r.status }}</span>
+                        <span class="num">{{ r.number }}</span>
+                        <span class="assignee" *ngIf="r.assigned_name"><mat-icon>person</mat-icon>{{ r.assigned_name }}</span>
+                    </div>
+                </div>
+            </li>
+        </ul>
+        <div class="empty" *ngIf="!rows.length && busy !== 'list' && !listError">
+            <mat-icon>mail_outline</mat-icon>
+            <p>{{ search || filter !== 'all' || mine ? 'No inquiries match these filters.' : archived ? 'No archived inquiries.' : 'No inquiries yet. Messages from the website Contact Us form appear here.' }}</p>
+        </div>
+        <div class="more" *ngIf="page < lastPage"><button mat-stroked-button (click)="more()" [disabled]="busy === 'list'">Load more ({{ rows.length }} of {{ total }})</button></div>
+    </section>
+
+    <!-- ================= DETAIL ================= -->
+    <section class="detail-pane" aria-label="Inquiry details">
+        <div class="placeholder" *ngIf="!selected && busy !== 'open' && !detailError">
+            <mat-icon>drafts</mat-icon><p>Select an inquiry to read the conversation.</p></div>
+        <mat-progress-bar *ngIf="busy === 'open'" mode="indeterminate"></mat-progress-bar>
+        <div class="state error" *ngIf="detailError" role="alert"><mat-icon>error_outline</mat-icon> {{ detailError }}</div>
+
+        <ng-container *ngIf="selected as s">
+            <header class="d-head">
+                <button mat-icon-button class="back" type="button" (click)="back()" aria-label="Back to the list"><mat-icon>arrow_back</mat-icon></button>
+                <div class="d-title">
+                    <h2>{{ s.subject }}</h2>
+                    <div class="meta">
+                        <span class="badge" [ngClass]="'st-' + s.status">{{ s.status }}</span>
+                        <span class="num">{{ s.number }}</span>
+                        <span *ngIf="s.archived" class="badge st-archived">archived</span>
+                        <span><mat-icon>person</mat-icon>{{ s.name }}</span>
+                        <a [href]="'mailto:' + s.email"><mat-icon>mail</mat-icon>{{ s.email }}</a>
+                        <span *ngIf="s.phone"><mat-icon>call</mat-icon>{{ s.phone }}</span>
+                        <span><mat-icon>schedule</mat-icon>{{ s.created_at | date:'medium' }}</span>
+                        <span *ngIf="s.assigned_name"><mat-icon>assignment_ind</mat-icon>{{ s.assigned_name }}</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="state warn" *ngIf="!s.notified && s.notify_error" role="status"><mat-icon>warning_amber</mat-icon>
+                <span>The "new inquiry" email to the business inbox was not sent: {{ s.notify_error }}</span></div>
+
+            <div class="actions" role="toolbar" aria-label="Inquiry actions">
+                <button mat-flat-button color="primary" type="button" (click)="startReply()" [disabled]="busy !== '' || composing || s.archived"><mat-icon>reply</mat-icon>Reply</button>
+                <button mat-stroked-button type="button" (click)="toggleRead()" [disabled]="busy !== ''"><mat-icon>{{ s.unread ? 'drafts' : 'mark_email_unread' }}</mat-icon>{{ s.unread ? 'Mark as read' : 'Mark as unread' }}</button>
+                <button mat-stroked-button type="button" (click)="toggleClosed()" [disabled]="busy !== '' || s.archived"><mat-icon>{{ s.status === 'closed' ? 'lock_open' : 'task_alt' }}</mat-icon>{{ s.status === 'closed' ? 'Reopen' : 'Close' }}</button>
+                <button mat-stroked-button type="button" (click)="toggleMineAssign()" [disabled]="busy !== '' || s.archived"><mat-icon>{{ s.assigned_code ? 'person_off' : 'person_add' }}</mat-icon>{{ s.assigned_code ? 'Unassign' : 'Assign to me' }}</button>
+                <span class="spacer"></span>
+                <ng-container *ngIf="!confirm">
+                    <button mat-button type="button" *ngIf="!s.archived" (click)="askArchive()" [disabled]="busy !== ''"><mat-icon>archive</mat-icon>Archive</button>
+                    <button mat-button type="button" *ngIf="s.archived" (click)="restore()" [disabled]="busy !== ''"><mat-icon>unarchive</mat-icon>Restore</button>
+                    <button mat-button type="button" color="warn" *ngIf="s.archived && isMaster" (click)="askDelete()" [disabled]="busy !== ''"><mat-icon>delete_forever</mat-icon>Delete permanently</button>
+                </ng-container>
+                <ng-container *ngIf="confirm">
+                    <span class="confirm" role="alert">{{ confirm === 'delete' ? 'Delete this inquiry and its replies for good? This cannot be undone.' : 'Archive this inquiry? You can restore it later.' }}</span>
+                    <button mat-flat-button [color]="confirm === 'delete' ? 'warn' : 'primary'" type="button" (click)="doConfirm()">{{ confirm === 'delete' ? 'Yes, delete' : 'Yes, archive' }}</button>
+                    <button mat-button type="button" (click)="cancelConfirm()">Cancel</button>
+                </ng-container>
+            </div>
+
+            <!-- conversation -->
+            <div class="thread" #thread aria-label="Conversation" role="log">
+                <article class="msg" *ngFor="let m of s.messages" [ngClass]="m.direction === 'in' ? 'in' : 'out'" [class.failed]="m.status === 'failed'">
+                    <div class="msg-head">
+                        <span class="avatar sm" aria-hidden="true">{{ initials(m.direction === 'in' ? (m.from_name || m.from_email) : (m.sent_by || 'You')) }}</span>
+                        <div class="who">
+                            <b>{{ m.direction === 'in' ? (m.from_name || m.from_email) : (m.sent_by || 'Administrator') }}</b>
+                            <small>{{ m.from_email }} <mat-icon>arrow_right_alt</mat-icon> {{ m.to_email }}</small>
+                        </div>
+                        <span class="badge" *ngIf="m.direction === 'out'" [ngClass]="m.status === 'sent' ? 'st-sent' : 'st-failed'"><mat-icon>{{ m.status === 'sent' ? 'check' : 'error_outline' }}</mat-icon>{{ m.status === 'sent' ? 'Sent' : 'Failed' }}</span>
+                        <time>{{ m.created_at | date:'MMM d, y, h:mm a' }}</time>
+                    </div>
+                    <div class="msg-subject" *ngIf="m.direction === 'out'">{{ m.subject }}</div>
+                    <div class="msg-body plain" *ngIf="!m.is_html">{{ m.body }}</div>
+                    <div class="msg-body html" *ngIf="m.is_html" [innerHTML]="m.body"></div>
+                    <div class="msg-error" *ngIf="m.status === 'failed'" role="alert"><mat-icon>error_outline</mat-icon>Not delivered: {{ m.error }}</div>
+                    <ul class="atts" *ngIf="m.attachments.length">
+                        <li *ngFor="let a of m.attachments"><button type="button" mat-stroked-button (click)="download(m, a)"><mat-icon>attach_file</mat-icon>{{ a.name }} <small>{{ size(a.size) }}</small></button></li>
+                    </ul>
+                </article>
+            </div>
+
+            <!-- reply composer -->
+            <form class="composer" *ngIf="composing" (ngSubmit)="send()" aria-label="Reply">
+                <div class="c-row"><span class="c-label">To</span><span class="to-chip"><mat-icon>person</mat-icon>{{ s.name }} &lt;{{ s.email }}&gt;</span></div>
+                <div class="c-row"><span class="c-label">From</span><span class="muted">The business email configured on the server</span></div>
+                <mat-form-field appearance="outline" class="c-subject"><mat-label>Subject</mat-label>
+                    <input matInput name="subject" [(ngModel)]="replySubject" maxlength="190" required></mat-form-field>
+                <div class="toolbar" role="toolbar" aria-label="Formatting">
+                    <button type="button" mat-icon-button (mousedown)="$event.preventDefault()" (click)="fmt('bold')" aria-label="Bold" matTooltip="Bold"><mat-icon>format_bold</mat-icon></button>
+                    <button type="button" mat-icon-button (mousedown)="$event.preventDefault()" (click)="fmt('italic')" aria-label="Italic" matTooltip="Italic"><mat-icon>format_italic</mat-icon></button>
+                    <button type="button" mat-icon-button (mousedown)="$event.preventDefault()" (click)="fmt('underline')" aria-label="Underline" matTooltip="Underline"><mat-icon>format_underlined</mat-icon></button>
+                    <button type="button" mat-icon-button (mousedown)="$event.preventDefault()" (click)="fmt('insertUnorderedList')" aria-label="Bulleted list" matTooltip="Bulleted list"><mat-icon>format_list_bulleted</mat-icon></button>
+                    <button type="button" mat-icon-button (mousedown)="$event.preventDefault()" (click)="fmt('insertOrderedList')" aria-label="Numbered list" matTooltip="Numbered list"><mat-icon>format_list_numbered</mat-icon></button>
+                    <button type="button" mat-icon-button (mousedown)="$event.preventDefault()" (click)="addLink()" aria-label="Insert link" matTooltip="Insert link"><mat-icon>link</mat-icon></button>
+                    <button type="button" mat-icon-button (mousedown)="$event.preventDefault()" (click)="fmt('removeFormat')" aria-label="Clear formatting" matTooltip="Clear formatting"><mat-icon>format_clear</mat-icon></button>
+                </div>
+                <div #editor class="editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Reply message"></div>
+
+                <div class="attach">
+                    <input #fileInput type="file" multiple hidden [accept]="acceptAttr" (change)="onFiles($event)">
+                    <button type="button" mat-stroked-button (click)="fileInput.click()" [disabled]="files.length >= maxFiles"><mat-icon>attach_file</mat-icon>Attach files</button>
+                    <small class="muted">Up to {{ maxFiles }} files, {{ maxFileMb }} MB each: PDF, Word, Excel, PowerPoint, images, TXT, CSV.</small>
+                </div>
+                <ul class="atts picked" *ngIf="files.length">
+                    <li *ngFor="let f of files; let i = index" class="file-chip"><mat-icon>description</mat-icon>{{ f.name }} <small>{{ size(f.size) }}</small>
+                        <button type="button" mat-icon-button (click)="removeFile(i)" [attr.aria-label]="'Remove ' + f.name"><mat-icon>close</mat-icon></button></li>
+                </ul>
+                <p class="field-error" *ngIf="attachError" role="alert"><mat-icon>error_outline</mat-icon>{{ attachError }}</p>
+                <div class="state error" *ngIf="sendError" role="alert"><mat-icon>error_outline</mat-icon>{{ sendError }}</div>
+
+                <div class="c-actions">
+                    <button mat-flat-button color="primary" type="submit" [disabled]="busy === 'send'">
+                        <mat-spinner *ngIf="busy === 'send'" diameter="18"></mat-spinner><mat-icon *ngIf="busy !== 'send'">send</mat-icon>{{ busy === 'send' ? 'Sending…' : 'Send reply' }}</button>
+                    <button mat-button type="button" (click)="cancelReply()" [disabled]="busy === 'send'">Discard</button>
+                </div>
+            </form>
+        </ng-container>
+    </section>
+</div>

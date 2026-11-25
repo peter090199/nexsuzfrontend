@@ -2,6 +2,7 @@
 // import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 // import { Router, NavigationEnd } from '@angular/router';
 // import { Subscription, firstValueFrom } from 'rxjs';
+import { ContactInquiriesService } from 'src/app/ComponentUI/ContactInquiries/contact-inquiries.service';
 // import { filter } from 'rxjs/operators';
 // import { SigInService } from 'src/app/services/signIn/sig-in.service';
 // import { TNavigationService } from 'src/app/services/TNavigation/tnavigation.service';
@@ -327,6 +328,7 @@ export class SideBarPanelComponent implements OnInit, OnDestroy {
     private profileImages: ProfileImageService,
     public savedJobsState: SavedJobsStateService,
     public features: FeatureService,
+    private inquiries: ContactInquiriesService,
   ) { }
 
   /** feature codes for the template (so no screen hard-codes one) */
@@ -405,6 +407,17 @@ export class SideBarPanelComponent implements OnInit, OnDestroy {
     });
   }
 
+  // ================= CONTACT INQUIRIES BADGE =================
+  private inquiryTimer: any;
+  get inquiryUnread(): number { return this.inquiries.unread$.value; }
+  isInquiries(item: any): boolean { return String(item?.route || '').split('/')[0] === 'contactinquiries'; }
+  /** Only accounts that were given the menu ask for the count; it refreshes every minute and instantly on the page itself. */
+  private startInquiryBadge(): void {
+    if (this.inquiryTimer || !this.rawMenu.some(i => this.isInquiries(i))) { return; }
+    this.inquiries.refreshUnread();
+    this.inquiryTimer = setInterval(() => this.inquiries.refreshUnread(), 60000);
+  }
+
   // ================= MENU LOAD =================
   async fetchModules(): Promise<void> {
     try {
@@ -423,6 +436,7 @@ export class SideBarPanelComponent implements OnInit, OnDestroy {
       this.rawMenu = formatted;
       this.applyFeatureFilter();
       this.expandActiveParents();
+      this.startInquiryBadge();
 
     } catch (error) {
       console.error('Error fetching modules:', error);
@@ -559,7 +573,7 @@ export class SideBarPanelComponent implements OnInit, OnDestroy {
     { key: 'general', label: 'General', routes: ['client-dashboard', 'admin-dashboard', 'home', 'message', 'network'] },
     { key: 'career', label: 'Career', routes: ['search', 'jobs', 'applied-jobs', 'user-cv'] },
     { key: 'hiring', label: 'Hiring', routes: ['vacancies', 'recommended-jobs', 'candidates', 'interviews', 'reports'] },
-    { key: 'admin', label: 'Administration', routes: ['accountmanagement', '#'] },
+    { key: 'admin', label: 'Administration', routes: ['contactinquiries', 'accountmanagement', '#'] },
   ];
 
   private groupsFor: any[] | null = null;
@@ -628,7 +642,7 @@ export class SideBarPanelComponent implements OnInit, OnDestroy {
   materialIcon(item: any): string {
     const t = (String(item?.label || '') + ' ' + String(item?.route || '')).toLowerCase();
     const map: [RegExp, string][] = [
-      [/dashboard/, 'space_dashboard'], [/home/, 'home'], [/messag|chat/, 'chat_bubble_outline'],
+      [/inquir|contact/, 'mail'], [/dashboard/, 'space_dashboard'], [/home/, 'home'], [/messag|chat/, 'chat_bubble_outline'],
       [/network|nexsuz/, 'hub'], [/vacanc/, 'campaign'], [/job/, 'work_outline'],
       [/applied/, 'assignment_turned_in'], [/search|find/, 'travel_explore'], [/cv|resume|curriculum/, 'description'],
       [/profile/, 'account_circle'], [/setting/, 'settings'], [/candidate/, 'groups'], [/interview|schedul/, 'event_available'], [/report|analytic/, 'insights'],
@@ -730,6 +744,7 @@ export class SideBarPanelComponent implements OnInit, OnDestroy {
 
   // ================= CLEANUP =================
   ngOnDestroy(): void {
+    clearInterval(this.inquiryTimer);
     this.featureSub?.unsubscribe();
     this.countsSubscription?.unsubscribe();
     this.activitySub?.unsubscribe();

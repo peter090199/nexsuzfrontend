@@ -53,6 +53,8 @@ import { PlanFeatureAssignmentComponent } from './ComponentUI/SubscriptionManage
 import { UserSubscriptionMonitoringComponent } from './ComponentUI/SubscriptionManagement/user-subscription-monitoring/user-subscription-monitoring.component';
 import { SubscriptionReportsComponent } from './ComponentUI/SubscriptionManagement/subscription-reports/subscription-reports.component';
 import { EmailConfigComponent } from './ComponentUI/EmailConfig/email-config.component';
+import { ContactInquiriesComponent } from './ComponentUI/ContactInquiries/contact-inquiries.component';
+import { BusinessInfoComponent } from './ComponentUI/BusinessInfo/business-info.component';
 import { DatabaseAdminComponent } from './ComponentUI/DatabaseAdmin/database-admin.component';
 import { UserPlanComponent } from './ComponentUI/AccountManagement/user-plan/user-plan.component';
 import { CategoryPlanComponent } from './ComponentUI/AccountManagement/category-plan/category-plan.component';
@@ -169,6 +171,10 @@ export const routes: Routes = [
       { path: 'planfeatureassignment', component: PlanFeatureAssignmentComponent },
       { path: 'usersubscriptionmonitoring', component: UserSubscriptionMonitoringComponent },
       { path: 'subscriptionreports', component: SubscriptionReportsComponent },
+      // NEXSUZ INFORMATION (one shared business record; the API enforces the assigned permission)
+      { path: 'nexsuzinfo', component: BusinessInfoComponent },
+      // CONTACT INQUIRIES (visitor messages and email replies; the API enforces the assigned permission)
+      { path: 'contactinquiries', component: ContactInquiriesComponent },
       { path: 'reports', component: ReportsComponent },
     ]
   },
@@ -215,6 +221,10 @@ export const routes: Routes = [
       { path: 'database', component: DatabaseAdminComponent },
       // EMAIL CONFIG (dynamic SMTP)
       { path: 'emailconfig', component: EmailConfigComponent },
+      // NEXSUZ INFORMATION (one shared business record)
+      { path: 'nexsuzinfo', component: BusinessInfoComponent },
+      // CONTACT INQUIRIES (visitor messages and email replies; the API enforces the assigned permission)
+      { path: 'contactinquiries', component: ContactInquiriesComponent },
 
       // SUBSCRIPTION MANAGEMENT
       { path: 'subscriptionplans', component: SubscriptionPlansComponent },

@@ -27,6 +27,10 @@ import { CommentModalUIComponent } from '../../Modal/comment-modal-ui/comment-mo
 import { SharedRoutinesService } from 'src/app/services/Function/shared-routines.service';
 import { ProfileImageService } from 'src/app/services/Profile/profile-image.service';
 import { filter } from 'rxjs/operators';
+import { _url } from 'src/global-variables';
+
+/** API origin of the active environment (http://192.168.1.68:8000/ locally, https://api.nexsuz.com/ in production). */
+const apiOrigin = (() => { try { return new URL(_url).origin + '/'; } catch { return '/'; } })();
 interface Reaction {
   emoji: string;
   label: string;
@@ -536,12 +540,12 @@ export class HomeUIComponent implements OnInit, AfterViewInit, OnDestroy {
             this.posts.forEach(post => {
               if (post.images && post.images.length > 0) {
                 post.images.forEach((image: { path_url: string; }) => {
-                  image.path_url = 'https://api.nexsuz.com/' + (image.path_url || '').replace(/\\/g, '');
+                  image.path_url = apiOrigin + (image.path_url || '').replace(/\\/g, '');
                 });
               }
               if (post.videos && post.videos.length > 0) {
                 post.videos.forEach((video: { path_url: string; }) => {
-                  video.path_url = 'https://api.nexsuz.com/' + (video.path_url || '').replace(/\\/g, '');
+                  video.path_url = apiOrigin + (video.path_url || '').replace(/\\/g, '');
                 });
               }
             });
@@ -900,7 +904,7 @@ export class HomeUIComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /** One feed card from what the API returned (media URLs made absolute, UI state added). */
   private formatFeedPost(post: any): any {
-    const normalizeUrl = (path: string) => path ? `https://api.nexsuz.com/${path.replace(/\\/g, '')}` : '';
+    const normalizeUrl = (path: string) => path ? `${apiOrigin}${path.replace(/\\/g, '')}` : '';
     return {
       ...post,
       expanded: false,

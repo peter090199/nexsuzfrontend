@@ -2581,3 +2581,7 @@ button[mat-stroked-button] {
 .mat-mdc-dialog-container .close-button ~ h2[mat-dialog-title] {
     padding-right: 48px;
 }
+
+/* Logo uploaded in Nexsuz Information (see BrandLogoDirective): keep proportions, readable on light and dark surfaces */
+/* background, padding, radius, size cap and alignment come from the saved logo style; the image itself is never altered */
+img.brand-custom { object-fit: contain; box-sizing: border-box; max-width: 100%; }

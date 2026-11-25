@@ -1,3 +1,4 @@
+import { BrandingService } from 'src/app/services/Branding/branding.service';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatDialogRef } from '@angular/material/dialog'; 
@@ -10,7 +11,7 @@ import { NotificationsService } from 'src/app/services/Global/notifications.serv
   styleUrls: ['./upload-profile.component.css']
 })
 export class UploadProfileComponent implements OnInit {
-  constructor( private fb: FormBuilder,private uploadServices:CurriculumVitaeService,
+  constructor(public branding: BrandingService, private fb: FormBuilder,private uploadServices:CurriculumVitaeService,
                private notificationService:NotificationsService,private router: Router,
                public dialogRef: MatDialogRef<UploadProfileComponent>
   ) { }

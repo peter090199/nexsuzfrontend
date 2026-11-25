@@ -1,0 +1,331 @@
+<nav class="crumbs" aria-label="Breadcrumb"><span>{{ section }}</span><mat-icon>chevron_right</mat-icon><span>System</span><mat-icon>chevron_right</mat-icon><b>Nexsuz Information</b></nav>
+
+<mat-progress-bar *ngIf="busy === 'load'" mode="indeterminate"></mat-progress-bar>
+<div class="state error" *ngIf="loadError" role="alert"><mat-icon>error_outline</mat-icon> {{ loadError }}
+    <button mat-button (click)="load()">Retry</button></div>
+
+<ng-container *ngIf="info">
+
+    <!-- ===== profile header ===== -->
+    <section class="hero" aria-label="Business profile">
+        <div class="logo-box" [class.empty]="!shownLogo">
+            <img *ngIf="shownLogo" [src]="shownLogo" alt="Business logo">
+            <span *ngIf="!shownLogo" aria-hidden="true">{{ initials }}</span>
+        </div>
+        <div class="hero-text">
+            <h1>{{ form.value.business_name || 'Business name' }}</h1>
+            <p class="tag">{{ form.value.tagline || 'Add a tagline in Company information' }}</p>
+            <div class="chips">
+                <span class="pill" [ngClass]="info.saved ? 'ok' : 'warn'">{{ info.saved ? 'Saved' : 'Not saved yet' }}</span>
+                <span class="pill info" *ngIf="form.value.registration_type">{{ form.value.registration_type }}<ng-container *ngIf="form.value.registration_number"> · {{ form.value.registration_number }}</ng-container></span>
+                <span class="pill warn" *ngIf="dirty">Unsaved changes</span>
+            </div>
+        </div>
+        <div class="hero-actions">
+            <input #file type="file" hidden accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml" (change)="onLogoPicked($event)">
+            <ng-container *ngIf="!pendingLogo">
+                <button mat-stroked-button type="button" (click)="file.click()" [disabled]="busy !== ''">
+                    <mat-icon>upload</mat-icon>{{ info.logo_url ? 'Replace logo' : 'Upload logo' }}</button>
+                <button mat-button type="button" color="warn" *ngIf="info.logo_url" (click)="removeLogo()" [disabled]="busy !== ''">
+                    <mat-icon>delete_outline</mat-icon>Remove</button>
+            </ng-container>
+            <ng-container *ngIf="pendingLogo">
+                <button mat-flat-button color="primary" type="button" (click)="uploadLogo()" [disabled]="busy !== ''">
+                    <mat-icon>cloud_upload</mat-icon>Use this logo</button>
+                <button mat-button type="button" (click)="discardPending()" [disabled]="busy === 'logo'">Discard</button>
+            </ng-container>
+            <small class="hint">PNG, JPG, WEBP or SVG · max 2 MB</small>
+            <small class="hint bad" *ngIf="logoError" role="alert">{{ logoError }}</small>
+            <mat-progress-bar *ngIf="busy === 'logo'" mode="indeterminate"></mat-progress-bar>
+        </div>
+    </section>
+
+    <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off" novalidate>
+        <mat-tab-group class="tabs" animationDuration="0ms" mat-stretch-tabs="false">
+
+            <!-- ===== company ===== -->
+            <mat-tab label="Company">
+                <div class="panel"><div class="grid">
+                    <mat-form-field appearance="outline"><mat-label>Business name</mat-label>
+                        <input matInput formControlName="business_name" required maxlength="150">
+                        <mat-error>{{ err('business_name') }}</mat-error></mat-form-field>
+                    <mat-form-field appearance="outline"><mat-label>Registered name</mat-label>
+                        <input matInput formControlName="registered_name" maxlength="190"><mat-error>{{ err('registered_name') }}</mat-error></mat-form-field>
+                    <mat-form-field appearance="outline" class="span-2"><mat-label>Tagline</mat-label>
+                        <input matInput formControlName="tagline" maxlength="190"><mat-error>{{ err('tagline') }}</mat-error></mat-form-field>
+                    <mat-form-field appearance="outline" class="span-2"><mat-label>Company description</mat-label>
+                        <textarea matInput rows="4" formControlName="description" maxlength="2000"></textarea>
+                        <mat-hint align="end">{{ form.value.description?.length || 0 }} / 2000</mat-hint></mat-form-field>
+                    <mat-form-field appearance="outline"><mat-label>Business type / industry</mat-label>
+                        <input matInput formControlName="business_type" list="industry-list" maxlength="120">
+                        <datalist id="industry-list"><option *ngFor="let i of industries" [value]="i"></option></datalist></mat-form-field>
+                    <mat-form-field appearance="outline"><mat-label>Registration type</mat-label>
+                        <mat-select formControlName="registration_type"><mat-option value="">None</mat-option>
+                            <mat-option *ngFor="let t of registrationTypes" [value]="t">{{ t }}</mat-option></mat-select></mat-form-field>
+                    <mat-form-field appearance="outline"><mat-label>Registration number</mat-label>
+                        <input matInput formControlName="registration_number" maxlength="60"></mat-form-field>
+                    <mat-form-field appearance="outline"><mat-label>Establishment date (optional)</mat-label>
+                        <input matInput type="date" formControlName="established_on" [max]="today"></mat-form-field>
+                </div></div>
+            </mat-tab>
+
+            <!-- ===== address ===== -->
+            <mat-tab label="Address">
+                <div class="panel"><div class="grid">
+                    <mat-form-field appearance="outline"><mat-label>Country</mat-label><input matInput formControlName="country" maxlength="80"></mat-form-field>
+                    <mat-form-field appearance="outline"><mat-label>Region</mat-label><input matInput formControlName="region" maxlength="100"></mat-form-field>
+                    <mat-form-field appearance="outline"><mat-label>Province</mat-label><input matInput formControlName="province" maxlength="100"></mat-form-field>
+                    <mat-form-field appearance="outline"><mat-label>City / Municipality</mat-label><input matInput formControlName="city" maxlength="100"></mat-form-field>
+                    <mat-form-field appearance="outline"><mat-label>Barangay</mat-label><input matInput formControlName="barangay" maxlength="100"></mat-form-field>
+                    <mat-form-field appearance="outline"><mat-label>Street</mat-label><input matInput formControlName="street" maxlength="150"></mat-form-field>
+                    <mat-form-field appearance="outline"><mat-label>Building</mat-label><input matInput formControlName="building" maxlength="100"></mat-form-field>
+                    <mat-form-field appearance="outline"><mat-label>Unit</mat-label><input matInput formControlName="unit" maxlength="50"></mat-form-field>
+                    <mat-form-field appearance="outline"><mat-label>ZIP code</mat-label><input matInput formControlName="zip_code" maxlength="12">
+                        <mat-error>{{ err('zip_code') }}</mat-error></mat-form-field>
+                    <mat-form-field appearance="outline"><mat-label>Google Maps URL (optional)</mat-label>
+                        <input matInput formControlName="maps_url" placeholder="https://maps.google.com/..." inputmode="url"><mat-error>{{ err('maps_url') }}</mat-error></mat-form-field>
+                    <mat-form-field appearance="outline" class="span-2"><mat-label>Complete formatted address</mat-label>
+                        <textarea matInput rows="2" formControlName="formatted_address" maxlength="400"></textarea>
+                        <mat-hint>Leave blank to build it from the fields above.</mat-hint></mat-form-field>
+                </div>
+                <div class="preview"><mat-icon>location_on</mat-icon><div><b>Shown as</b><p>{{ addressPreview || 'No address yet' }}</p></div></div></div>
+            </mat-tab>
+
+            <!-- ===== contact ===== -->
+            <mat-tab label="Contact">
+                <div class="panel"><div class="grid">
+                    <mat-form-field appearance="outline"><mat-label>Primary phone</mat-label><input matInput type="tel" formControlName="phone_primary" maxlength="30">
+                        <mat-icon matPrefix>call</mat-icon><mat-error>{{ err('phone_primary') }}</mat-error></mat-form-field>
+                    <mat-form-field appearance="outline"><mat-label>Alternative phone</mat-label><input matInput type="tel" formControlName="phone_alt" maxlength="30">
+                        <mat-icon matPrefix>phone_in_talk</mat-icon><mat-error>{{ err('phone_alt') }}</mat-error></mat-form-field>
+                    <mat-form-field appearance="outline"><mat-label>Official business email</mat-label><input matInput type="email" formControlName="email_official" maxlength="190">
+                        <mat-icon matPrefix>mail</mat-icon><mat-error>{{ err('email_official') }}</mat-error></mat-form-field>
+                    <mat-form-field appearance="outline"><mat-label>Support email</mat-label><input matInput type="email" formControlName="email_support" maxlength="190">
+                        <mat-icon matPrefix>support_agent</mat-icon><mat-error>{{ err('email_support') }}</mat-error></mat-form-field>
+                    <mat-form-field appearance="outline"><mat-label>Website URL</mat-label><input matInput formControlName="website_url" placeholder="https://" inputmode="url">
+                        <mat-icon matPrefix>language</mat-icon><mat-error>{{ err('website_url') }}</mat-error></mat-form-field>
+                    <mat-form-field appearance="outline"><mat-label>Customer service contact</mat-label><input matInput formControlName="customer_service" maxlength="190">
+                        <mat-icon matPrefix>headset_mic</mat-icon></mat-form-field>
+                    <mat-form-field appearance="outline" class="span-2"><mat-label>Business operating hours</mat-label>
+                        <textarea matInput rows="3" formControlName="operating_hours" maxlength="400" placeholder="Mon – Fri: 9:00 AM – 6:00 PM"></textarea></mat-form-field>
+                </div></div>
+            </mat-tab>
+
+            <!-- ===== social ===== -->
+            <mat-tab label="Social media">
+                <div class="panel"><div class="grid">
+                    <mat-form-field appearance="outline" *ngFor="let n of [['facebook','Facebook','facebook'],['instagram','Instagram','photo_camera'],['linkedin','LinkedIn','work'],['youtube','YouTube','smart_display'],['twitter','X / Twitter','alternate_email'],['tiktok','TikTok','music_note']]">
+                        <mat-label>{{ n[1] }}</mat-label>
+                        <input matInput [formControlName]="n[0]" placeholder="https://" inputmode="url"><mat-icon matPrefix>{{ n[2] }}</mat-icon>
+                        <mat-error>{{ err(n[0]) }}</mat-error></mat-form-field>
+                </div>
+                <div class="links" formArrayName="other_links">
+                    <div class="links-head"><b>Other links</b><button mat-stroked-button type="button" (click)="addLink()" [disabled]="otherLinks.length >= maxOtherLinks">
+                        <mat-icon>add_link</mat-icon>Add link</button></div>
+                    <div class="link-row" *ngFor="let g of otherLinks.controls; let i = index" [formGroupName]="i">
+                        <mat-form-field appearance="outline"><mat-label>Label</mat-label><input matInput formControlName="label" maxlength="40"></mat-form-field>
+                        <mat-form-field appearance="outline"><mat-label>URL</mat-label><input matInput formControlName="url" placeholder="https://" inputmode="url">
+                            <mat-error>Enter a full web address starting with http:// or https://</mat-error></mat-form-field>
+                        <button mat-icon-button type="button" (click)="removeLink(i)" aria-label="Remove link"><mat-icon>close</mat-icon></button>
+                    </div>
+                </div></div>
+            </mat-tab>
+
+            <!-- ===== logo style + live previews ===== -->
+            <mat-tab label="Logo style">
+                <div class="panel" formGroupName="logo_style">
+                    <div class="style-layout">
+                        <div class="style-controls">
+                            <h3 class="sub">Logo background</h3>
+                            <div class="modes" role="radiogroup" aria-label="Logo background">
+                                <button type="button" *ngFor="let m of bgModes" class="mode" role="radio" [attr.aria-checked]="styleValue.bg_mode === m.id"
+                                    [class.on]="styleValue.bg_mode === m.id" (click)="form.get('logo_style.bg_mode')!.setValue(m.id); form.markAsDirty()">
+                                    <mat-icon>{{ m.icon }}</mat-icon>{{ m.label }}</button>
+                            </div>
+                            <div class="colors" *ngIf="styleValue.bg_mode === 'color'">
+                                <label class="picker"><span>Background color</span><input type="color" formControlName="bg_color"></label>
+                                <mat-form-field appearance="outline"><mat-label>Hex</mat-label><input matInput formControlName="bg_color" maxlength="7" placeholder="#ffffff">
+                                    <mat-error>Use a color like #0a66c2</mat-error></mat-form-field>
+                            </div>
+                            <div class="colors" *ngIf="styleValue.bg_mode === 'gradient'">
+                                <label class="picker"><span>From</span><input type="color" formControlName="gradient_from"></label>
+                                <label class="picker"><span>To</span><input type="color" formControlName="gradient_to"></label>
+                                <mat-form-field appearance="outline"><mat-label>Angle (deg)</mat-label><input matInput type="number" min="0" max="360" formControlName="gradient_angle"></mat-form-field>
+                            </div>
+                            <p class="state info-note" *ngIf="styleHint"><mat-icon>info</mat-icon>{{ styleHint }}</p>
+
+                            <h3 class="sub">Container</h3>
+                            <div class="grid small">
+                                <mat-form-field appearance="outline"><mat-label>Padding (px)</mat-label><input matInput type="number" min="0" max="32" formControlName="padding">
+                                    <mat-hint>0 to 32</mat-hint></mat-form-field>
+                                <mat-form-field appearance="outline"><mat-label>Border radius (px)</mat-label><input matInput type="number" min="0" max="60" formControlName="radius">
+                                    <mat-hint>0 square, 60 round</mat-hint></mat-form-field>
+                                <mat-form-field appearance="outline"><mat-label>Max width (px)</mat-label><input matInput type="number" min="16" max="400" formControlName="width" placeholder="Auto">
+                                    <mat-hint>Empty keeps each place's own size</mat-hint></mat-form-field>
+                                <mat-form-field appearance="outline"><mat-label>Max height (px)</mat-label><input matInput type="number" min="16" max="200" formControlName="height" placeholder="Auto">
+                                    <mat-hint>Empty keeps each place's own size</mat-hint></mat-form-field>
+                            </div>
+                            <mat-button-toggle-group formControlName="align" aria-label="Logo alignment">
+                                <mat-button-toggle value="left"><mat-icon>format_align_left</mat-icon> Left</mat-button-toggle>
+                                <mat-button-toggle value="center"><mat-icon>format_align_center</mat-icon> Center</mat-button-toggle>
+                                <mat-button-toggle value="right"><mat-icon>format_align_right</mat-icon> Right</mat-button-toggle>
+                            </mat-button-toggle-group>
+                            <p><button mat-button type="button" (click)="resetStyle()"><mat-icon>restart_alt</mat-icon>Back to default look</button></p>
+                        </div>
+
+                        <div class="style-preview">
+                            <div class="prev-head"><h3 class="sub">Live preview <small>(not saved until you press {{ info.saved ? 'Update' : 'Save' }})</small></h3>
+                                <mat-button-toggle-group [value]="surface" (change)="surface = $event.value" aria-label="Preview surface" class="surf-toggle">
+                                    <mat-button-toggle value="actual">As in app</mat-button-toggle>
+                                    <mat-button-toggle value="light">Light</mat-button-toggle>
+                                    <mat-button-toggle value="dark">Dark</mat-button-toggle>
+                                </mat-button-toggle-group></div>
+                            <div class="mocks">
+                                <figure class="mock sidebar" [ngClass]="resolvedSurface('dark')"><figcaption>Admin sidebar</figcaption>
+                                    <div class="mock-row"><img [src]="previewSrc(resolvedSurface('dark'))" [ngStyle]="previewCss" alt="Logo preview"><b>NEXSUZ</b></div>
+                                    <i></i><i></i><i></i></figure>
+                                <figure class="mock sidebar" [ngClass]="resolvedSurface('dark')"><figcaption>Master Admin sidebar</figcaption>
+                                    <div class="mock-row"><img [src]="previewSrc(resolvedSurface('dark'))" [ngStyle]="previewCss" alt="Logo preview"><b>NEXSUZ</b></div>
+                                    <i></i><i></i><i></i></figure>
+                                <figure class="mock header" [ngClass]="resolvedSurface('light')"><figcaption>Website header</figcaption>
+                                    <div class="mock-row"><img [src]="previewSrc(resolvedSurface('light'))" [ngStyle]="previewCss" alt="Logo preview"><span class="nav-dots"><i></i><i></i><i></i></span></div></figure>
+                                <figure class="mock footer" [ngClass]="resolvedSurface('dark')"><figcaption>Website footer</figcaption>
+                                    <div class="mock-row"><img [src]="previewSrc(resolvedSurface('dark'))" [ngStyle]="previewCss" alt="Logo preview"><span class="nav-dots"><i></i><i></i><i></i></span></div></figure>
+                                <figure class="mock auth" [ngClass]="resolvedSurface('light')"><figcaption>Sign-in page</figcaption>
+                                    <div class="auth-card"><img class="big" [src]="previewSrc(resolvedSurface('light'))" [ngStyle]="previewCss" alt="Logo preview"><i></i><i></i><u></u></div></figure>
+                                <figure class="mock auth" [ngClass]="resolvedSurface('light')"><figcaption>Sign-up page</figcaption>
+                                    <div class="auth-card"><img class="big" [src]="previewSrc(resolvedSurface('light'))" [ngStyle]="previewCss" alt="Logo preview"><i></i><i></i><i></i><u></u></div></figure>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </mat-tab>
+
+            <!-- ===== website contact settings ===== -->
+            <mat-tab label="Website contact">
+                <div class="panel"><div class="grid">
+                    <mat-form-field appearance="outline"><mat-label>Contact section heading</mat-label><input matInput formControlName="contact_heading" maxlength="120"></mat-form-field>
+                    <mat-form-field appearance="outline"><mat-label>Contact form recipient email</mat-label><input matInput type="email" formControlName="contact_recipient_email" maxlength="190">
+                        <mat-hint>Messages from the website form are sent here. Never shown publicly.</mat-hint><mat-error>{{ err('contact_recipient_email') }}</mat-error></mat-form-field>
+                    <mat-form-field appearance="outline" class="span-2"><mat-label>Contact section description</mat-label>
+                        <textarea matInput rows="3" formControlName="contact_description" maxlength="500"></textarea></mat-form-field>
+                </div>
+                <h3 class="sub">Email delivery</h3>
+                <div class="mailbox" *ngIf="mail as m">
+                    <div class="mail-line"><mat-icon [class.ok]="m.ready" [class.bad]="!m.ready">{{ m.ready ? 'mark_email_read' : 'mail_lock' }}</mat-icon>
+                        <div><b>{{ m.ready ? 'Ready to receive website inquiries' : 'Not ready' }}</b>
+                            <p>Sent through <b>{{ m.provider || 'no SMTP server' }}</b><ng-container *ngIf="m.host"> ({{ m.host }}:{{ m.port }}, {{ m.encryption || 'no encryption' }})</ng-container>
+                                as <b>{{ m.from_address || 'no sender' }}</b>; delivered to <b>{{ m.recipient || 'no recipient yet' }}</b>.</p></div></div>
+                    <div class="state error" *ngIf="m.recipient_problem" role="alert"><mat-icon>error_outline</mat-icon>
+                        {{ m.recipient_problem === 'invalid' ? 'The saved recipient email is not valid.' : 'No recipient email is set, so website messages cannot be delivered.' }}
+                        Enter it in <b>Contact form recipient email</b> above and press {{ info.saved ? 'Update' : 'Save' }}.</div>
+                    <ul class="mail-issues" *ngIf="m.missing.length || m.warnings.length">
+                        <li *ngIf="m.missing.length">Missing in the server .env: {{ m.missing.join(', ') }}</li>
+                        <li *ngFor="let w of m.warnings">{{ w }}</li>
+                    </ul>
+                    <p class="hint-line"><mat-icon>lock</mat-icon>The sender login (Gmail App Password or domain mailbox password) is set only in the server .env and is never shown here. Switching between Gmail and a domain email needs no change on this page.</p>
+                    <div class="mail-actions">
+                        <button mat-stroked-button type="button" (click)="runMail('check')" [disabled]="busy !== ''"><mat-icon>wifi_tethering</mat-icon>Check connection</button>
+                        <button mat-stroked-button type="button" (click)="runMail('test')" [disabled]="busy !== '' || dirty || !m.recipient"
+                            [matTooltip]="dirty ? 'Save your changes first' : ''"><mat-icon>forward_to_inbox</mat-icon>Send test email</button>
+                        <mat-spinner *ngIf="busy === 'mail'" diameter="20"></mat-spinner>
+                    </div>
+                    <div class="state result" *ngIf="mailResult" [class.error]="!mailResult.ok" role="status">
+                        <mat-icon>{{ mailResult.ok ? 'check_circle' : 'error_outline' }}</mat-icon> {{ mailResult.text }}</div>
+                </div>
+
+                <h3 class="sub">Show on the public website</h3>
+                <div class="toggles">
+                    <mat-slide-toggle formControlName="show_address">Address</mat-slide-toggle>
+                    <mat-slide-toggle formControlName="show_phone">Phone numbers</mat-slide-toggle>
+                    <mat-slide-toggle formControlName="show_email">Email</mat-slide-toggle>
+                    <mat-slide-toggle formControlName="show_hours">Operating hours</mat-slide-toggle>
+                    <mat-slide-toggle formControlName="show_socials">Social links</mat-slide-toggle>
+                </div></div>
+            </mat-tab>
+            <!-- ===== email theme + live preview ===== -->
+            <mat-tab label="Email theme">
+                <div class="panel" formGroupName="email_theme">
+                    <div class="style-layout theme-layout">
+                        <div class="style-controls">
+                            <h3 class="sub">Theme</h3>
+                            <div class="presets" role="radiogroup" aria-label="Email theme">
+                                <button type="button" *ngFor="let p of presetList" class="preset" role="radio" [attr.aria-checked]="themePreset === p.id" [class.on]="themePreset === p.id" (click)="applyPreset(p.id)">
+                                    <span class="swatches" aria-hidden="true"><i [style.background]="p.colors['header_bg']"></i><i [style.background]="p.colors['card_bg']"></i><i [style.background]="p.colors['button_bg']"></i><i [style.background]="p.colors['footer_bg']"></i></span>
+                                    {{ p.label }}</button>
+                                <button type="button" class="preset" role="radio" [attr.aria-checked]="themePreset === 'custom'" [class.on]="themePreset === 'custom'" (click)="applyPreset('custom')">
+                                    <span class="swatches" aria-hidden="true"><i [style.background]="theme.colors['header_bg']"></i><i [style.background]="theme.colors['card_bg']"></i><i [style.background]="theme.colors['button_bg']"></i><i [style.background]="theme.colors['footer_bg']"></i></span>
+                                    Custom Theme</button>
+                            </div>
+
+                            <div formGroupName="colors">
+                                <section class="cgroup" *ngFor="let g of colorGroups">
+                                    <h4><mat-icon>{{ g.icon }}</mat-icon>{{ g.title }}</h4>
+                                    <div class="crow" *ngFor="let f of g.fields">
+                                        <label class="picker"><span class="sr-only">{{ f.label }} color picker</span><input type="color" [formControlName]="f.key" (input)="markCustom()"></label>
+                                        <mat-form-field appearance="outline" class="hex"><mat-label>{{ f.label }}</mat-label>
+                                            <input matInput [formControlName]="f.key" maxlength="7" placeholder="#000000" (input)="markCustom()" autocomplete="off" spellcheck="false">
+                                            <mat-error>Use a color like #0a66c2</mat-error></mat-form-field>
+                                    </div>
+                                </section>
+                            </div>
+
+                            <section class="cgroup" *ngFor="let gr of [['header_gradient', 'Header gradient (optional)'], ['footer_gradient', 'Footer gradient (optional)']]" [formGroupName]="gr[0]">
+                                <h4><mat-icon>gradient</mat-icon>{{ gr[1] }}</h4>
+                                <mat-slide-toggle formControlName="enabled" (change)="markCustom()">Use a gradient</mat-slide-toggle>
+                                <div class="colors" *ngIf="theme[gr[0] === 'header_gradient' ? 'header_gradient' : 'footer_gradient'].enabled">
+                                    <label class="picker"><span>From</span><input type="color" formControlName="from" (input)="markCustom()"></label>
+                                    <label class="picker"><span>To</span><input type="color" formControlName="to" (input)="markCustom()"></label>
+                                    <mat-form-field appearance="outline"><mat-label>Angle (deg)</mat-label><input matInput type="number" min="0" max="360" formControlName="angle" (input)="markCustom()"></mat-form-field>
+                                </div>
+                                <p class="hint-line" *ngIf="theme[gr[0] === 'header_gradient' ? 'header_gradient' : 'footer_gradient'].enabled"><mat-icon>info</mat-icon>Mail apps without gradient support (some Outlook versions) show the "From" color as a solid.</p>
+                            </section>
+
+                            <div class="state warn" *ngIf="contrastIssues.length" role="status"><mat-icon>warning_amber</mat-icon>
+                                <span>Hard to read: <ng-container *ngFor="let i of contrastIssues; let last = last"><b>{{ i.label }}</b> ({{ i.ratio }}:1){{ last ? '' : ', ' }}</ng-container>. Aim for 4.5:1 or more.</span></div>
+
+                            <div class="actions tight">
+                                <button mat-stroked-button type="button" (click)="resetTheme()"><mat-icon>restart_alt</mat-icon>Reset to Navy</button>
+                                <button mat-stroked-button type="button" (click)="sendThemeTest()" [disabled]="busy !== '' || dirty || !mail?.recipient"
+                                    [matTooltip]="dirty ? 'Save your changes first' : (mail?.recipient ? '' : 'Set the contact form recipient first')"><mat-icon>forward_to_inbox</mat-icon>Send test email</button>
+                            </div>
+                            <div class="state result" *ngIf="themeResult" [class.error]="!themeResult.ok" role="status"><mat-icon>{{ themeResult.ok ? 'check_circle' : 'error_outline' }}</mat-icon> {{ themeResult.text }}</div>
+                        </div>
+
+                        <div class="style-preview">
+                            <div class="prev-head"><h3 class="sub">Live email preview <small>({{ themeLabel }}; not saved until you press {{ info.saved ? 'Update' : 'Save' }})</small></h3>
+                                <mat-button-toggle-group [value]="previewDevice" (change)="previewDevice = $event.value" aria-label="Preview device">
+                                    <mat-button-toggle value="desktop"><mat-icon>desktop_windows</mat-icon> Desktop</mat-button-toggle>
+                                    <mat-button-toggle value="mobile"><mat-icon>smartphone</mat-icon> Mobile</mat-button-toggle>
+                                </mat-button-toggle-group></div>
+                            <mat-progress-bar *ngIf="previewBusy" mode="indeterminate"></mat-progress-bar>
+                            <div class="state error" *ngIf="previewError" role="alert"><mat-icon>error_outline</mat-icon>{{ previewError }}</div>
+                            <div class="frame-wrap" [class.mobile]="previewDevice === 'mobile'">
+                                <iframe class="email-frame" [srcdoc]="previewDoc" sandbox="" title="Email preview"></iframe>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </mat-tab>
+        </mat-tab-group>
+
+        <!-- ===== actions ===== -->
+        <div class="actions">
+            <button mat-flat-button color="primary" type="submit" [disabled]="busy !== '' || (info.saved && !dirty)">
+                <mat-spinner *ngIf="busy === 'save'" diameter="18"></mat-spinner>
+                <mat-icon *ngIf="busy !== 'save'">save</mat-icon>{{ info.saved ? 'Update' : 'Save' }}</button>
+            <button mat-stroked-button type="button" (click)="cancel()" [disabled]="busy !== '' || !dirty"><mat-icon>undo</mat-icon>Cancel</button>
+            <span class="spacer"></span>
+            <ng-container *ngIf="!confirmReset">
+                <button mat-button type="button" color="warn" (click)="askReset()" [disabled]="busy !== '' || !info.saved"><mat-icon>restart_alt</mat-icon>Reset</button>
+            </ng-container>
+            <ng-container *ngIf="confirmReset">
+                <span class="confirm" role="alert">Clear all saved business details?</span>
+                <button mat-flat-button color="warn" type="button" (click)="doReset()">Yes, reset</button>
+                <button mat-button type="button" (click)="confirmReset = false">Keep</button>
+            </ng-container>
+        </div>
+        <div class="state result" *ngIf="lastResult" [class.error]="!lastResult.ok" role="status">
+            <mat-icon>{{ lastResult.ok ? 'check_circle' : 'error_outline' }}</mat-icon> {{ lastResult.text }}</div>
+    </form>
+</ng-container>

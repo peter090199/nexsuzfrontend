@@ -1,72 +1,62 @@
 <section class="contact-section-1" id="contact-section">
     <div class="container">
 
-        <!-- Section Heading -->
+        <!-- Section Heading (text comes from Nexsuz Information) -->
         <div class="section-heading text-center reveal reveal-up">
             <span class="hero-badge">
                 <i class="fas fa-envelope"></i>
-                Get In Touch
+                {{ biz?.contact_heading || 'Get In Touch' }}
             </span>
-            <h2>Let's <span>Connect</span></h2>
-            <p class="section-subtitle">
-                Have a question, feedback, or a partnership idea? Reach out — our team
-                typically responds within 24 hours.
-            </p>
+            <h2 *ngIf="biz?.business_name">{{ biz?.business_name }}</h2>
+            <p class="section-subtitle" *ngIf="biz?.contact_description">{{ biz?.contact_description }}</p>
+            <p class="section-subtitle" *ngIf="biz?.tagline"><em>{{ biz?.tagline }}</em></p>
         </div>
 
         <div class="row align-items-start contact-row">
 
-            <!-- LEFT: CONTACT INFO -->
-            <div class="col-lg-5 col-md-12 reveal reveal-left">
+            <!-- LEFT: CONTACT INFO (only what is saved and switched on) -->
+            <div class="col-lg-5 col-md-12 reveal reveal-left" *ngIf="hasInfo">
 
                 <div class="contact-info-card">
 
-                    <div class="contact-info-item">
-                        <span class="feature-icon">
-                            <mat-icon>location_on</mat-icon>
-                        </span>
+                    <div class="contact-info-item" *ngIf="biz?.address">
+                        <span class="feature-icon"><mat-icon>location_on</mat-icon></span>
                         <div>
                             <h5>Our Office</h5>
-                            <p>123 Business Avenue, Suite 400<br>Metro City, 10001</p>
+                            <p>{{ biz?.address }}</p>
+                            <a *ngIf="biz?.maps_url" [href]="biz?.maps_url" target="_blank" rel="noopener noreferrer">View on map</a>
                         </div>
                     </div>
 
-                    <div class="contact-info-item">
-                        <span class="feature-icon">
-                            <mat-icon>mail</mat-icon>
-                        </span>
+                    <div class="contact-info-item" *ngIf="biz?.email">
+                        <span class="feature-icon"><mat-icon>mail</mat-icon></span>
                         <div>
                             <h5>Email Us</h5>
-                            <p>support&#64;nexsuz.com</p>
+                            <p><a [href]="'mailto:' + biz?.email">{{ biz?.email }}</a></p>
                         </div>
                     </div>
 
-                    <div class="contact-info-item">
-                        <span class="feature-icon">
-                            <mat-icon>call</mat-icon>
-                        </span>
+                    <div class="contact-info-item" *ngIf="biz?.phone_primary || biz?.phone_alt">
+                        <span class="feature-icon"><mat-icon>call</mat-icon></span>
                         <div>
                             <h5>Call Us</h5>
-                            <p>+1 (555) 123-4567</p>
+                            <p *ngIf="biz?.phone_primary">{{ biz?.phone_primary }}</p>
+                            <p *ngIf="biz?.phone_alt">{{ biz?.phone_alt }}</p>
                         </div>
                     </div>
 
-                    <div class="contact-info-item">
-                        <span class="feature-icon">
-                            <mat-icon>schedule</mat-icon>
-                        </span>
+                    <div class="contact-info-item" *ngIf="biz?.operating_hours">
+                        <span class="feature-icon"><mat-icon>schedule</mat-icon></span>
                         <div>
                             <h5>Working Hours</h5>
-                            <p>Mon – Fri: 9:00 AM – 6:00 PM</p>
+                            <p style="white-space: pre-line">{{ biz?.operating_hours }}</p>
                         </div>
                     </div>
 
                     <!-- Social Links -->
-                    <div class="contact-socials">
-                        <a href="#" mat-icon-button aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" mat-icon-button aria-label="Twitter / X"><i class="fab fa-twitter"></i></a>
-                        <a href="#" mat-icon-button aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
-                        <a href="#" mat-icon-button aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <div class="contact-socials" *ngIf="socials.length || biz?.other_links?.length">
+                        <a *ngFor="let s of socials" [href]="s.href" target="_blank" rel="noopener noreferrer" mat-icon-button [attr.aria-label]="s.label"><i [class]="s.icon"></i></a>
+                        <a *ngFor="let l of biz?.other_links" [href]="l.url" target="_blank" rel="noopener noreferrer" mat-icon-button [attr.aria-label]="l.label" [title]="l.label"><mat-icon>link</mat-icon></a>
                     </div>
 
                 </div>
@@ -74,7 +64,7 @@
             </div>
 
             <!-- RIGHT: CONTACT FORM -->
-            <div class="col-lg-7 col-md-12 reveal reveal-right">
+            <div class="col-md-12 reveal reveal-right" [ngClass]="hasInfo ? 'col-lg-7' : 'col-lg-8 mx-auto'">
 
                 <form class="contact-form" (ngSubmit)="onContactSubmit()" #contactForm="ngForm">
 
@@ -123,6 +113,10 @@
                     <p class="form-success" *ngIf="submitSuccess">
                         <mat-icon>check_circle</mat-icon>
                         Thanks! Your message has been sent — we'll get back to you soon.
+                    </p>
+
+                    <p class="form-error" *ngIf="submitError" role="alert" style="color:#c62828;margin-top:12px">
+                        <mat-icon>error_outline</mat-icon> {{ submitError }}
                     </p>
 
                 </form>

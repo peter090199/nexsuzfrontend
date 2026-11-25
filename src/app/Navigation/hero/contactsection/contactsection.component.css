@@ -273,3 +273,4 @@ textarea.form-control {
     font-size: 1.8rem;
   }
 }
+.contact-info-item a { color: inherit; }
