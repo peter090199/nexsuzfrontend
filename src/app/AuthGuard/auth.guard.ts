@@ -63,7 +63,6 @@ import { ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot } from
 import { BehaviorSubject, catchError, map, Observable, tap, throwError } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { _url } from 'src/global-variables';
-
 @Injectable({
   providedIn: 'root'
 })
