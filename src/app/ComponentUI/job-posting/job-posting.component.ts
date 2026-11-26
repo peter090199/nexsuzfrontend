@@ -2,7 +2,6 @@ import { FEATURE } from 'src/app/services/AccountPlan/feature-access.map';
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { MatPaginator } from '@angular/material/paginator';
-import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { firstValueFrom } from 'rxjs';
 import { SharedRoutinesService } from 'src/app/services/Function/shared-routines.service';
@@ -24,47 +23,20 @@ export class JobPostingComponent implements OnInit {
   /** feature codes for the template */
   readonly FEATURE = FEATURE;
   searchKey: string = '';
-  placeHolder: string = 'Search';
   isLoading: boolean = false;
-
-  // Default (all fields individually)
-  defaultColumns: string[] = [
-    'id',
-    'job_name',
-    'job_position',
-    'job_description',
-    'job_about',
-    'qualification',
-    'work_type',
-    'comp_name',
-    'comp_description',
-    'job_image',
-    'created_at',
-    'updated_at',
-    'actions'
-  ];
-
-  // Merged view
-  mergedColumns: string[] = [
-    'job_info',
-    'job_position',
-    'company_info',
-    'work_type',
-    'job_image',
-    'actions'
-  ];
-
-  // Currently active set
-  displayedColumns: string[] = this.defaultColumns;
+  failed = false;
+  statusFilter: 'all' | 'active' | 'draft' = 'all';
+  sortBy: 'newest' | 'oldest' | 'title' = 'newest';
 
   dataSource = new MatTableDataSource<any>([]);
   jobPosting: any[] = [];
   questions: any[] = [];
   pageSizeOptions: number[] = [5, 10, 25, 100];
   success: boolean = false;
+  /** the cards on screen: filtered, sorted and paged by the data source */
+  readonly jobs$ = this.dataSource.connect();
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
-  @ViewChild(MatSort) sort!: MatSort;
 
   constructor(
     private jobServices: JobPostingService, private router: Router,
@@ -76,25 +48,49 @@ export class JobPostingComponent implements OnInit {
 
   ngOnInit(): void {
     this.getJobPosting();
-    this.toggleColumns();
-  }
-
-  // 🔄 Toggle between default & merged
-  toggleColumns() {
-    if (this.displayedColumns === this.defaultColumns) {
-      this.displayedColumns = this.mergedColumns;
-    } else {
-      //   this.displayedColumns = this.defaultColumns;
-    }
   }
 
   applyFilter() {
-    this.dataSource.filter = this.searchKey.trim().toLocaleLowerCase();
+    const key = this.searchKey.trim().toLocaleLowerCase();
+    const rows = this.jobPosting
+      .filter(j => this.statusFilter === 'all' || this.statusOf(j) === this.statusFilter)
+      .filter(j => !key || [j.job_name, j.job_position, j.company, j.location, j.work_type, j.employment_type, j.transNo]
+        .some(v => String(v ?? '').toLocaleLowerCase().includes(key)));
+    const time = (j: any) => new Date(j.created_at || 0).getTime();
+    rows.sort((x, y) => this.sortBy === 'title' ? String(x.job_name).localeCompare(String(y.job_name))
+      : this.sortBy === 'oldest' ? time(x) - time(y) : time(y) - time(x));
+    this.dataSource.data = rows;
+    this.paginator?.firstPage();
   }
 
   clearSearch() {
     this.searchKey = '';
     this.applyFilter();
+  }
+
+  setStatus(status: 'all' | 'active' | 'draft'): void {
+    this.statusFilter = status;
+    this.applyFilter();
+  }
+
+  statusOf(job: any): string { return job?.recordstatus || 'active'; }
+  count(status: 'active' | 'draft'): number { return this.jobPosting.filter(j => this.statusOf(j) === status).length; }
+
+  /** the public job page; only active vacancies are listed there, so a draft has none */
+  jobLink(job: any): any[] | null {
+    return this.statusOf(job) === 'active' ? ['/' + this.sharedRoutines.getRole(), 'recommended-jobs', job.transNo] : null;
+  }
+
+  async copyLink(job: any): Promise<void> {
+    const link = this.jobLink(job);
+    if (!link) { return; }
+    const url = window.location.origin + this.router.serializeUrl(this.router.createUrlTree(link));
+    try {
+      await navigator.clipboard.writeText(url);
+      this.notificationsService.toastrSuccess('Job link copied.');
+    } catch {
+      window.prompt('Copy this link', url);
+    }
   }
 
   jobPosting2() {
@@ -118,6 +114,7 @@ export class JobPostingComponent implements OnInit {
   async getJobPosting(): Promise<void> {
     try {
       this.isLoading = true;
+      this.failed = false;
 
       const res = await firstValueFrom(this.jobServices.getJobPosting());
 
@@ -136,16 +133,16 @@ export class JobPostingComponent implements OnInit {
           };  
         });
 
-        this.dataSource.data = this.jobPosting;
+        this.dataSource.paginator = this.paginator;
+        this.applyFilter();
       } else {
         this.success = false;
+        this.failed = true;
       }
-
-      this.dataSource.paginator = this.paginator;
-      this.dataSource.sort = this.sort;
 
     } catch (error) {
       console.error('Error fetching jobs:', error);
+      this.failed = true;
     } finally {
       this.isLoading = false;
     }

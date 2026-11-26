@@ -66,8 +66,12 @@
                 <p class="salary"><i class="fas fa-money-bill-wave"></i> {{ formatSalary(job) }}</p>
 
                 <div class="job-footer">
-                    <button class="apply-btn" (click)="openJobApply(job); $event.stopPropagation()">
+                    <!-- recruiters don't apply: they manage the vacancies that are theirs -->
+                    <button class="apply-btn" *ngIf="!isRecruiter" (click)="openJobApply(job); $event.stopPropagation()">
                         Apply Now
+                    </button>
+                    <button class="apply-btn manage-btn" *ngIf="canManage(job)" (click)="manageJob(job); $event.stopPropagation()">
+                        Manage Job
                     </button>
                 </div>
             </div>

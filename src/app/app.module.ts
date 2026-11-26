@@ -17,8 +17,11 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatSidenavModule } from '@angular/material/sidenav';
 
 // Translate module imports
-import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
-import { TranslateHttpLoader } from '@ngx-translate/http-loader';
+import { TranslateModule, TranslateLoader, MissingTranslationHandler } from '@ngx-translate/core';
+import { NexsuzMissingTranslationHandler, NexsuzTranslateLoader } from './services/language.service';
+import { MenuLabelPipe } from './services/menu-label.pipe';
+import { CountryPickerComponent } from './ComponentSharedUI/country-picker/country-picker.component';
+import { LanguageSetupComponent } from './ComponentUI/system/language-setup/language-setup.component';
 import { CookieService } from 'ngx-cookie-service';
 // Component declarations
 import { FooterComponent } from './footer/footer.component';
@@ -66,6 +69,8 @@ import { ProfileComponent } from './layout/profile/profile.component';
 import { TopbarComponent } from './layout/topbar/topbar.component';
 import { CurriculumVitaeUIComponent } from './ComponentSharedUI/Individual/curriculum-vitae-ui/curriculum-vitae-ui.component';
 import { ProfileUIComponent } from './ComponentSharedUI/Profile/profile-ui/profile-ui.component';
+import { PublicProfileComponent } from './ComponentSharedUI/Profile/public-profile/public-profile.component';
+import { ProfileVisibilityComponent } from './ComponentSharedUI/Profile/profile-visibility/profile-visibility.component';
 import { UserCVComponent } from './ComponentSharedUI/Individual/user-cv/user-cv.component';
 import { DatePipe } from '@angular/common';
 import { UploadProfileComponent } from './ComponentSharedUI/Individual/upload-profile/upload-profile.component';
@@ -210,7 +215,7 @@ import { ContactsectionComponent } from './Navigation/hero/contactsection/contac
 import { FootersectionComponent } from './Navigation/hero/footersection/footersection.component';
 
 export function HttpLoaderFactory(http: HttpClient) {
-  return new TranslateHttpLoader(http, './assets/i18n/', '.json');
+  return new NexsuzTranslateLoader(http);
 }
 // export function preloadNavigationData(navService: TNavigationService) {
 //   return () => navService.getData().toPromise().then(() => true);
@@ -273,6 +278,11 @@ export function HttpLoaderFactory(http: HttpClient) {
     TopbarComponent,
     CurriculumVitaeUIComponent,
     ProfileUIComponent,
+    MenuLabelPipe,
+    CountryPickerComponent,
+    LanguageSetupComponent,
+    PublicProfileComponent,
+    ProfileVisibilityComponent,
     UserCVComponent,
     UploadProfileComponent,
     AddLanguageUIComponent,
@@ -421,6 +431,7 @@ export function HttpLoaderFactory(http: HttpClient) {
     MatChipsModule,
     ToastrModule.forRoot(), // Correctly placed ToastrModule
      TranslateModule.forRoot({
+      missingTranslationHandler: { provide: MissingTranslationHandler, useClass: NexsuzMissingTranslationHandler },
       loader: {
         provide: TranslateLoader,
         useFactory: HttpLoaderFactory,

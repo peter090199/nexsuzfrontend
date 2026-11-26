@@ -523,6 +523,9 @@ export class JobsProfileComponent implements OnInit {
     return Math.ceil((d.getTime() + 86400000 - Date.now()) / 86400000);
   }
 
+  /** DEF-CLIENT sees the job only: no "Jobs for you" list, no Apply, no Save */
+  get isRecruiter(): boolean { return this.sharedRoutines.getRole() === 'DEF-CLIENT'; }
+
   closeSidebar(): void {
 
     this.selectedJob = null;

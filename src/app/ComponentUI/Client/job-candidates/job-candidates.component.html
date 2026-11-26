@@ -49,7 +49,7 @@
     <mat-form-field appearance="outline" class="jc-sort" *ngIf="isMobile">
       <mat-label>Sort by</mat-label>
       <mat-select [value]="sortKey" (selectionChange)="sortBy($event.value)">
-        <mat-option value="applied">Newest first</mat-option><mat-option value="name">Name</mat-option>
+        <mat-option value="latest">Latest activity</mat-option><mat-option value="applied">Newest application</mat-option><mat-option value="name">Name</mat-option>
         <mat-option value="score">AI score</mat-option><mat-option value="status">Status</mat-option>
       </mat-select>
     </mat-form-field>
@@ -100,7 +100,7 @@
 
       <ng-container matColumnDef="applied">
         <th mat-header-cell *matHeaderCellDef><button type="button" class="th" (click)="sortBy('applied')">Applied <mat-icon>{{ arrow('applied') }}</mat-icon></button></th>
-        <td mat-cell *matCellDef="let c"><span class="date">{{ c.applied_at | date:'mediumDate' }}</span>
+        <td mat-cell *matCellDef="let c"><span class="date">{{ c.applied_at | date:'mediumDate' }}</span><small class="date" *ngIf="wasUpdated(c)" style="display:block">Updated {{ latest(c) | date:'MMM d, h:mm a' }}</small>
           <small class="iv" *ngIf="c.next_interview"><mat-icon>event</mat-icon>{{ c.next_interview | date:'MMM d, h:mm a' }}</small></td>
       </ng-container>
 
@@ -141,7 +141,7 @@
           <strong>{{ c.fullname }}</strong>
           <small>{{ c.email }}</small>
           <small *ngIf="allMode" class="job-line"><mat-icon>work</mat-icon>{{ c.job_name }}</small>
-          <small>Applied {{ c.applied_at | date:'mediumDate' }}</small>
+          <small>Applied {{ c.applied_at | date:'mediumDate' }}<ng-container *ngIf="wasUpdated(c)"> · Updated {{ latest(c) | date:'MMM d, h:mm a' }}</ng-container></small>
         </div>
         <button mat-icon-button type="button" [matMenuTriggerFor]="actionMenu" [matMenuTriggerData]="{ c: c }" aria-label="More actions"><mat-icon>more_vert</mat-icon></button>
       </div>

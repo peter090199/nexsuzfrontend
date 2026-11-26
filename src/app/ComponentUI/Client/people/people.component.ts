@@ -15,6 +15,8 @@ interface Person {
   cover: string | null;
   follow_status?: string;
   follow_id?: number | null;
+  location?: string | null;
+  user_id?: number | null;
 }
 
 /**
@@ -69,6 +71,11 @@ export class PeopleComponent implements OnInit, OnDestroy {
     return r === 'DEF-USERS' || r === 'DEF-CLIENT';
   }
 
+  get messageLink(): any[] | null {
+    const role = this.shared.getRole();
+    return role ? ['/' + role, 'message'] : null;
+  }
+
   profileLink(p: Person): any[] | null {
     const role = this.shared.getRole();
     return role ? ['/' + role, 'profile', p.code] : null;
@@ -118,6 +125,8 @@ export class PeopleComponent implements OnInit, OnDestroy {
       cover: p.coverphoto ? this.images.cleanImageUrl(p.coverphoto) : null,
       follow_status: p.follow_status,
       follow_id: p.id ?? null,
+      location: p.location ?? null,
+      user_id: p.user_id ?? null,
     };
   }
 
@@ -128,7 +137,9 @@ export class PeopleComponent implements OnInit, OnDestroy {
     switch (person.follow_status) {
       case 'not_following': message = 'Send a follow request to this user?'; done = 'Follow request sent.'; break;
       case 'pending': message = 'Cancel your pending follow request?'; done = 'Follow request canceled.'; break;
-      case 'accepted': message = 'Unfollow this user?'; done = 'Unfollowed successfully.'; break;
+      case 'accepted': message = 'Remove this connection?'; done = 'Connection removed.'; break;
+      // their pending request: connecting back accepts it
+      case 'connect_back': message = 'Accept this connection request?'; done = 'You are now connected.'; break;
       default: return;
     }
     this.alert.popupWarning(person.fullname, message).then((result: any) => {

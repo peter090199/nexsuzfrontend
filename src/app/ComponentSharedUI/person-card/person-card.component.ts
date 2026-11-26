@@ -26,6 +26,10 @@ export class PersonCardComponent {
   /** small grey line under the profession (skills, "Based on your profile", ...) */
   @Input() label: string | null | undefined = '';
   @Input() online = false;
+  @Input() location: string | null | undefined = null;
+  /** users.id to open a chat with; leave empty for no Message button */
+  @Input() messageUserId: number | null | undefined = null;
+  @Input() messageLink: any[] | null = null;
   /** cover photo shown behind the avatar (the gradient shows when there is none) */
   @Input() cover: string | null | undefined = null;
 

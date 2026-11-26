@@ -724,3 +724,6 @@ mat-divider {
 .jd.jt .jd-sec h2 { color: var(--jt-primary); }
 .jd.jt .jd-sec p, .jd.jt .jd-co { color: inherit; }
 .jd.jt .jd-themed { margin-top: 6px; }
+
+/* DEF-CLIENT: only the job, centred */
+.jobs-container.recruiter-view { grid-template-columns: minmax(0, 960px); justify-content: center; }

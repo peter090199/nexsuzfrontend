@@ -45,6 +45,8 @@ export class PrivatePostComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() postId!: number;
   /** Photo of the profile owner (the author of these posts), passed in by the profile page */
   @Input() ownerPhoto?: string | null;
+  /** the author's "Share profile" address; posts have no address of their own */
+  @Input() shareUrl?: string | null;
   @ViewChild('feedContainer') feedContainer!: ElementRef;
   @ViewChildren('videoEl') videoElements!: QueryList<ElementRef<HTMLVideoElement>>;
 
@@ -163,7 +165,7 @@ export class PrivatePostComponent implements OnInit, AfterViewInit, OnDestroy {
       profile: this.profileService.getProfileByUserOnly().pipe(catchError(() => of(null))),
       cv: this.cvService.getDataCV().pipe(catchError(() => of(null))),
       people: this.clientsService.getPeopleRecentActivity().pipe(catchError(() => of([]))),
-      posts: this.postService.getDataPost(this.route.snapshot.paramMap.get('code') || window.location.href.split('/').pop())
+      posts: this.postService.getDataPost(this.profileCode, 1)
         .pipe(catchError(() => of({ success: false, data: [] })))
     } as any;
 
@@ -175,6 +177,8 @@ export class PrivatePostComponent implements OnInit, AfterViewInit, OnDestroy {
         if (res.people?.data) this.users = res.people.data;
 
         if (res.posts?.success && Array.isArray(res.posts.data)) {
+          this.page = 1;
+          this.allLoaded = !res.posts.has_more;
           this.posts = res.posts.data.map((p: any) => this.formatPost(p));
           // batch load reactions to reduce HTTP overhead
           this.loadReactionsBatch(this.posts.map(p => p.id));
@@ -355,15 +359,20 @@ export class PrivatePostComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   loadMorePosts(append = true): void {
-    if (this.isLoading || this.allLoaded) return;
+    if (this.isLoading || (append && this.allLoaded)) return;
     this.isLoading = true;
+    const page = append ? this.page + 1 : 1;
 
-    this.postService.getDataPost(this.route.snapshot.paramMap.get('code') || window.location.href.split('/').pop())
+    this.postService.getDataPost(this.profileCode, page)
       .pipe(finalize(() => { this.isLoading = false; this.cdr.markForCheck(); }))
       .subscribe((res: any) => {
         if (res?.success && Array.isArray(res.data)) {
           const formatted = res.data.map((p: any) => this.formatPost(p));
-          this.posts = append ? [...this.posts, ...formatted] : formatted;
+          this.page = page;
+          this.allLoaded = !res.has_more;
+          // a post published since the last page shifts the others down: never show one twice
+          const known = new Set(append ? this.posts.map((p: any) => p.id) : []);
+          this.posts = append ? [...this.posts, ...formatted.filter((p: any) => !known.has(p.id))] : formatted;
           // load reactions for newly added posts lazily
           const ids = formatted.map((p: { id: any; }) => p.id);
           this.loadReactionsBatch(ids);
@@ -503,10 +512,37 @@ export class PrivatePostComponent implements OnInit, AfterViewInit, OnDestroy {
     this.dialog.open(ReactionPostComponent, { data: postId, width: '100%', maxWidth: '600px', panelClass: 'centered-modal' });
   }
 
+  private get profileCode(): any {
+    return this.route.snapshot.paramMap.get('code') || window.location.href.split('/').pop();
+  }
+
+  get isOwnProfile(): boolean {
+    const me = this.authService.getAuthCode();
+    return !!me && String(me) === String(this.profileCode);
+  }
+
   createPost(): void {
     const dialogRef = this.dialog.open(PostUIComponent, { width: '600px', disableClose: true });
     dialogRef.afterClosed().pipe(takeUntil(this.destroy$)).subscribe(() => this.refreshFeed());
   }
+
+  async sharePost(post: any): Promise<void> {
+    if (!this.shareUrl) { return; }
+    const nav: any = navigator;
+    const text = String(post?.caption || '').slice(0, 200);
+    try {
+      if (nav.share) {
+        await nav.share({ title: post?.fullname, text, url: this.shareUrl });
+        return;
+      }
+      await navigator.clipboard.writeText(`${text}\n${this.shareUrl}`.trim());
+      this.shareNotice = post.id;
+    } catch (e: any) {
+      if (e?.name !== 'AbortError') { window.prompt('Copy this link', this.shareUrl); }
+    }
+    this.cdr.markForCheck();
+  }
+  shareNotice: number | null = null;
 
   toggleComments(post: any): void { post.showComments = !post.showComments; }
 

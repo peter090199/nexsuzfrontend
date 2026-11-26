@@ -1,5 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { LanguageSetupComponent } from './ComponentUI/system/language-setup/language-setup.component';
+import { PublicProfileComponent } from './ComponentSharedUI/Profile/public-profile/public-profile.component';
 import { UserhomepageComponent } from './Users/userhomepage/userhomepage.component';
 import { SignInUIComponent } from './SignIn/sign-in-ui/sign-in-ui.component';
 import { SignUpUIComponent } from './SignUp/sign-up-ui/sign-up-ui.component';
@@ -85,6 +87,10 @@ export const routes: Routes = [
 
   { path: 'upload-cv', component: UploadProfileComponent, canActivate: [AuthGuard, RoleGuard, FeatureGuard], data: { roles: ['DEF-USERS'], feature: FEATURE.CREATE_RESUME } },
   { path: 'print-cv', component: PrintCVComponent, canActivate: [AuthGuard] },
+  // public: the "Share profile" address; the API decides what a logged-out visitor may see
+  { path: 'p/:code', component: PublicProfileComponent },
+  // public: a shared CV link. No guard on purpose; the API checks the signature
+  { path: 'cv/:code/:signature', component: PrintCVComponent },
   { path: 'socket', component: ChatUIComponent },
 
 
@@ -206,6 +212,8 @@ export const routes: Routes = [
       // { path: 'search', component: UserListComponent },
       { path: 'search', component: JobsectionComponent },
       { path: 'security', component: SecurityRolesComponent },
+      // countries, languages and translations
+      { path: 'languagesetup', component: LanguageSetupComponent },
       { path: 'user', component: UsersComponent },
       { path: 'menu', component: MenuComponent },
       { path: 'role', component: RoleComponent },

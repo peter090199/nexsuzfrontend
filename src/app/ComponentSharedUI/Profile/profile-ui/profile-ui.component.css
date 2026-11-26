@@ -20,6 +20,14 @@
 .button-gap button { min-height: 44px; border-radius: 22px; font-weight: 700; }
 .button-gap mat-icon { margin-right: 4px; }
 
+.button-gap a[mat-stroked-button] { min-height: 44px; line-height: 42px; border-radius: 22px; font-weight: 700; }
+.button-gap a mat-icon { margin-right: 4px; }
+.company-head { display: flex; gap: 14px; align-items: center; margin-bottom: 12px; min-width: 0; }
+.company-head img { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; flex: none; }
+.company-head > div { min-width: 0; overflow-wrap: anywhere; }
+.company-head h3 { margin: 0; font-size: 15px; color: var(--nx-navy); }
+.company-form { display: flex; flex-direction: column; }
+
 /* ---------- Body grid (mobile first) ---------- */
 .profile-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .profile-body > * { min-width: 0; }
@@ -379,3 +387,19 @@
 .resume-chip mat-icon { font-size: 18px; width: 18px; height: 18px; flex: none; }
 .resume-chip span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
 .resume-chip small { color: #6b7a90; font-weight: 500; white-space: nowrap; }
+
+/* inside the profile card the feed is only as tall as its content */
+.activity-card ::ng-deep app-private-post .middle-column { min-height: 0; height: auto; margin-bottom: 0; width: 100%; padding: 0; }
+
+/* ---------- Recruiter tabs ---------- */
+.profile-tabs { display: block; min-width: 0; }
+.profile-tabs ::ng-deep > .mat-tab-header { background: #fff; border: 1px solid var(--nx-border); border-radius: 12px; margin-bottom: 14px; }
+.profile-tabs ::ng-deep > .mat-tab-header .mat-ink-bar { background: #0a66c2; height: 3px; }
+.profile-tabs ::ng-deep > .mat-tab-header .mat-tab-label { font-family: var(--nx-font); font-weight: 700; opacity: 1; color: var(--nx-muted); min-width: 0; }
+.profile-tabs ::ng-deep > .mat-tab-header .mat-tab-label-active { color: #004182; }
+.profile-tabs ::ng-deep .mat-tab-body-content { overflow: visible; }
+.company-cover { width: 100%; height: 140px; object-fit: cover; border-radius: 10px; margin-bottom: 12px; display: block; }
+@media (max-width: 599.98px) {
+  .profile-tabs ::ng-deep > .mat-tab-header .mat-tab-label { padding: 0 2px; font-size: 11px; letter-spacing: 0; flex: 1 0 auto; }
+}
+.profile-tabs ::ng-deep .mat-tab-body.mat-tab-body-active { overflow: visible; }

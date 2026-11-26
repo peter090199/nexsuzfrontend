@@ -115,6 +115,20 @@ export class CurriculumVitaeService {
     return this.http.get(`${_url}getProfileCV`, { headers });
   }
 
+  /** The link for the signed-in job seeker's own CV; the API builds it from its configured frontend URL. */
+  getShareLink(): Observable<any> {
+    return this.http.get(`${_url}cv/share-link`, { headers: this.createHeaders() });
+  }
+
+  /** Public (no sign in): the CV behind a share link. Never sends the viewer's token. */
+  getSharedCV(code: string, signature: string): Observable<any> {
+    return this.http.get(this.sharedCvUrl(code, signature));
+  }
+
+  sharedCvUrl(code: string, signature: string): string {
+    return `${_url}cv/shared/${encodeURIComponent(code)}/${encodeURIComponent(signature)}`;
+  }
+
 
   saveLanguages(languages: any): Observable<any> {
     const headers = this.createHeaders();

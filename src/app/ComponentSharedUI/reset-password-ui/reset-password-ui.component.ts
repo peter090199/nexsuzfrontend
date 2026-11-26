@@ -82,7 +82,7 @@ export class ResetPasswordUIComponent implements OnInit {
         {
           this.isLoading = true;
           this.notify.toastrSuccess(res.message);
-          this.router.navigate(['/signInUI']);
+          this.router.navigate(['/signin']);
         }
         else
         {

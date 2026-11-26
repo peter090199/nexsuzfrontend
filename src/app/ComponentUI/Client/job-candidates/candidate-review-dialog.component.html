@@ -181,6 +181,9 @@
             </div>
           </div>
 
+          <div class="advice" role="status" *ngIf="e.incomplete?.length"><mat-icon>info</mat-icon>
+            <span>Incomplete information ({{ e.incomplete.join(', ') }}): neutral scores were used. Check the CV before deciding.</span></div>
+
           <section class="card">
             <h3>Category scores</h3>
             <div class="cat" *ngFor="let c of catEntries(); trackBy: trackKey">

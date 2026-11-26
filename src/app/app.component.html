@@ -1,6 +1,10 @@
 <!-- <app-cookies-ui></app-cookies-ui> -->
 <app-nx-top-loader></app-nx-top-loader>
 <router-outlet></router-outlet>
+<div class="public-pickers" *ngIf="showPublicPickers">
+  <app-country-picker></app-country-picker>
+  <app-translate></app-translate>
+</div>
 
 <!-- <div class="floating-btn"  *ngIf="showWebsiteChat" @fadeInUp>
   <button class="btn btn-info" matTooltip="Messages" (click)="openChat()">

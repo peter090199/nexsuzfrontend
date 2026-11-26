@@ -28,6 +28,7 @@ export class JobsClientComponent implements OnInit {
   jobs: any[] = [];
   filteredJobs: any[] = [];
   isLoading = false;
+  failed = false;
   code: any;
   currentUserCode: any;
   placeholderImg = 'assets/images/logo2.png';
@@ -50,6 +51,7 @@ export class JobsClientComponent implements OnInit {
   async getActiveJobsByCode(): Promise<void> {
     try {
       this.isLoading = true;
+      this.failed = false;
       const res = await firstValueFrom(this.jobService.getActiveJobsByCode(this.code));
 
       if (res?.success) {
@@ -65,6 +67,7 @@ export class JobsClientComponent implements OnInit {
       }
     } catch (error) {
       console.error('Error fetching jobs:', error);
+      this.failed = true;
     } finally {
       this.isLoading = false;
     }
@@ -100,6 +103,19 @@ export class JobsClientComponent implements OnInit {
     if (job.min_salary == null && job.max_salary == null) return 'Salary not specified';
     const symbol = this.getCurrencySymbol(job.currency);
     return `${symbol}${job.min_salary ?? ''} - ${symbol}${job.max_salary ?? ''}`;
+  }
+
+  private get role(): string { return this.sharedRoutineService.getRole() || ''; }
+  /** only job seekers apply; the recruiter who owns the profile manages instead */
+  get canApply(): boolean { return this.role === 'DEF-USERS'; }
+  get canManage(): boolean { return this.role === 'DEF-CLIENT' && String(this.currentUserCode) === String(this.code); }
+
+  viewJob(job: any): void {
+    this.router.navigate(['/' + this.role, 'recommended-jobs', job.transNo]);
+  }
+
+  manageJobs(): void {
+    this.router.navigate(['/' + this.role, 'vacancies']);
   }
 
   openJobApply(job: any): void {

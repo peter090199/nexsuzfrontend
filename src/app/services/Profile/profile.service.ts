@@ -100,6 +100,23 @@ getCompanyProfile(code: any): Observable<any> {
 
 
 
+  /** no token on purpose: what a logged-out visitor gets */
+  getPublicProfile(code: string): Observable<any> {
+    return this.http.get<any>(`${_url}public/profile/${encodeURIComponent(code)}`);
+  }
+
+  getPrivacy(): Observable<any> {
+    return this.http.get<any>(`${_url}privacy-settings`, { headers: this.createHeaders() });
+  }
+
+  savePrivacy(data: any): Observable<any> {
+    return this.http.put<any>(`${_url}privacy-settings`, data, { headers: this.createHeaders() });
+  }
+
+  saveCompany(data: any): Observable<any> {
+    return this.http.put<any>(`${_url}company-details`, data, { headers: this.createHeaders() });
+  }
+
   Unfollow(id: number): Observable<any> {
     const headers = this.createHeaders();
     return this.http.delete<any>(`${_url}unfollow/${id}`, { headers });

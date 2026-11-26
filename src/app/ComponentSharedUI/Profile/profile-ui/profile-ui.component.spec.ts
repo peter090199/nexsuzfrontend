@@ -27,6 +27,22 @@ describe('ProfileUIComponent', () => {
     fixture.detectChanges();
   });
 
+  it('shows the four tabs on a recruiter profile only', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    component.profiles = { role_code: 'DEF-CLIENT', connections_count: 3, lines: {} };
+    fixture.detectChanges();
+    expect(component.useTabs).toBeTrue();
+    const labels = Array.from(el.querySelectorAll('.mat-tab-label')).map(t => t.textContent!.trim());
+    expect(labels).toEqual(['Company', 'Activity', 'Open Jobs', 'Connections (3)']);
+
+    component.profiles = { role_code: 'DEF-USERS', lines: {} };
+    fixture.detectChanges();
+    expect(el.querySelector('.mat-tab-label')).toBeNull();
+
+    component.profiles = { role_code: 'DEF-CLIENT', restricted: true, lines: {} };
+    expect(component.useTabs).toBeFalse();
+  });
+
   it('should create', () => {
     expect(component).toBeTruthy();
   });

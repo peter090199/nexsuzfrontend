@@ -3,9 +3,9 @@
     <span class="acct-avatar"><img *ngIf="accountPhoto; else headInit" [src]="accountPhoto" alt=""><ng-template #headInit><span>{{ accountInitials }}</span></ng-template></span>
     <span class="acct-who"><strong>{{ accountName || 'Your account' }}</strong><small>{{ accountRole }}</small></span>
   </div>
-  <button mat-menu-item type="button" (click)="openWorkspace()"><mat-icon>dashboard</mat-icon><span>Go to my workspace</span></button>
-  <button mat-menu-item type="button" (click)="switchAccount()"><mat-icon>switch_account</mat-icon><span>Switch account</span></button>
-  <button mat-menu-item type="button" (click)="signOut()"><mat-icon>logout</mat-icon><span>Sign out</span></button>
+  <button mat-menu-item type="button" (click)="openWorkspace()"><mat-icon>dashboard</mat-icon><span>{{ 'nav_workspace' | translate }}</span></button>
+  <button mat-menu-item type="button" (click)="switchAccount()"><mat-icon>switch_account</mat-icon><span>{{ 'nav_switch_account' | translate }}</span></button>
+  <button mat-menu-item type="button" (click)="signOut()"><mat-icon>logout</mat-icon><span>{{ 'nav_sign_out' | translate }}</span></button>
 </mat-menu>
 
 <mat-sidenav-container>
@@ -17,7 +17,7 @@
       <header class="dr-head">
         <app-app-logo></app-app-logo>
         <span class="dr-spacer"></span>
-        <app-translate></app-translate>
+        <app-country-picker></app-country-picker><app-translate></app-translate>
         <button type="button" class="dr-close" (click)="drawer.close()" aria-label="Close menu"><mat-icon aria-hidden="true">close</mat-icon></button>
       </header>
 
@@ -40,7 +40,7 @@
         <a class="dr-link" *ngFor="let l of navLinks; trackBy: trackLink" [href]="'#' + l.id" [class.active]="activeSection === l.id"
           [attr.aria-current]="activeSection === l.id ? 'page' : null" (click)="scrollToSection($event, l.id); drawer.close()">
           <span class="dr-ico"><mat-icon aria-hidden="true">{{ l.icon }}</mat-icon></span>
-          <span class="dr-text">{{ l.label }}</span>
+          <span class="dr-text">{{ l.label | nxMenu }}</span>
           <mat-icon class="dr-chev" aria-hidden="true">chevron_right</mat-icon>
         </a>
       </nav>
@@ -71,23 +71,23 @@
           <div class="nav-links">
           <a href="#home-section" [class.active]="activeSection === 'home-section'"
             [attr.aria-current]="activeSection === 'home-section' ? 'page' : null"
-            (click)="scrollToSection($event, 'home-section')">Home</a>
+            (click)="scrollToSection($event, 'home-section')">{{ 'Home' | nxMenu }}</a>
           <a href="#about-section" [class.active]="activeSection === 'about-section'"
             [attr.aria-current]="activeSection === 'about-section' ? 'page' : null"
-            (click)="scrollToSection($event, 'about-section')">About</a>
+            (click)="scrollToSection($event, 'about-section')">{{ 'About' | nxMenu }}</a>
           <a href="#pricing-section" [class.active]="activeSection === 'pricing-section'"
             [attr.aria-current]="activeSection === 'pricing-section' ? 'page' : null"
-            (click)="scrollToSection($event, 'pricing-section')">Pricing</a>
+            (click)="scrollToSection($event, 'pricing-section')">{{ 'Pricing' | nxMenu }}</a>
           <a href="#jobs-section" [class.active]="activeSection === 'jobs-section'"
             [attr.aria-current]="activeSection === 'jobs-section' ? 'page' : null"
-            (click)="scrollToSection($event, 'jobs-section')">Jobs</a>
+            (click)="scrollToSection($event, 'jobs-section')">{{ 'Jobs' | nxMenu }}</a>
           <a href="#client-section" [class.active]="activeSection === 'client-section'"
             [attr.aria-current]="activeSection === 'client-section' ? 'page' : null"
-            (click)="scrollToSection($event, 'client-section')">Clients</a>
+            (click)="scrollToSection($event, 'client-section')">{{ 'Clients' | nxMenu }}</a>
 
           <a href="#contact-section" [class.active]="activeSection === 'contact-section'"
             [attr.aria-current]="activeSection === 'contact-section' ? 'page' : null"
-            (click)="scrollToSection($event, 'contact-section')">Contact Us</a>
+            (click)="scrollToSection($event, 'contact-section')">{{ 'Contact Us' | nxMenu }}</a>
           </div>
 
           <div class="nav-right">
@@ -104,7 +104,7 @@
             <ng-template #acctInit><span>{{ accountInitials }}</span></ng-template>
           </button>
 
-          <app-translate></app-translate>
+          <app-country-picker></app-country-picker><app-translate></app-translate>
           </div>
         </nav>
 

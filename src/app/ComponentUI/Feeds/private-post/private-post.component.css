@@ -1201,3 +1201,6 @@ mat-card-footer {
 .pc-actions { justify-content: flex-start; align-items: center; }
 .pc-actions app-reaction-button { flex: 1; min-width: 0; display: flex; justify-content: center; }
 .pc-actions app-reaction-button ::ng-deep .rb, .pc-actions app-reaction-button ::ng-deep .main { width: 100%; }
+
+.new-post { width: 100%; margin-bottom: 12px; }
+.no-posts { text-align: center; color: #6b7a99; font-size: 13px; }

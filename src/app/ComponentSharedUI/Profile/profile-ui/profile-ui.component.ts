@@ -162,6 +162,13 @@ export class ProfileUIComponent implements OnInit {
   }
 
   initData(): void {
+    // another profile in the same component: drop the previous one so posts, jobs and people are rebuilt
+    this.profiles = undefined;
+    this.tabIndex = Math.max(0, this.tabNames.indexOf(this.route.snapshot?.queryParamMap?.get('tab') || ''));
+    this.companyForm = null;
+    this.followStatus = 'none';
+    this.followId = 0;
+    this.incoming = false;
     this.loadPeople();
     this.loadUserPost();
     this.loadUserData();
@@ -225,11 +232,40 @@ export class ProfileUIComponent implements OnInit {
     });
   }
 
+  loadError = '';
+
   loadProfileCV(): void {
+    this.loadError = '';
     this.followServices.getProfileByUser(this.code!).subscribe({
-      next: (res) => this.profiles = res?.message,
-      error: (err) => this.error = err.message
+      next: (res) => {
+        if (res?.success === false || !res?.message || typeof res.message !== 'object') {
+          this.loadError = res?.blocked ? 'This profile is not available.' : 'Could not load this profile.';
+          return;
+        }
+        this.profiles = res.message;
+      },
+      error: (err) => {
+        this.error = err.message;
+        this.loadError = err?.status === 404 ? 'This profile is not available.' : 'Could not load this profile. Please try again.';
+      }
     });
+  }
+
+  retryProfile(): void {
+    this.initData();
+  }
+
+  // =========================
+  // TABS (recruiter profiles), remembered in the address as ?tab=
+  // =========================
+  private readonly tabNames = ['company', 'activity', 'jobs', 'connections'];
+  tabIndex = 0;
+
+  get useTabs(): boolean { return this.isRecruiter && !this.profiles?.restricted; }
+
+  selectTab(index: number): void {
+    this.tabIndex = index;
+    this.router.navigate([], { relativeTo: this.route, queryParams: { tab: this.tabNames[index] }, queryParamsHandling: 'merge', replaceUrl: true });
   }
 
   loadProfileCoverPhoto(): void {
@@ -251,6 +287,8 @@ export class ProfileUIComponent implements OnInit {
 
         const record = res?.data?.[0];
         this.followId = record?.id || record?.follow_id || 0;
+        // a pending request that THEY sent me is answered with Accept / Ignore
+        this.incoming = this.followStatus === 'pending' && String(record?.follower_code) === String(code);
       }
     });
   }
@@ -428,7 +466,11 @@ export class ProfileUIComponent implements OnInit {
       if (!result.value) {
         return;
       }
-      this.followServices.AddFollow(code).subscribe({
+      // removing an accepted connection works whichever side sent the request
+      const request$ = followStatus === 'accepted' && this.followId
+        ? this.followServices.Unfollow(this.followId)
+        : this.followServices.AddFollow(code);
+      request$.subscribe({
         next: (res: any) => {
           this.isloading = false;
           if (!res) {
@@ -443,6 +485,7 @@ export class ProfileUIComponent implements OnInit {
           // Update UI immediately (the button reads followStatus, not data.follow_status)
           data.follow_status = res.follow_status;
           this.followStatus = res.follow_status;
+          this.checkFollowStatus(String(code));
         },
 
         error: (err: any) => {
@@ -584,6 +627,85 @@ export class ProfileUIComponent implements OnInit {
           this.alert.toastrError(err.error?.message || 'Error');
         }
       });
+    });
+  }
+
+  // =========================
+  // REQUESTS, SHARING, COMPANY
+  // =========================
+  incoming = false;
+  companyForm: any = null;
+  savingCompany = false;
+
+  get isIncoming(): boolean { return this.incoming && this.followStatus === 'pending'; }
+  get isRecruiter(): boolean { return this.profiles?.role_code === 'DEF-CLIENT'; }
+
+  /** CV-style cards: not for staff, limited profiles, or recruiters who have filled in none of it */
+  get showCv(): boolean {
+    const p = this.profiles;
+    if (p?.cv_available === false || p?.restricted || p?.experience_hidden) { return false; }
+
+    return !this.isRecruiter || Object.values(p?.lines || {}).some((rows: any) => Array.isArray(rows) && rows.length > 0);
+  }
+
+  get websiteUrl(): string {
+    const site = String(this.profiles?.companywebsite || '').trim();
+    if (!site) { return ''; }
+
+    return /^https?:\/\//i.test(site) ? site : 'https://' + site;
+  }
+
+  acceptRequest(): void {
+    this.clientServices.acceptFollowRequest(this.code).subscribe({
+      next: (res: any) => {
+        this.alert.toastrSuccess(res?.message || 'Connected.');
+        this.checkFollowStatus(this.code!);
+        this.loadProfileCV();
+      },
+      error: (err: any) => this.alert.toastrError(err?.error?.message || 'Could not accept the request.')
+    });
+  }
+
+  ignoreRequest(): void {
+    this.followServices.Unfollow(this.followId).subscribe({
+      next: () => this.checkFollowStatus(this.code!),
+      error: (err: any) => this.alert.toastrError(err?.error?.message || 'Could not remove the request.')
+    });
+  }
+
+  async shareProfile(): Promise<void> {
+    const url = this.profiles?.share_url;
+    if (!url) { return; }
+    const nav: any = navigator;
+    try {
+      if (nav.share) {
+        await nav.share({ title: `${this.profiles.fname} ${this.profiles.lname}`, url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      this.alert.toastrSuccess('Profile link copied.');
+    } catch (e: any) {
+      if (e?.name === 'AbortError') { return; }
+      this.alert.toastrInfo(`Copy this link: ${url}`);
+    }
+  }
+
+  openCompanyForm(): void {
+    const p = this.profiles || {};
+    this.companyForm = { company: p.company || '', industry: p.industry || '', companywebsite: p.companywebsite || '',
+      location: p.current_location || '', about: p.summary || '' };
+  }
+
+  saveCompany(): void {
+    if (this.savingCompany || !this.companyForm?.company?.trim()) { return; }
+    this.savingCompany = true;
+    this.followServices.saveCompany(this.companyForm).pipe(finalize(() => this.savingCompany = false)).subscribe({
+      next: (res: any) => {
+        this.alert.toastrSuccess(res?.message || 'Saved.');
+        this.companyForm = null;
+        this.loadProfileCV();
+      },
+      error: (err: any) => this.alert.toastrError(err?.error?.message || 'Could not save the company information.')
     });
   }
 

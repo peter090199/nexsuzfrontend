@@ -28,25 +28,31 @@
 
         <h3 class="job-name">{{ job.job_name }}</h3>
 
-        <p class="job-position"><i class="fas fa-building"></i> {{ job.job_position }}</p>
+        <p class="job-position"><i class="fas fa-building"></i> {{ job.company || job.job_position }}</p>
         <p class="location"><i class="fas fa-map-marker-alt"></i> {{ job.location }}</p>
+        <p class="location" *ngIf="job.employment_type"><i class="fas fa-briefcase"></i> {{ job.employment_type.split('_').join(' ') | titlecase }}</p>
         <p class="salary"><i class="fas fa-money-bill-wave"></i> {{ formatSalary(job) }}</p>
+        <p class="posted">Active<ng-container *ngIf="job.created_at"> · posted {{ job.created_at | date:'mediumDate' }}</ng-container></p>
 
         <div class="job-footer">
-          <button class="apply-btn" (click)="openJobApply(job); $event.stopPropagation()">
+          <button class="apply-btn" *ngIf="canApply" (click)="openJobApply(job); $event.stopPropagation()">
             Apply Now
           </button>
+          <button class="apply-btn" (click)="viewJob(job); $event.stopPropagation()">View Job</button>
+          <button class="apply-btn" *ngIf="canManage" (click)="manageJobs(); $event.stopPropagation()">Manage</button>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="text-center mt-5" *ngIf="!isLoading && filteredJobs.length === 0">
-    <h3>No jobs found.</h3>
-    <p>Try searching with another keyword.</p>
+  <div class="text-center mt-5" *ngIf="failed && !isLoading" role="alert">
+    <p>Could not load the jobs.</p>
+    <button mat-stroked-button color="primary" type="button" (click)="getActiveJobsByCode()">Try again</button>
   </div>
 
-  <div class="text-center mt-5" *ngIf="!isLoading && filteredJobs.length > 0">
-    <button class="browse-btn">Browse All Jobs</button>
+  <div class="text-center mt-5" *ngIf="!failed && !isLoading && filteredJobs.length === 0">
+    <h3>{{ jobs.length ? 'No jobs found.' : 'No open jobs right now.' }}</h3>
+    <p *ngIf="jobs.length">Try searching with another keyword.</p>
   </div>
+
 </section>

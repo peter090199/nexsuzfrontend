@@ -1,0 +1,157 @@
+<div class="ls">
+  <header class="ls-head">
+    <h1><mat-icon>translate</mat-icon> {{ 'ls_title' | translate }}</h1>
+    <p>{{ 'ls_intro' | translate }}</p>
+  </header>
+
+  <mat-progress-bar *ngIf="loading" mode="indeterminate"></mat-progress-bar>
+  <div class="ls-state" *ngIf="failed" role="alert">
+    <p>{{ 'ls_load_failed' | translate }}</p>
+    <button mat-stroked-button color="primary" type="button" (click)="load()">{{ 'ls_retry' | translate }}</button>
+  </div>
+
+  <mat-tab-group *ngIf="!loading && !failed" animationDuration="150ms">
+    <!-- COUNTRIES -->
+    <mat-tab [label]="('ls_countries' | translate) + ' (' + countries.length + ')'">
+      <ng-template matTabContent>
+        <div class="ls-tools">
+          <input class="ls-input" type="search" [(ngModel)]="countrySearch" (ngModelChange)="countryLimit = 50"
+            [placeholder]="'ls_search' | translate" [attr.aria-label]="'ls_search' | translate">
+        </div>
+        <div class="ls-table">
+          <table>
+            <thead><tr>
+              <th>{{ 'ls_country' | translate }}</th><th>{{ 'ls_iso2' | translate }}</th><th>{{ 'ls_iso3' | translate }}</th>
+              <th>{{ 'ls_dial' | translate }}</th><th>{{ 'ls_active' | translate }}</th>
+            </tr></thead>
+            <tbody>
+              <tr class="country-row" *ngFor="let c of filteredCountries.slice(0, countryLimit); trackBy: trackCode">
+                <td>{{ c.name }}</td><td>{{ c.code }}</td><td>{{ c.code3 }}</td><td dir="ltr">{{ c.dial || '—' }}</td>
+                <td><mat-slide-toggle color="primary" [checked]="c.active" (change)="toggleCountry(c, $event.checked)" [attr.aria-label]="c.name"></mat-slide-toggle></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="ls-state" *ngIf="!filteredCountries.length">{{ 'ls_nothing' | translate }}</p>
+        <button mat-button color="primary" type="button" *ngIf="filteredCountries.length > countryLimit" (click)="countryLimit = countryLimit + 50">{{ 'ls_show_more' | translate }}</button>
+      </ng-template>
+    </mat-tab>
+
+    <!-- LANGUAGES -->
+    <mat-tab [label]="('ls_languages' | translate) + ' (' + languages.length + ')'">
+      <ng-template matTabContent>
+        <div class="ls-tools">
+          <input class="ls-input" type="search" [(ngModel)]="languageSearch" (ngModelChange)="languageLimit = 50"
+            [placeholder]="'ls_search' | translate" [attr.aria-label]="'ls_search' | translate">
+          <select class="ls-input" [(ngModel)]="languageCountry" (ngModelChange)="languageLimit = 50" [attr.aria-label]="'ls_country' | translate">
+            <option value="">{{ 'ls_all_countries' | translate }}</option>
+            <option *ngFor="let c of countries; trackBy: trackCode" [value]="c.code">{{ c.name }}</option>
+          </select>
+          <mat-slide-toggle color="primary" [(ngModel)]="activeOnly">{{ 'ls_active' | translate }}</mat-slide-toggle>
+          <button mat-flat-button color="primary" type="button" (click)="openForm()"><mat-icon>add</mat-icon> {{ 'ls_add_language' | translate }}</button>
+        </div>
+
+        <form class="ls-form" *ngIf="form" (ngSubmit)="saveForm()">
+          <input class="ls-input" name="code" [(ngModel)]="form.code" [readonly]="!form.isNew" maxlength="20" required [placeholder]="('ls_code' | translate) + ' (e.g. ceb-PH)'" [attr.aria-label]="'ls_code' | translate">
+          <input class="ls-input" name="name" [(ngModel)]="form.name" maxlength="100" required [placeholder]="'ls_name' | translate" [attr.aria-label]="'ls_name' | translate">
+          <input class="ls-input" name="native" [(ngModel)]="form.native" maxlength="100" [placeholder]="'ls_native' | translate" [attr.aria-label]="'ls_native' | translate">
+          <select class="ls-input ls-multi" name="countries" multiple [(ngModel)]="form.countries" [attr.aria-label]="'ls_used_in' | translate">
+            <option *ngFor="let c of countries; trackBy: trackCode" [value]="c.code">{{ c.name }}</option>
+          </select>
+          <mat-slide-toggle color="primary" name="rtl" [(ngModel)]="form.rtl">{{ 'ls_rtl' | translate }}</mat-slide-toggle>
+          <div>
+            <button mat-flat-button color="primary" type="submit" [disabled]="!form.code.trim() || !form.name.trim()">{{ 'ls_save' | translate }}</button>
+            <button mat-button type="button" (click)="form = null">{{ 'ls_cancel' | translate }}</button>
+          </div>
+        </form>
+
+        <div class="ls-table">
+          <table>
+            <thead><tr>
+              <th>{{ 'ls_language' | translate }}</th><th>{{ 'ls_native' | translate }}</th><th>{{ 'ls_code' | translate }}</th>
+              <th>{{ 'ls_used_in' | translate }}</th><th>{{ 'ls_active' | translate }}</th><th>{{ 'ls_default' | translate }}</th><th></th>
+            </tr></thead>
+            <tbody>
+              <tr class="language-row" *ngFor="let l of filteredLanguages.slice(0, languageLimit); trackBy: trackCode">
+                <td>{{ l.name }} <span class="ls-tag" *ngIf="l.rtl">RTL</span></td>
+                <td><bdi>{{ l.native }}</bdi></td><td dir="ltr">{{ l.code }}</td><td>{{ countryNames(l.countries) }}</td>
+                <td><mat-slide-toggle color="primary" [checked]="l.active" (change)="setActive(l, $event.checked)" [attr.aria-label]="l.name"></mat-slide-toggle></td>
+                <td>
+                  <span class="ls-tag on" *ngIf="l.is_default">{{ 'ls_default' | translate }}</span>
+                  <button mat-button color="primary" type="button" *ngIf="!l.is_default && l.active" (click)="makeDefault(l)">{{ 'ls_make_default' | translate }}</button>
+                </td>
+                <td><button mat-icon-button type="button" (click)="openForm(l)" [attr.aria-label]="('ls_edit' | translate) + ' ' + l.name"><mat-icon>edit</mat-icon></button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="ls-state" *ngIf="!filteredLanguages.length">{{ 'ls_nothing' | translate }}</p>
+        <button mat-button color="primary" type="button" *ngIf="filteredLanguages.length > languageLimit" (click)="languageLimit = languageLimit + 50">{{ 'ls_show_more' | translate }}</button>
+      </ng-template>
+    </mat-tab>
+
+    <!-- TRANSLATIONS -->
+    <mat-tab [label]="'ls_translations' | translate">
+      <ng-template matTabContent>
+        <div class="ls-tools">
+          <select class="ls-input" [(ngModel)]="locale" (ngModelChange)="loadRows()" [attr.aria-label]="'ls_language' | translate">
+            <option *ngFor="let l of activeLanguages; trackBy: trackCode" [value]="l.code">{{ l.name }}</option>
+          </select>
+          <input class="ls-input" type="search" [(ngModel)]="rowSearch" [placeholder]="'ls_search' | translate" [attr.aria-label]="'ls_search' | translate">
+          <mat-slide-toggle color="primary" [(ngModel)]="missingOnly">{{ 'ls_missing_only' | translate }} ({{ missingCount }})</mat-slide-toggle>
+          <button mat-flat-button color="primary" type="button" (click)="saveRows()" [disabled]="saving || !changed.length">{{ 'ls_save' | translate }}<ng-container *ngIf="changed.length"> ({{ changed.length }})</ng-container></button>
+        </div>
+        <p class="ls-state" *ngIf="missingKeys.length" role="status">{{ 'ls_undefined_keys' | translate }}: <bdi>{{ missingKeys.join(', ') }}</bdi></p>
+        <mat-progress-bar *ngIf="loadingRows" mode="indeterminate"></mat-progress-bar>
+        <div class="ls-table">
+          <table>
+            <thead><tr><th>{{ 'ls_key' | translate }}</th><th>{{ 'ls_english' | translate }}</th><th>{{ 'ls_translation' | translate }}</th></tr></thead>
+            <tbody>
+              <tr class="translation-row" *ngFor="let r of filteredRows; trackBy: trackKey">
+                <td class="ls-key" dir="ltr">{{ r.key }}
+                  <span class="ls-tag warn" *ngIf="r.missing">{{ 'ls_missing' | translate }}</span>
+                  <span class="ls-tag on" *ngIf="r.edited">{{ 'ls_edited' | translate }}</span>
+                </td>
+                <td dir="ltr">{{ r.english }}</td>
+                <td><input class="ls-input wide" [(ngModel)]="r.value" maxlength="2000" dir="auto" [attr.aria-label]="r.english"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-template>
+    </mat-tab>
+
+    <!-- USERS -->
+    <mat-tab [label]="'ls_users' | translate">
+      <ng-template matTabContent>
+        <div class="ls-tools">
+          <input class="ls-input" type="search" [(ngModel)]="peopleSearch" (ngModelChange)="loadPeople(1)"
+            [placeholder]="'ls_search' | translate" [attr.aria-label]="'ls_search' | translate">
+        </div>
+        <mat-progress-bar *ngIf="loadingPeople" mode="indeterminate"></mat-progress-bar>
+        <div class="ls-table">
+          <table>
+            <thead><tr><th>{{ 'ls_name' | translate }}</th><th>Email</th><th>{{ 'ls_role' | translate }}</th><th>{{ 'ls_language' | translate }}</th></tr></thead>
+            <tbody>
+              <tr class="person-row" *ngFor="let p of people">
+                <td>{{ p.name }}</td><td dir="ltr">{{ p.email }}</td><td dir="ltr">{{ p.role_code }}</td>
+                <td>
+                  <select class="ls-input" [ngModel]="p.language || ''" (ngModelChange)="setPersonLanguage(p, $event)" [attr.aria-label]="p.name">
+                    <option value="">{{ 'ls_automatic' | translate }}</option>
+                    <option *ngFor="let l of languages" [value]="l.code" [hidden]="!l.active" [disabled]="!l.active">{{ l.name }}</option>
+                  </select>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="ls-state" *ngIf="!loadingPeople && !people.length">{{ 'ls_nothing' | translate }}</p>
+        <div class="ls-tools" *ngIf="peopleLastPage > 1">
+          <button mat-stroked-button type="button" [disabled]="peoplePage <= 1" (click)="loadPeople(peoplePage - 1)">‹</button>
+          <span>{{ peoplePage }} / {{ peopleLastPage }}</span>
+          <button mat-stroked-button type="button" [disabled]="peoplePage >= peopleLastPage" (click)="loadPeople(peoplePage + 1)">›</button>
+        </div>
+      </ng-template>
+    </mat-tab>
+  </mat-tab-group>
+</div>

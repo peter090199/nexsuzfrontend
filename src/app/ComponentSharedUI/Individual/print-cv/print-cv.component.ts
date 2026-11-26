@@ -1,7 +1,7 @@
 import { Component, ElementRef, OnDestroy, OnInit, Optional, ViewChild } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
-import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { ActivatedRoute, Router } from '@angular/router';
+import { firstValueFrom, Subscription } from 'rxjs';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { CurriculumVitaeService } from 'src/app/services/CV/curriculum-vitae.service';
@@ -70,8 +70,14 @@ export class PrintCVComponent implements OnInit, OnDestroy {
     private sharedRoutines: SharedRoutinesService,
     private profileImages: ProfileImageService,
     /** Present when opened as a dialog from the CV editor; absent on the /print-cv route */
-    @Optional() private dialogRef: MatDialogRef<PrintCVComponent>
+    @Optional() private dialogRef: MatDialogRef<PrintCVComponent>,
+    private route: ActivatedRoute
   ) { }
+
+  /** Set when opened from a share link (/cv/:code/:signature): read only, no sign in needed */
+  shared: { code: string; signature: string } | null = null;
+  /** own CV only: fetched up front so Share can open the share sheet straight from the click */
+  private shareUrl = '';
 
   get isDialog(): boolean { return !!this.dialogRef; }
   get cv(): any { return this.cvData[0]; }
@@ -81,6 +87,15 @@ export class PrintCVComponent implements OnInit, OnDestroy {
   private photoSub?: Subscription;
 
   ngOnInit(): void {
+    const params = this.isDialog ? null : this.route.snapshot.paramMap;
+    const code = params?.get('code');
+    const signature = params?.get('signature');
+    if (code && signature) {
+      // someone else's CV: nothing of the viewer's (settings, photo, saved copy) is mixed into it
+      this.shared = { code, signature };
+      this.getCVData();
+      return;
+    }
     this.loadSettings();
     this.getCVData();
     this.loadAccountPhoto();
@@ -109,12 +124,14 @@ export class PrintCVComponent implements OnInit, OnDestroy {
   getCVData(after?: () => void): void {
     this.isLoading = true;
     this.error = null;
+    if (this.shared) { this.loadSharedCV(this.shared); return; }
     this.cvService.getProfileCV().subscribe({
       next: (response) => {
         if (response?.success && Array.isArray(response.message) && response.message.length) {
           this.cvData = response.message.map((c: any) => this.normalise(c));
           this.code = this.cvData[0].code;
           this.cache();
+          this.loadShareLink();
         } else {
           this.error = response?.success
             ? 'Your CV has no content yet. Complete the CV steps first.'
@@ -131,6 +148,30 @@ export class PrintCVComponent implements OnInit, OnDestroy {
         this.isLoading = false;
         after?.();
       }
+    });
+  }
+
+  private loadSharedCV(link: { code: string; signature: string }): void {
+    this.cvService.getSharedCV(link.code, link.signature).subscribe({
+      next: (response) => {
+        this.cvData = response?.success && Array.isArray(response.message) ? response.message.map((c: any) => this.normalise(c)) : [];
+        if (!this.cvData.length) this.error = 'This CV could not be loaded.';
+        this.isLoading = false;
+      },
+      error: (err) => {
+        this.cvData = [];
+        this.error = err?.status === 404 ? 'This CV link is not valid or the CV is no longer available.'
+          : err?.status === 429 ? 'Too many requests. Please wait a minute and try again.'
+          : 'Could not load this CV. Check your connection and try again.';
+        this.isLoading = false;
+      }
+    });
+  }
+
+  private loadShareLink(): void {
+    this.cvService.getShareLink().subscribe({
+      next: (res: any) => this.shareUrl = res?.url || '',
+      error: () => { /* Share asks again and reports the problem then */ }
     });
   }
 
@@ -362,7 +403,17 @@ export class PrintCVComponent implements OnInit, OnDestroy {
   }
 
   async share(): Promise<void> {
-    const url = `${window.location.origin}/${this.sharedRoutines.getRole()}/profile/${this.code}`;
+    let reason = '';
+    if (!this.shareUrl) {
+      try {
+        this.shareUrl = (await firstValueFrom(this.cvService.getShareLink()))?.url || '';
+      } catch (e: any) { reason = e?.error?.message || ''; }
+    }
+    const url = this.shareUrl;
+    if (!url) {
+      this.alert.toastrError(reason || 'Could not create the share link. Please try again.');
+      return;
+    }
     const title = `${this.fullName(this.cv)} – Curriculum Vitae`;
     const nav: any = navigator;
     try {
@@ -371,7 +422,7 @@ export class PrintCVComponent implements OnInit, OnDestroy {
         return;
       }
       await navigator.clipboard.writeText(url);
-      this.alert.toastrSuccess('Profile link copied to clipboard.');
+      this.alert.toastrSuccess('CV link copied. Anyone with the link can view your CV.');
     } catch (e: any) {
       if (e?.name === 'AbortError') return; // user closed the share sheet
       this.alert.toastrInfo(`Copy this link: ${url}`);
@@ -396,31 +447,40 @@ export class PrintCVComponent implements OnInit, OnDestroy {
   /**
    * html2canvas can only draw images it is allowed to read. Uploaded photos live under /storage,
    * which the file server returns without CORS headers, so the PDF copy gets the photo through
-   * the API (GET media) and embeds it as an inline data URL. Bundled assets are same-origin
-   * and left alone. If anything fails the default avatar is used so the PDF has no blank hole.
+   * the API (GET media, or the share link's photo endpoint) and embeds it as an inline data URL.
+   * Bundled assets are same-origin and only need to finish loading. A picture that cannot be
+   * fetched stops the export: a PDF with a hole in it is never saved.
    */
   private async prepareImagesForCanvas(root: HTMLElement): Promise<void> {
     const imgs = Array.from(root.querySelectorAll('img'));
     await Promise.all(imgs.map(async img => {
       const src = img.getAttribute('src') || '';
-      if (!src || src.startsWith('data:') || !/^https?:/i.test(src)) return; // inline or same-origin asset
-      try {
-        const res = await fetch(`${_url}media?path=${encodeURIComponent(src)}`, {
+      if (!/^https?:/i.test(src)) { // inline or same-origin asset
+        await this.imageReady(img);
+        return;
+      }
+      const res = this.shared
+        ? await fetch(`${this.cvService.sharedCvUrl(this.shared.code, this.shared.signature)}/photo`)
+        : await fetch(`${_url}media?path=${encodeURIComponent(src)}`, {
           headers: { Authorization: `Bearer ${sessionStorage.getItem('token') || ''}` }
         });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const blob = await res.blob();
-        const dataUrl: string = await new Promise((resolve, reject) => {
-          const r = new FileReader();
-          r.onload = () => resolve(r.result as string);
-          r.onerror = () => reject(r.error);
-          r.readAsDataURL(blob);
-        });
-        await this.setImgSrc(img, dataUrl);
-      } catch {
-        await this.setImgSrc(img, DEFAULT_PHOTO);
-      }
+      if (!res.ok) throw new Error(`Photo could not be loaded (HTTP ${res.status})`);
+      const blob = await res.blob();
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result as string);
+        r.onerror = () => reject(r.error);
+        r.readAsDataURL(blob);
+      });
+      await this.setImgSrc(img, dataUrl);
+      if (!img.naturalWidth) throw new Error('Photo could not be read');
     }));
+  }
+
+  private imageReady(img: HTMLImageElement): Promise<void> {
+    return img.complete ? Promise.resolve() : new Promise<void>(resolve => {
+      img.onload = img.onerror = () => resolve();
+    });
   }
 
   private setImgSrc(img: HTMLImageElement, src: string): Promise<void> {
@@ -438,6 +498,7 @@ export class PrintCVComponent implements OnInit, OnDestroy {
     this.busy = 'pdf';
     try {
       await this.prepareImagesForCanvas(clone.sheet);
+      await (document as any).fonts?.ready; // icons and the chosen font must be in before drawing
       const scale = 2;
       const canvas = await html2canvas(clone.sheet, { scale, useCORS: true, backgroundColor: '#ffffff', logging: false });
       const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
@@ -474,7 +535,7 @@ export class PrintCVComponent implements OnInit, OnDestroy {
       pdf.save(`CV_${safe}.pdf`);
     } catch (err) {
       console.error('PDF export failed:', err);
-      this.alert.toastrError('Could not create the PDF. Try Print and choose "Save as PDF".');
+      this.alert.toastrError('Could not create the complete PDF. Check your connection and try again, or use Print and choose "Save as PDF".');
     } finally {
       document.body.removeChild(clone.wrap);
       this.busy = '';

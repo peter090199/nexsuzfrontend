@@ -7,8 +7,8 @@ import { RecruitmentService } from 'src/app/services/Jobs/recruitment.service';
 type Preset = '7' | '30' | '90' | '365' | 'custom';
 
 const STATUS_COLOR: Record<string, string> = { applied_active: '#0a66c2', review: '#d97706', interview: '#7a5af8', approved: '#16a34a', reject: '#dc2626' };
-const AI_COLOR: Record<string, string> = { strong: '#16a34a', qualified: '#0a66c2', review: '#d97706', low: '#dc2626' };
-const AI_LABEL: Record<string, string> = { strong: 'Strong match', qualified: 'Qualified', review: 'Needs review', low: 'Low match' };
+const AI_COLOR: Record<string, string> = { excellent: '#15803d', strong: '#4ade80', good: '#0a66c2', moderate: '#d97706', low: '#dc2626' };
+const AI_LABEL: Record<string, string> = { excellent: 'Excellent', strong: 'Strong', good: 'Good', moderate: 'Moderate', low: 'Low' };
 
 /** Reports / Analytics: how hiring is going across the recruiter's own vacancies. Counts and averages only. */
 @Component({
@@ -95,7 +95,7 @@ export class ReportsComponent implements OnInit {
   }
 
   fmt(v: number | null | undefined, suffix = ''): string { return v === null || v === undefined ? '–' : v + suffix; }
-  scoreClass(s: number | null): string { return s === null ? 'na' : s >= 85 ? 'strong' : s >= 70 ? 'qualified' : s >= 50 ? 'review' : 'low'; }
+  scoreClass(s: number | null): string { return s === null ? 'na' : s >= 90 ? 'excellent' : s >= 80 ? 'strong' : s >= 70 ? 'good' : s >= 60 ? 'moderate' : 'low'; }
   trackKey(_: number, x: any): any { return x.transNo ?? x.key ?? x.label; }
 
   openJob(transNo: string): void { this.router.navigate(['/' + this.routines.getRole(), 'vacancies', transNo, 'candidates']); }

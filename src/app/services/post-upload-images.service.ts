@@ -134,9 +134,10 @@ export class PostUploadImagesService {
       .pipe(catchError(this.handleError('getDataPostAddFollow')));
   }
 
-  getDataPost(code: any): Observable<any> {
+  getDataPost(code: any, page?: number): Observable<any> {
     const headers = this.createHeaders();
-    const params = new HttpParams().set('code', code);
+    let params = new HttpParams().set('code', code);
+    if (page) { params = params.set('page', String(page)); }
 
     return this.http.get(`${_url}post`, { headers, params })
       .pipe(catchError(this.handleError('getDataPost')));

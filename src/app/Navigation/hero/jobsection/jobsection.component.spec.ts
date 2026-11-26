@@ -25,6 +25,24 @@ describe('JobsectionComponent', () => {
     fixture.detectChanges();
   });
 
+  it('gives a recruiter Manage Job on their own vacancies and no Apply button', () => {
+    spyOn(TestBed.inject(AuthService), 'isLoggedIn').and.returnValue(true);
+    const el = fixture.nativeElement as HTMLElement;
+    const buttons = (role: string) => {
+      sessionStorage.setItem('role', role);
+      component.isLoading = false;
+      component.searchType = 'jobs';
+      (component as any).ownJobs = new Set(['TR-1']);
+      component.filteredJobs = [{ transNo: 'TR-1', job_name: 'Mine' }, { transNo: 'TR-2', job_name: 'Theirs' }] as any;
+      fixture.detectChanges();
+      return Array.from(el.querySelectorAll('.job-footer button')).map(b => b.textContent!.trim());
+    };
+
+    expect(buttons('DEF-CLIENT')).toEqual(['Manage Job']);
+    expect(buttons('DEF-USERS')).toEqual(['Apply Now', 'Apply Now']);
+    sessionStorage.removeItem('role');
+  });
+
   it('should create', () => {
     expect(component).toBeTruthy();
   });

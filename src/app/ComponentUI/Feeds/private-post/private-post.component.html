@@ -21,6 +21,11 @@
     </button>
   </div>
 
+  <button mat-stroked-button color="primary" type="button" class="new-post" *ngIf="isOwnProfile" (click)="createPost()">
+    <mat-icon>edit_square</mat-icon> Create a post
+  </button>
+  <p class="no-posts" *ngIf="!isLoading && !posts.length">No posts to show.</p>
+
   <!-- Feed -->
   <div *ngFor="let post of posts; trackBy: trackByPostId" class="post-card feed-container">
 
@@ -102,6 +107,10 @@
       <button mat-button (click)="toggleComments(post)" [class.active]="post.showComments" [attr.aria-expanded]="!!post.showComments">
         <mat-icon>chat_bubble_outline</mat-icon> Comment
       </button>
+      <!-- only Public posts can be passed on -->
+      <button mat-button type="button" *ngIf="shareUrl && privacyOf(post.status).value === 1" (click)="sharePost(post)">
+        <mat-icon>{{ shareNotice === post.id ? 'check' : 'share' }}</mat-icon> {{ shareNotice === post.id ? 'Copied' : 'Share' }}
+      </button>
     </div>
 
     <!-- COMMENTS: shared section (replies, reactions, edit, delete), same as Home -->
@@ -109,6 +118,10 @@
       (countChange)="post.comments_count = $event"></app-post-comments>
 
   </div>
+
+  <button mat-button color="primary" type="button" class="new-post" *ngIf="posts.length && !allLoaded && !isLoading" (click)="loadMorePosts()">
+    Load more
+  </button>
 
   <!-- Loading More -->
   <div class="loading-more" *ngIf="isLoading && posts.length">

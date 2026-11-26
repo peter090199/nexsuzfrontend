@@ -27,7 +27,7 @@
       <nav class="menu-list" aria-label="Main navigation">
         <ng-container *ngFor="let g of groups; trackBy: trackByKey">
 
-          <div class="menu-group-title" *ngIf="groups.length > 1 && !railMode">{{ g.label }}</div>
+          <div class="menu-group-title" *ngIf="groups.length > 1 && !railMode">{{ g.label | nxMenu }}</div>
           <div class="menu-group-sep" *ngIf="groups.length > 1 && railMode" aria-hidden="true"></div>
 
           <ng-container *ngFor="let item of g.items; trackBy: trackByItem">
@@ -35,12 +35,12 @@
             <!-- NORMAL MENU -->
             <a *ngIf="!item.submenus?.length" class="menu-item" [routerLink]="item.route"
               routerLinkActive="active-link" [routerLinkActiveOptions]="{ exact: true }"
-              [matTooltip]="railMode ? item.label : ''" matTooltipPosition="right" [attr.aria-label]="item.label">
+              [matTooltip]="railMode ? (item.label | nxMenu) : ''" matTooltipPosition="right" [attr.aria-label]="item.label | nxMenu">
               <span class="menu-icon">
                 <i *ngIf="faIcon(item); else matIco" [class]="faIcon(item)" aria-hidden="true"></i>
                 <ng-template #matIco><mat-icon>{{ materialIcon(item) }}</mat-icon></ng-template>
               </span>
-              <span class="menu-label" *ngIf="!railMode">{{ item.label }}</span>
+              <span class="menu-label" *ngIf="!railMode">{{ item.label | nxMenu }}</span>
               <span class="menu-badge" *ngIf="isInquiries(item) && inquiryUnread" [class.rail]="railMode" role="status"
                 [attr.aria-label]="inquiryUnread + ' unread inquiries'">{{ inquiryUnread > 99 ? '99+' : inquiryUnread }}</span>
             </a>
@@ -50,12 +50,12 @@
               <button type="button" class="menu-item parent" (click)="onParentClick(item)"
                 [class.active-parent]="isParentActive(item)"
                 [attr.aria-expanded]="item.expanded && !railMode"
-                [matTooltip]="railMode ? item.label : ''" matTooltipPosition="right" [attr.aria-label]="item.label">
+                [matTooltip]="railMode ? (item.label | nxMenu) : ''" matTooltipPosition="right" [attr.aria-label]="item.label | nxMenu">
                 <span class="menu-icon">
                   <i *ngIf="faIcon(item); else matIcoP" [class]="faIcon(item)" aria-hidden="true"></i>
                   <ng-template #matIcoP><mat-icon>{{ materialIcon(item) }}</mat-icon></ng-template>
                 </span>
-                <span class="menu-label" *ngIf="!railMode">{{ item.label }}</span>
+                <span class="menu-label" *ngIf="!railMode">{{ item.label | nxMenu }}</span>
                 <mat-icon class="expand-icon" [class.open]="item.expanded" *ngIf="!railMode">expand_more</mat-icon>
               </button>
 
@@ -65,7 +65,7 @@
                     routerLinkActive="active-link" [routerLinkActiveOptions]="{ exact: true }"
                     [attr.tabindex]="item.expanded && !railMode ? 0 : -1">
                     <span class="sub-dot" aria-hidden="true"></span>
-                    <span class="submenu-label">{{ sub.label || sub.description }}</span>
+                    <span class="submenu-label">{{ (sub.label || sub.description) | nxMenu }}</span>
                   </a>
                 </div>
               </div>
@@ -103,10 +103,10 @@
     <mat-toolbar class="topbar" nxAutoHide nxAutoHideScroller=".mat-drawer-content">
       <div class="toolbar-left">
         <div class="page-info">
-          <button mat-icon-button class="back-btn" matTooltip="Back" aria-label="Go back" (click)="sharedService.goBack()">
+          <button mat-icon-button class="back-btn" [matTooltip]="'nav_back' | translate" [attr.aria-label]="'nav_back' | translate" (click)="sharedService.goBack()">
             <mat-icon>arrow_back</mat-icon>
           </button>
-          <h3>{{ pageTitle }}</h3>
+          <h3>{{ pageTitle | nxMenu }}</h3>
         </div>
       </div>
 
@@ -123,7 +123,7 @@
           <mat-icon>bookmark_border</mat-icon>
         </button>
 
-        <button mat-icon-button matTooltip="Notifications" (click)="openNotifications()" [matBadge]="bellCount"
+        <button mat-icon-button [matTooltip]="'nav_notifications' | translate" (click)="openNotifications()" [matBadge]="bellCount"
           [matBadgeHidden]="!bellCount" matBadgeColor="warn">
           <mat-icon>notifications</mat-icon>
         </button>
@@ -133,15 +133,15 @@
     <!-- SAVED JOBS MENU -->
     <mat-menu #savedMenu="matMenu" class="saved-jobs-menu" xPosition="before">
       <div class="saved-menu-head" (click)="$event.stopPropagation()">
-        <strong>Saved jobs</strong>
+        <strong>{{ 'nav_saved_jobs' | translate }}</strong>
         <span>{{ (savedJobsState.list$ | async)?.length || 0 }}</span>
       </div>
 
       <ng-container *ngIf="savedJobsState.list$ | async as saved">
         <div class="saved-menu-empty" *ngIf="!saved.length && !savedJobsState.loading" (click)="$event.stopPropagation()">
           <mat-icon>bookmark_border</mat-icon>
-          <p>No saved jobs yet.</p>
-          <small>Tap Save on a job and it will appear here.</small>
+          <p>{{ 'nav_no_saved_jobs' | translate }}</p>
+          <small>{{ 'nav_save_hint' | translate }}</small>
         </div>
 
         <button mat-menu-item class="saved-item" *ngFor="let job of saved; trackBy: trackSaved" (click)="openSavedJob(job)">
@@ -173,40 +173,45 @@
 <mat-menu #userMenu="matMenu" class="sidebar-user-menu" xPosition="after" yPosition="above">
   <a mat-menu-item [routerLink]="sharedService.getClientProfileRoute(profile?.code)">
     <mat-icon color="primary">person</mat-icon>
-    <span>Profile</span>
+    <span>{{ 'nav_profile' | translate }}</span>
   </a>
+
+  <button mat-menu-item [matMenuTriggerFor]="langMenu">
+    <mat-icon color="primary">language</mat-icon>
+    <span>{{ 'nav_language' | translate }}</span>
+  </button>
 
   <button mat-menu-item (click)="getsettingsUrl()">
     <mat-icon color="primary">settings</mat-icon>
-    <span>Settings</span>
+    <span>{{ 'nav_settings' | translate }}</span>
   </button>
 
   <button mat-menu-item (click)="sharedService.onLogout()">
     <mat-icon color="warn">logout</mat-icon>
-    <span>Logout</span>
+    <span>{{ 'nav_logout' | translate }}</span>
   </button>
 </mat-menu>
 <!-- ================= MOBILE TAB BAR (Ionic style): first 4 menu items + More ================= -->
 <nav class="tab-bar" *ngIf="isMobile" aria-label="Primary" [class.behind-drawer]="sidebarOpen" [attr.aria-hidden]="sidebarOpen ? 'true' : null" data-testid="tab-bar">
   <ng-container *ngFor="let item of tabItems; trackBy: trackByItem">
     <a *ngIf="!item.submenus?.length; else tabParent" class="tab-btn" [routerLink]="item.route"
-      routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" [attr.aria-label]="item.label">
+      routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" [attr.aria-label]="item.label | nxMenu">
       <span class="tab-icon">
         <i *ngIf="faIcon(item); else tabMat" [class]="faIcon(item)" aria-hidden="true"></i>
         <ng-template #tabMat><mat-icon>{{ materialIcon(item) }}</mat-icon></ng-template>
         <span class="tab-badge" *ngIf="isMessageTab(item) && unreadCount">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
         <span class="tab-badge" *ngIf="isInquiries(item) && inquiryUnread">{{ inquiryUnread > 99 ? '99+' : inquiryUnread }}</span>
       </span>
-      <span class="tab-label">{{ item.label }}</span>
+      <span class="tab-label">{{ item.label | nxMenu }}</span>
     </a>
     <ng-template #tabParent>
       <button type="button" class="tab-btn" [class.active]="isParentActive(item)" (click)="openMoreFor(item)"
-        [attr.aria-label]="item.label">
+        [attr.aria-label]="item.label | nxMenu">
         <span class="tab-icon">
           <i *ngIf="faIcon(item); else tabMatP" [class]="faIcon(item)" aria-hidden="true"></i>
           <ng-template #tabMatP><mat-icon>{{ materialIcon(item) }}</mat-icon></ng-template>
         </span>
-        <span class="tab-label">{{ item.label }}</span>
+        <span class="tab-label">{{ item.label | nxMenu }}</span>
       </button>
     </ng-template>
   </ng-container>
@@ -216,6 +221,13 @@
       <mat-icon>menu</mat-icon>
       <span class="tab-badge" *ngIf="bellCount">{{ bellCount > 99 ? '99+' : bellCount }}</span>
     </span>
-    <span class="tab-label">More</span>
+    <span class="tab-label">{{ 'nav_more' | translate }}</span>
   </button>
 </nav>
+
+<mat-menu #langMenu="matMenu">
+  <button mat-menu-item type="button" *ngFor="let l of languages.languages$ | async" (click)="languages.choose(l.code)">
+    <mat-icon>{{ l.code === languages.current ? 'check' : '' }}</mat-icon>
+    <span [attr.dir]="l.rtl ? 'rtl' : 'ltr'">{{ l.native || l.name }}</span>
+  </button>
+</mat-menu>

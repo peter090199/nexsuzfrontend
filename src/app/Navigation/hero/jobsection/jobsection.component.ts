@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { AuthService } from 'src/app/services/auth.service';
 import { JobListService } from 'src/app/services/Jobs/job-list.service';
 import { SharedRoutinesService } from 'src/app/services/Function/shared-routines.service';
+import { JobPostingService } from 'src/app/services/Jobs/job-posting.service';
 import { ImagesService } from 'src/app/services/images/images.service';
 import { SearchService } from 'src/app/services/search.service';
 import { NotificationsService } from 'src/app/services/Global/notifications.service';
@@ -81,12 +82,14 @@ export class JobsectionComponent implements OnInit {
      private jobServices: JobListService,
     private alert: NotificationsService,
     private profile: ProfileService,
+    private postings: JobPostingService,
   ) { }
 
   ngOnInit(): void {
     this.currentUserCode = this.authService.getAuthCode();
     this.code = this.route.snapshot.paramMap.get('code') || window.location.href.split('/').pop() || '';
     this.getActiveJobsByCode();
+    this.loadOwnJobs();
 
     // arrived from sign in via "People": open the people view straight away
     if (this.route.snapshot.queryParamMap.get('type') === 'people' && this.isLoggedIn) {
@@ -257,6 +260,27 @@ export class JobsectionComponent implements OnInit {
     if (!role) return;
 
     this.router.navigate([`${role}/profile`, person.code]);
+  }
+
+  /** a signed-in recruiter (the public landing page uses this component too) */
+  get isRecruiter(): boolean { return this.authService.isLoggedIn() && sessionStorage.getItem('role') === 'DEF-CLIENT'; }
+
+  /** the recruiter's own vacancies; the public job list does not say who posted each job */
+  private ownJobs = new Set<string>();
+
+  private loadOwnJobs(): void {
+    if (!this.isRecruiter) { return; }
+    this.postings.getJobPosting().subscribe({
+      next: (res: any) => this.ownJobs = new Set((res?.jobs || []).map((j: any) => String(j.transNo))),
+      error: () => this.alert.toastrError('Could not load your vacancies, so Manage Job is not available.')
+    });
+  }
+
+  canManage(job: Job): boolean { return this.isRecruiter && this.ownJobs.has(String(job.transNo)); }
+
+  /** opens the vacancy in the editor */
+  manageJob(job: Job): void {
+    this.router.navigate(['/DEF-CLIENT/posting-job'], { queryParams: { job: job.transNo } });
   }
 
   openJobApply(job: Job): void {

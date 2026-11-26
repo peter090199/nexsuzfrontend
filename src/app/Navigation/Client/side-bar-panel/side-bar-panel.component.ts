@@ -1,3 +1,4 @@
+import { LanguageService } from 'src/app/services/language.service';
 // import { Component, OnInit, OnDestroy } from '@angular/core';
 // import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 // import { Router, NavigationEnd } from '@angular/router';
@@ -321,6 +322,7 @@ export class SideBarPanelComponent implements OnInit, OnDestroy {
     private titleService: Title,
     private profileService: ProfileService,
     public sharedService: SharedRoutinesService,
+    public languages: LanguageService,
     private location: Location,
     private cvService: CurriculumVitaeService,
     private prefs: NotificationPrefsService,
@@ -347,6 +349,8 @@ export class SideBarPanelComponent implements OnInit, OnDestroy {
   get railMode(): boolean { return this.collapsed && !this.isMobile; }
 
   ngOnInit(): void {
+    // after sign in and after a refresh: this person's own language
+    this.languages.restoreForUser();
 
     // the menu follows the subscription: hide what the plan does not include, live
     this.featureSub = this.features.changes$.subscribe(() => { if (this.rawMenu.length) { this.applyFeatureFilter(); } });

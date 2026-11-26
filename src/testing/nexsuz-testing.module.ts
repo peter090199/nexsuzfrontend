@@ -10,6 +10,7 @@ import { ToastrModule } from 'ngx-toastr';
 import { of } from 'rxjs';
 
 import { MaterialModule } from 'src/Material/Material.module';
+import { MenuLabelPipe } from 'src/app/services/menu-label.pipe';
 
 /**
  * Shared TestBed imports for component and service specs.
@@ -24,6 +25,7 @@ import { MaterialModule } from 'src/Material/Material.module';
  *   });
  */
 @NgModule({
+  declarations: [MenuLabelPipe],
   imports: [
     HttpClientTestingModule,
     RouterTestingModule,
@@ -35,6 +37,7 @@ import { MaterialModule } from 'src/Material/Material.module';
     TranslateModule.forRoot(),
   ],
   exports: [
+    MenuLabelPipe,
     HttpClientTestingModule,
     RouterTestingModule,
     NoopAnimationsModule,

@@ -58,7 +58,7 @@
 
 .score { display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 12px; border: 0; border-radius: 999px; font: inherit; cursor: pointer; background: #eef2f8; color: #34476a; }
 .score b { font-size: 15px; } .score span { font-size: 11px; font-weight: 700; } .score .rev { font-size: 15px; width: 15px; height: 15px; line-height: 15px; align-self: center; }
-.score.strong { background: #e7f6ee; color: #14753d; } .score.qualified { background: #eaf3fc; color: #0a66c2; } .score.review { background: #fff4e0; color: #9a5b00; } .score.low { background: #fdecea; color: #b3261e; }
+.score.strong, .score.excellent { background: #e7f6ee; color: #14753d; } .score.qualified, .score.good { background: #eaf3fc; color: #0a66c2; } .score.review, .score.moderate { background: #fff4e0; color: #9a5b00; } .score.low { background: #fdecea; color: #b3261e; }
 .eval-btn { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border: 1px dashed #b9a7f5; border-radius: 999px; background: #faf8ff; color: #5a3cc9; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
 .eval-btn mat-icon { font-size: 16px; width: 16px; height: 16px; line-height: 16px; }
 .cv-btn { border-radius: 999px; margin-right: 4px; } .cv-btn mat-icon { margin-right: 4px; font-size: 18px; width: 18px; height: 18px; line-height: 18px; }

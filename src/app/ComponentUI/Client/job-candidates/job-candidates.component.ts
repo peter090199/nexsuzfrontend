@@ -1,4 +1,4 @@
-import { Component, HostListener, OnInit } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { PageEvent } from '@angular/material/paginator';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -11,7 +11,8 @@ import { CandidateReviewDialogComponent, ReviewTab } from './candidate-review-di
 import { CandidateDecisionDialogComponent } from './candidate-decision-dialog.component';
 import { EvaluationSettingsDialogComponent } from './evaluation-settings-dialog.component';
 
-type SortKey = 'applied' | 'name' | 'score' | 'status';
+type SortKey = 'latest' | 'applied' | 'name' | 'score' | 'status';
+const REFRESH_MS = 30000;
 
 /** Candidates of ONE vacancy: pipeline summary, search, sort, table / cards, and every recruiter action. */
 @Component({
@@ -19,7 +20,7 @@ type SortKey = 'applied' | 'name' | 'score' | 'status';
   templateUrl: './job-candidates.component.html',
   styleUrls: ['./job-candidates.component.css']
 })
-export class JobCandidatesComponent implements OnInit {
+export class JobCandidatesComponent implements OnInit, OnDestroy {
   readonly statuses = STATUS_META;
   readonly labels = RECOMMENDATION_LABEL;
   /** the job column only makes sense when the page lists several vacancies */
@@ -36,7 +37,8 @@ export class JobCandidatesComponent implements OnInit {
 
   filter: PipelineStatus | 'all' = 'all';
   searchKey = '';
-  sortKey: SortKey = 'applied';
+  /** every tab starts with what changed last: a new application or a status change */
+  sortKey: SortKey = 'latest';
   sortDir: 'asc' | 'desc' = 'desc';
   pageIndex = 0;
   pageSize = 10;
@@ -58,7 +60,35 @@ export class JobCandidatesComponent implements OnInit {
     this.route.paramMap.subscribe(p => { this.transNo = p.get('transNo') || ''; this.jobFilter = ''; this.pageIndex = 0; this.load(); });
     const c = Number(this.route.snapshot.queryParamMap.get('candidate'));
     this.deepLink = c > 0 ? c : null;
+    this.timer = setInterval(() => this.refreshQuietly(), REFRESH_MS);
   }
+
+  private timer: any;
+  private refreshing = false;
+
+  ngOnDestroy(): void { clearInterval(this.timer); }
+
+  /** keeps the tabs current without a progress bar; coming back to the browser tab updates at once */
+  @HostListener('document:visibilitychange')
+  refreshQuietly(): void {
+    // not while hidden, loading, or a recruiter has a dialog open (it reloads when closed)
+    if (document.hidden || this.isLoading || this.refreshing || !this.list || this.dialog.openDialogs.length) { return; }
+    this.refreshing = true;
+    const transNo = this.transNo;
+    (this.allMode ? this.api.allCandidates() : this.api.candidates(transNo)).subscribe({
+      next: r => {
+        this.refreshing = false;
+        if (transNo !== this.transNo) { return; }
+        this.list = r;
+        this.pageIndex = Math.min(this.pageIndex, Math.max(0, Math.ceil(this.filtered.length / this.pageSize) - 1));
+      },
+      error: () => { this.refreshing = false; }      // keep what is on screen; Refresh reports problems
+    });
+  }
+
+  /** when the application last changed */
+  latest(c: CandidateRow): string { return c.updated_at || c.applied_at; }
+  wasUpdated(c: CandidateRow): boolean { return !!c.updated_at && c.updated_at !== c.applied_at; }
 
   // ------------------------------------------------------------------ data
   get rows(): CandidateRow[] { return this.list?.data || []; }
@@ -106,7 +136,7 @@ export class JobCandidatesComponent implements OnInit {
     const val = (c: CandidateRow): any => this.sortKey === 'name' ? c.fullname.toLowerCase()
       : this.sortKey === 'score' ? (c.ai_score ?? -1)
       : this.sortKey === 'status' ? this.order[c.applied_status]
-      : new Date(c.applied_at).getTime();
+      : new Date(this.sortKey === 'latest' ? this.latest(c) : c.applied_at).getTime();
     return [...this.filtered].sort((a, b) => (val(a) > val(b) ? 1 : val(a) < val(b) ? -1 : 0) * dir);
   }
 
@@ -124,7 +154,7 @@ export class JobCandidatesComponent implements OnInit {
   label(s: string): string { return STATUS_META.find(m => m.key === s)?.label || s; }
   icon(s: string): string { return STATUS_META.find(m => m.key === s)?.icon || 'help'; }
   initials(name: string): string { return String(name || '?').trim().split(/\s+/).slice(0, 2).map(w => w.charAt(0).toUpperCase()).join('') || '?'; }
-  scoreClass(s: number | null): string { return s === null ? 'na' : s >= (this.list?.thresholds.strong ?? 85) ? 'strong' : s >= (this.list?.thresholds.qualified ?? 70) ? 'qualified' : s >= (this.list?.thresholds.review ?? 50) ? 'review' : 'low'; }
+  scoreClass(s: number | null): string { return s === null ? 'na' : s >= 90 ? 'excellent' : s >= 80 ? 'strong' : s >= 70 ? 'good' : s >= 60 ? 'moderate' : 'low'; }
   trackById(_: number, c: CandidateRow): number { return c.applied_id; }
 
   allowed(c: CandidateRow, to: PipelineStatus): boolean { return (this.list?.transitions[c.applied_status] || []).includes(to); }

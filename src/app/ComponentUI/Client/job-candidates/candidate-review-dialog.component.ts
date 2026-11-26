@@ -198,8 +198,9 @@ export class CandidateReviewDialogComponent implements OnInit, OnDestroy {
   catEntries(): { key: string; label: string; score: number | null; evidence: string; weight: number }[] {
     const e = this.evalNow;
     if (!e) { return []; }
-    const names: Record<string, string> = { education: 'Education', experience: 'Experience', skills: 'Skills', answers: 'Screening answers', competencies: 'Job competencies' };
-    return Object.keys(names).map(k => ({ key: k, label: names[k], score: e.categories[k]?.score ?? null, evidence: e.categories[k]?.evidence || '', weight: e.weights?.[k] ?? 0 }));
+    const names: Record<string, string> = { skills: 'Required skills', experience: 'Relevant experience', education: 'Education', requirements: 'Job requirements', certifications: 'Certifications', answers: 'Screening answers', competencies: 'Job competencies' };
+    // answers / competencies only exist on runs made before the five criteria
+    return Object.keys(names).filter(k => e.categories[k]).map(k => ({ key: k, label: names[k], score: e.categories[k]?.score ?? null, evidence: e.categories[k]?.evidence || '', weight: e.weights?.[k] ?? 0 }));
   }
 
   answerFor(qid: number) { return this.evalNow?.answers.find(x => x.question_id === qid) || null; }
@@ -304,7 +305,7 @@ export class CandidateReviewDialogComponent implements OnInit, OnDestroy {
 
   // ------------------------------------------------------------------ small helpers
   initials(n: string): string { return String(n || '?').trim().split(/\s+/).slice(0, 2).map(w => w.charAt(0).toUpperCase()).join(''); }
-  scoreClass(s: number | null | undefined): string { return s === null || s === undefined ? 'na' : s >= 85 ? 'strong' : s >= 70 ? 'qualified' : s >= 50 ? 'review' : 'low'; }
+  scoreClass(s: number | null | undefined): string { return s === null || s === undefined ? 'na' : s >= 90 ? 'excellent' : s >= 80 ? 'strong' : s >= 70 ? 'good' : s >= 60 ? 'moderate' : 'low'; }
   trackIdx(i: number): number { return i; }
   trackKey(_: number, x: { key: string }): string { return x.key; }
   trackId(_: number, x: any): any { return x.id ?? x.question_id; }

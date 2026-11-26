@@ -43,7 +43,7 @@
 .ai-top { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; }
 .ring { --p: 0; --c: #94a3b8; flex: none; width: 76px; height: 76px; border-radius: 50%; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; position: relative; background: conic-gradient(var(--c) calc(var(--p) * 1%), #e8edf5 0); }
 .ring::before { content: ''; position: absolute; inset: 7px; border-radius: 50%; background: #fff; } .ring b, .ring small { position: relative; line-height: 1; } .ring b { font-size: 22px; } .ring small { font-size: 10px; color: #8a97b0; }
-.ring.strong { --c: #16a34a; } .ring.qualified { --c: #0a66c2; } .ring.review { --c: #d97706; } .ring.low { --c: #dc2626; }
+.ring.strong, .ring.excellent { --c: #16a34a; } .ring.qualified, .ring.good { --c: #0a66c2; } .ring.review, .ring.moderate { --c: #d97706; } .ring.low { --c: #dc2626; }
 .ai-facts { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #34476a; } .ai-facts b { font-size: 15px; }
 
 .iv-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
@@ -56,7 +56,7 @@
 .vt .n { text-align: right; white-space: nowrap; } .vt small { display: block; color: #8a97b0; font-size: 11.5px; }
 .link { border: 0; background: transparent; padding: 0; font: inherit; font-weight: 700; color: #0a66c2; cursor: pointer; text-align: left; overflow-wrap: anywhere; } .link:hover { text-decoration: underline; }
 .mini { display: inline-block; min-width: 34px; padding: 3px 9px; border-radius: 999px; text-align: center; font-weight: 700; font-size: 12px; background: #eef2f8; color: #34476a; }
-.mini.strong { background: #e7f6ee; color: #14753d; } .mini.qualified { background: #eaf3fc; color: #0a66c2; } .mini.review { background: #fff4e0; color: #9a5b00; } .mini.low { background: #fdecea; color: #b3261e; }
+.mini.strong, .mini.excellent { background: #e7f6ee; color: #14753d; } .mini.qualified, .mini.good { background: #eaf3fc; color: #0a66c2; } .mini.review, .mini.moderate { background: #fff4e0; color: #9a5b00; } .mini.low { background: #fdecea; color: #b3261e; }
 
 .vcards { display: grid; gap: 10px; }
 .vc { padding: 12px 14px; border: 1px solid #e6eaf1; border-radius: 14px; cursor: pointer; background: #fff; } .vc small { color: #8a97b0; font-size: 11.5px; }

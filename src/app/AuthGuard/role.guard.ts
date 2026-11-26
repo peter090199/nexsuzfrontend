@@ -17,7 +17,7 @@ export class RoleGuard implements CanActivate {
 
     // ❌ No role found → force login
     if (!userRole) {
-      return this.router.parseUrl('/signInUI');
+      return this.router.parseUrl('/signin');
     }
 
     // ✅ Role allowed
@@ -33,19 +33,19 @@ export class RoleGuard implements CanActivate {
     switch (role) {
 
       case 'DEF-CLIENT':
-        return this.router.parseUrl('/recruiter');
+        return this.router.parseUrl('/DEF-CLIENT/client-dashboard');
 
       case 'DEF-ADMIN':
-        return this.router.parseUrl('/admin/admin-dashboard');
+        return this.router.parseUrl('/DEF-ADMIN/admin-dashboard');
 
       case 'DEF-MASTERADMIN':
-        return this.router.parseUrl('/masteradmin/admin-dashboard');
+        return this.router.parseUrl('/DEF-MASTERADMIN/admin-dashboard');
 
       case 'DEF-SUPERADMIN':
         return this.router.parseUrl('/superadmin/dashboard');
 
       case 'DEF-USERS':
-        return this.router.parseUrl('/home');
+        return this.router.parseUrl('/DEF-USERS/home');
 
       default:
         return this.router.parseUrl('/homepage');

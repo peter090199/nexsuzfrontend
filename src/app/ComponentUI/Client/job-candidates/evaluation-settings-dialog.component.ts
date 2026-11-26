@@ -4,14 +4,14 @@ import { NotificationsService } from 'src/app/services/Global/notifications.serv
 import { RecruitmentService } from 'src/app/services/Jobs/recruitment.service';
 
 const CATS: { key: string; label: string; hint: string }[] = [
+  { key: 'skills', label: 'Required skills', hint: 'Required skills found on the CV and in answers' },
+  { key: 'experience', label: 'Relevant experience', hint: 'Relevant work history' },
   { key: 'education', label: 'Education', hint: 'Meets the education requirement' },
-  { key: 'experience', label: 'Experience', hint: 'Relevant work history' },
-  { key: 'skills', label: 'Skills', hint: 'Required skills found on the CV and in answers' },
-  { key: 'answers', label: 'Screening answers', hint: 'Quality and relevance of the answers' },
-  { key: 'competencies', label: 'Job competencies', hint: 'Your job-specific criteria below' },
+  { key: 'requirements', label: 'Job requirements', hint: 'Qualifications, competencies and screening answers' },
+  { key: 'certifications', label: 'Certifications', hint: 'Required or related certifications and licenses' },
 ];
 
-/** Scoring weights, recommendation thresholds, passing score and job-specific criteria for ONE job (or the global defaults). */
+/** Scoring weights, passing score and job-specific criteria for ONE job (or the global defaults). */
 @Component({
   selector: 'app-evaluation-settings-dialog',
   template: `
@@ -33,15 +33,9 @@ const CATS: { key: string; label: string; hint: string }[] = [
       <mat-slider min="0" max="100" step="5" [value]="s.weights[c.key]" (input)="s.weights[c.key] = $any($event.value)" [attr.aria-label]="c.label + ' weight'"></mat-slider>
       <span class="es-val">{{ s.weights[c.key] }} <small>({{ share(c.key) }}%)</small></span>
     </div>
-    <p class="es-note">Categories that don't apply (for example answers when a job has no questions) are left out and the others re-balance.</p>
+    <p class="es-note">Criteria the job asks nothing about (for example certifications) are left out and the others re-balance.</p>
 
-    <h3>Recommendation thresholds</h3>
-    <div class="es-thr">
-      <mat-form-field appearance="outline"><mat-label>Strong match from</mat-label><input matInput type="number" min="1" max="100" [(ngModel)]="s.thresholds.strong"></mat-form-field>
-      <mat-form-field appearance="outline"><mat-label>Qualified from</mat-label><input matInput type="number" min="1" max="100" [(ngModel)]="s.thresholds.qualified"></mat-form-field>
-      <mat-form-field appearance="outline"><mat-label>Needs review from</mat-label><input matInput type="number" min="1" max="100" [(ngModel)]="s.thresholds.review"></mat-form-field>
-    </div>
-    <p class="es-note">Below the last value: low match, manual review required. Defaults: 85 / 70 / 50.</p>
+    <p class="es-note">Score levels: Excellent 90–100, Strong 80–89, Good 70–79, Moderate 60–69, Low below 60.</p>
 
     <mat-form-field appearance="outline" class="full">
       <mat-label>Passing score</mat-label>
@@ -78,11 +72,10 @@ const CATS: { key: string; label: string; hint: string }[] = [
     .es-val { font-size: 13px; font-weight: 700; text-align: right; } .es-val small { font-weight: 400; color: #8a97b0; }
     mat-slider { width: 100%; }
     .es-note { margin: 4px 0 8px; font-size: 12px; color: #8a97b0; text-align: left; }
-    .es-thr { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
     .full { width: 100%; }
     .es-error { display: flex; align-items: center; gap: 6px; color: #c62828; font-size: 12.5px; }
     mat-dialog-actions button { border-radius: 999px; } mat-dialog-actions mat-spinner { display: inline-block; margin-right: 6px; vertical-align: middle; }
-    @media (max-width: 599.98px) { .es-body { min-width: 0; } .es-row { grid-template-columns: 1fr 64px; } .es-row mat-slider { grid-column: 1 / -1; grid-row: 2; } .es-thr { grid-template-columns: 1fr; } }
+    @media (max-width: 599.98px) { .es-body { min-width: 0; } .es-row { grid-template-columns: 1fr 64px; } .es-row mat-slider { grid-column: 1 / -1; grid-row: 2; } }
   `]
 })
 export class EvaluationSettingsDialogComponent implements OnInit {
@@ -128,7 +121,7 @@ export class EvaluationSettingsDialogComponent implements OnInit {
     this.saving = true;
     this.error = '';
     this.api.saveSettings({
-      transNo: this.global ? null : this.data.transNo, weights: this.s.weights, thresholds: this.s.thresholds,
+      transNo: this.global ? null : this.data.transNo, weights: this.s.weights,
       passing_score: this.s.passing_score, competencies: this.global ? null : this.competencies
     }).subscribe({
       next: r => { this.saving = false; this.notice.toastrSuccess(r.message || 'Saved.'); this.ref.close(true); },

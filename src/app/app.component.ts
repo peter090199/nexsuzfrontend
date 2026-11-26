@@ -1,3 +1,5 @@
+import { LanguageService } from './services/language.service';
+import { PublicTranslatorService } from './services/public-translator.service';
 import { Component, OnInit } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { CookieService } from 'ngx-cookie-service';
@@ -60,12 +62,14 @@ export class AppComponent implements OnInit {
     private subscriptionService: SubscriptionService,
     private featureService: FeatureService,
     public dialog: MatDialog,
-    private router: Router
+    private router: Router,
+    private languages: LanguageService,
+    private publicTranslator: PublicTranslatorService
   ) {
 
     this.appearance.init();
-    this.translate.addLangs(['en', 'fr']);
-    this.translate.setDefaultLang('en');
+    this.languages.init();
+    this.publicTranslator.start();
   }
   ngOnInit(): void {
 
@@ -93,6 +97,12 @@ export class AppComponent implements OnInit {
         this.notificationCounts = count;
       });
   }
+  /** the public pages without their own header get the pickers in a corner */
+  get showPublicPickers(): boolean {
+    const url = this.router.url || '';
+    return this.router.navigated && this.publicTranslator.isPublic(url) && !/^\/($|[?#]|homepage)/.test(url);
+  }
+
   private stopUpgradePopup(): void {
     if (this.upgradeDialogTimer) {
       this.upgradeDialogTimer.unsubscribe();

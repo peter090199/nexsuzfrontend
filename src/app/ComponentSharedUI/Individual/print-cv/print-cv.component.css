@@ -22,6 +22,7 @@ p { text-align: left; margin: 0; }
 .cv-banner.warn { background: #fdecea; border-color: #f5c2bd; color: #8a1c1c; align-items: flex-start; }
 .cv-banner.warn a { color: #004182; font-weight: 700; margin-left: 6px; }
 .cv-banner { display: flex; gap: 8px; align-items: center; font-size: 12px; background: #fff7e6; border: 1px solid #f4dba5; color: #7a5200; padding: 8px 12px; border-radius: 10px; margin-bottom: 12px; }
+.cv-loading { text-align: center; padding: 32px 16px; color: #6b7a99; font-size: 13px; }
 .cv-state { text-align: center; padding: 48px 16px; color: #6b7a99; }
 .cv-state mat-icon { font-size: 44px; width: 44px; height: 44px; color: #94c0ea; }
 .cv-state p { text-align: center; margin: 8px 0 16px; font-size: 13px; }

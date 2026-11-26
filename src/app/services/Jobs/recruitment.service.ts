@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { _url } from 'src/global-variables';
 
 export type PipelineStatus = 'applied_active' | 'review' | 'interview' | 'approved' | 'reject';
-export type Recommendation = 'strong' | 'qualified' | 'review' | 'low';
+export type Recommendation = 'excellent' | 'strong' | 'good' | 'moderate' | 'low';
 
 export const STATUS_META: { key: PipelineStatus; label: string; icon: string }[] = [
   { key: 'applied_active', label: 'Applied', icon: 'inbox' },
@@ -14,12 +14,7 @@ export const STATUS_META: { key: PipelineStatus; label: string; icon: string }[]
   { key: 'reject', label: 'Rejected', icon: 'cancel' },
 ];
 
-export const RECOMMENDATION_LABEL: Record<Recommendation, string> = {
-  strong: 'Strong match – interview recommended',
-  qualified: 'Qualified – recruiter review',
-  review: 'Needs further review',
-  low: 'Low match – manual review required',
-};
+export const RECOMMENDATION_LABEL: Record<Recommendation, string> = {  excellent: 'Excellent match',  strong: 'Strong match',  good: 'Good match',  moderate: 'Moderate match',  low: 'Low match – manual review required',};
 
 export interface CandidateRow {
   applied_id: number; transNo: string; code: string; fullname: string; email: string;
@@ -34,7 +29,7 @@ export interface CandidateList {
   job: { transNo: string; job_name: string; recordstatus: string };
   counts: Record<PipelineStatus, number>; total: number;
   transitions: Record<string, PipelineStatus[]>;
-  passing_score: number; thresholds: { strong: number; qualified: number; review: number };
+  passing_score: number; thresholds: { excellent: number; strong: number; good: number; moderate: number };
   ai_provider: 'anthropic' | 'local';
   data: CandidateRow[];
 }
@@ -46,7 +41,7 @@ export interface AnswerEval {
 }
 export interface Evaluation {
   id: number; applied_id: number; overall_score: number; final_score: number | null; score: number;
-  recommendation: Recommendation; recommendation_label: string;
+  recommendation: Recommendation; recommendation_label: string; incomplete?: string[];
   categories: Record<string, EvalCategory>; strengths: string[]; weaknesses: string[]; matched: string[]; missing: string[];
   answers: AnswerEval[]; explanation: string; interview_questions: string[];
   provider: string; model: string; version: string; weights: Record<string, number>; criteria: any; thresholds: any;
@@ -55,7 +50,7 @@ export interface Evaluation {
 
 export interface EvalSettings {
   scope: 'global' | 'job'; transNo?: string | null;
-  weights: Record<string, number>; thresholds: { strong: number; qualified: number; review: number };
+  weights: Record<string, number>; thresholds: { excellent: number; strong: number; good: number; moderate: number };
   passing_score: number; competencies: string[];
 }
 
