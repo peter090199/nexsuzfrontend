@@ -8,6 +8,7 @@ import { CurriculumVitaeService } from 'src/app/services/CV/curriculum-vitae.ser
 import { NotificationsService } from 'src/app/services/Global/notifications.service';
 import { SharedRoutinesService } from 'src/app/services/Function/shared-routines.service';
 import { _url } from 'src/global-variables';
+import { CvPdfService, CvPdfSettings } from 'src/app/services/CV/cv-pdf.service';
 import { ProfileImageService } from 'src/app/services/Profile/profile-image.service';
 
 const DEFAULT_PHOTO = 'assets/images/default.png';
@@ -31,7 +32,6 @@ const CV_FONTS: { name: string; stack: string }[] = [
   { name: 'Trebuchet MS', stack: "'Trebuchet MS', Helvetica, sans-serif" },
 ];
 const CV_SIZES = [9, 10, 11, 12, 13, 14, 15, 16, 18];
-const A4_WIDTH_PX = 794; // 210mm @ 96dpi: width used when rendering the PDF/print copy
 
 @Component({
   selector: 'app-print-cv',
@@ -69,6 +69,7 @@ export class PrintCVComponent implements OnInit, OnDestroy {
     private alert: NotificationsService,
     private sharedRoutines: SharedRoutinesService,
     private profileImages: ProfileImageService,
+    private cvPdf: CvPdfService,
     /** Present when opened as a dialog from the CV editor; absent on the /print-cv route */
     @Optional() private dialogRef: MatDialogRef<PrintCVComponent>,
     private route: ActivatedRoute
@@ -79,6 +80,11 @@ export class PrintCVComponent implements OnInit, OnDestroy {
   /** own CV only: fetched up front so Share can open the share sheet straight from the click */
   private shareUrl = '';
 
+  /** CV Setup: what may be done with the PDF, and on what paper */
+  get pdfSettings(): CvPdfSettings { return this.cvPdf.settings; }
+  /** width of the rendered copy: the paper's width at 96dpi (A4 portrait = 794px) */
+  private get sheetWidthPx(): number { return Math.round(this.cvPdf.pageMm()[0] * 96 / 25.4); }
+
   get isDialog(): boolean { return !!this.dialogRef; }
   get cv(): any { return this.cvData[0]; }
 
@@ -87,6 +93,7 @@ export class PrintCVComponent implements OnInit, OnDestroy {
   private photoSub?: Subscription;
 
   ngOnInit(): void {
+    this.cvPdf.load().subscribe();
     const params = this.isDialog ? null : this.route.snapshot.paramMap;
     const code = params?.get('code');
     const signature = params?.get('signature');
@@ -434,11 +441,11 @@ export class PrintCVComponent implements OnInit, OnDestroy {
     const src = this.printContent?.nativeElement;
     if (!src) return null;
     const wrap = document.createElement('div');
-    wrap.style.cssText = `position:fixed;left:-10000px;top:0;width:${A4_WIDTH_PX}px;background:#fff;`;
+    wrap.style.cssText = `position:fixed;left:-10000px;top:0;width:${this.sheetWidthPx}px;background:#fff;`;
     const sheet = src.cloneNode(true) as HTMLElement;
     sheet.classList.remove('preview-paper', 'plain-head'); // preview-only looks must not leak into PDF/print
     sheet.classList.add('pdf-mode');
-    sheet.style.width = `${A4_WIDTH_PX}px`;
+    sheet.style.width = `${this.sheetWidthPx}px`;
     wrap.appendChild(sheet);
     document.body.appendChild(wrap);
     return { wrap, sheet };
@@ -492,16 +499,32 @@ export class PrintCVComponent implements OnInit, OnDestroy {
   }
 
   async downloadPDF(): Promise<void> {
-    if (!this.cv || this.busy) return;
+    if (!this.pdfSettings.allow_download) return;
+    const pdf = await this.buildPdf();
+    pdf?.save(this.cvPdf.fileName(this.fullName(this.cv)));
+  }
+
+  /** "PDF preview": the same PDF, shown as CV Setup says (embedded viewer, new tab, or download) */
+  async previewPdf(): Promise<void> {
+    if (!this.pdfSettings.preview_enabled || !this.cv || this.busy) return;
+    const tab = this.cvPdf.openTabIfNeeded();
+    const pdf = await this.buildPdf();
+    if (!pdf) { tab?.close(); return; }
+    this.cvPdf.present(pdf.output('blob'), this.cvPdf.fileName(this.fullName(this.cv)), tab);
+  }
+
+  /** the CV as a PDF; null (with a message) when it cannot be made complete */
+  private async buildPdf(): Promise<jsPDF | null> {
+    if (!this.cv || this.busy) return null;
     const clone = this.makeSheetClone();
-    if (!clone) return;
+    if (!clone) return null;
     this.busy = 'pdf';
     try {
       await this.prepareImagesForCanvas(clone.sheet);
       await (document as any).fonts?.ready; // icons and the chosen font must be in before drawing
       const scale = 2;
       const canvas = await html2canvas(clone.sheet, { scale, useCORS: true, backgroundColor: '#ffffff', logging: false });
-      const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+      const pdf = new jsPDF({ unit: 'mm', format: this.pdfSettings.page_size, orientation: this.pdfSettings.orientation });
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
       const margin = 8;
@@ -531,11 +554,11 @@ export class PrintCVComponent implements OnInit, OnDestroy {
         y = end;
         page++;
       }
-      const safe = this.fullName(this.cv).replace(/[^\w\-]+/g, '_');
-      pdf.save(`CV_${safe}.pdf`);
+      return pdf;
     } catch (err) {
       console.error('PDF export failed:', err);
       this.alert.toastrError('Could not create the complete PDF. Check your connection and try again, or use Print and choose "Save as PDF".');
+      return null;
     } finally {
       document.body.removeChild(clone.wrap);
       this.busy = '';
@@ -543,7 +566,7 @@ export class PrintCVComponent implements OnInit, OnDestroy {
   }
 
   printData(): void {
-    if (!this.cv || this.busy) return;
+    if (!this.pdfSettings.allow_print || !this.cv || this.busy) return;
     const clone = this.makeSheetClone();
     if (!clone) return;
     this.busy = 'print';
@@ -580,7 +603,7 @@ export class PrintCVComponent implements OnInit, OnDestroy {
     doc.open();
     doc.write(`<!doctype html><html><head><meta charset="utf-8"><title>CV – ${this.fullName(this.cv)}</title>
       <style>
-        @page { size: A4; margin: 10mm; }
+        @page { size: ${this.pdfSettings.page_size} ${this.pdfSettings.orientation}; margin: 10mm; }
         html, body { margin: 0; background: #fff; font-family: Verdana, Geneva, Tahoma, sans-serif; }
         * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .cv-sheet { width: auto !important; box-shadow: none !important; border-radius: 0 !important; }
@@ -588,7 +611,7 @@ export class PrintCVComponent implements OnInit, OnDestroy {
       </style><style>${styles}</style>
       <style>
         /* ---- Clean print layout (wins over the on-screen styles above) ---- */
-        @page { size: A4; margin: 14mm 12mm; }
+        @page { size: ${this.pdfSettings.page_size} ${this.pdfSettings.orientation}; margin: 14mm 12mm; }
         html, body { color: #111; font-size: 11pt; }
         .cv-sheet *:not(mat-icon) { font-family: var(--cv-font, Verdana, Geneva, Tahoma, sans-serif) !important; }
         /* the icon font is not loaded in the print frame: hide icons instead of printing their names */

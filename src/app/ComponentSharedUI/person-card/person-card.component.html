@@ -30,13 +30,13 @@
     </div>
 
     <!-- name -->
-    <a class="pc-name" *ngIf="link; else plainName" [routerLink]="link">{{ name }}</a>
+    <a class="pc-name" data-no-translate *ngIf="link; else plainName" [routerLink]="link">{{ name }}</a>
     <ng-template #plainName>
-      <span class="pc-name" role="button" tabindex="0" (click)="onOpen()" (keydown.enter)="onOpen()">{{ name }}</span>
+      <span class="pc-name" data-no-translate role="button" tabindex="0" (click)="onOpen()" (keydown.enter)="onOpen()">{{ name }}</span>
     </ng-template>
 
-    <p class="pc-prof">{{ profession || '--' }}</p>
-    <p class="pc-label" *ngIf="location"><mat-icon inline>place</mat-icon> {{ location }}</p>
+    <p class="pc-prof" data-no-translate>{{ profession || '--' }}</p>
+    <p class="pc-label" data-no-translate *ngIf="location"><mat-icon inline>place</mat-icon> {{ location }}</p>
     <p class="pc-label" *ngIf="label">{{ label }}</p>
     <a mat-button color="primary" class="pc-message" *ngIf="messageLink && messageUserId" [routerLink]="messageLink"
       [queryParams]="{ user: messageUserId }"><mat-icon>chat</mat-icon> Message</a>

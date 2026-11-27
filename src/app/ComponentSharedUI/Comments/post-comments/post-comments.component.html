@@ -115,7 +115,7 @@
     <div class="bubble-wrap" *ngIf="!item.editing">
       <div class="bubble">
         <span class="name">{{ item.fullname }}</span>
-        <p class="text" *ngIf="item.comment">{{ item.comment }}</p>
+        <p class="text" *ngIf="item.comment">{{ item.comment }}</p><app-see-translation [text]="item.comment"></app-see-translation>
         <a class="attachment" *ngIf="item.attachment_url" [href]="item.attachment_url" target="_blank" rel="noopener">
           <img [src]="item.attachment_url" alt="Photo in comment" loading="lazy" />
         </a>

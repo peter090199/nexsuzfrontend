@@ -45,7 +45,7 @@
   <div *ngIf="selectedUser" class="chat-messages" #chatContainer>
     <div *ngFor="let message of chatHistory[selectedUser.id]"
       [ngClass]="{'sent': message.sender_id === myUserId, 'received': message.sender_id !== myUserId}">
-      <span>{{ message.message }}</span>
+      <span>{{ message.message }}</span><app-see-translation *ngIf="message.sender_id !== myUserId" [text]="message.message"></app-see-translation>
     </div>
   </div>
 

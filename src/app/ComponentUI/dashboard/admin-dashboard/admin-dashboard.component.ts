@@ -171,6 +171,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         { label: 'Menus', icon: 'menu_open', route: 'menu' },
         { label: 'Roles', icon: 'admin_panel_settings', route: 'role' },
         { label: 'Security roles', icon: 'security', route: 'security' },
+        { label: 'Translation plans', icon: 'translate', route: 'translationplans' },
       ]
       : [
         { label: 'Manage users', icon: 'manage_accounts', route: 'user' },
@@ -181,12 +182,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         { label: 'Subscribers', icon: 'monitoring', route: 'usersubscriptionmonitoring' },
         { label: 'Subscription reports', icon: 'insights', route: 'subscriptionreports' },
         { label: 'Plan features', icon: 'checklist', route: 'featuresplan' },
+        { label: 'Translation plans', icon: 'translate', route: 'translationplans' },
         { label: 'Messages', icon: 'chat_bubble_outline', route: 'message' },
         { label: 'My network', icon: 'hub', route: 'network' },
         { label: 'Settings', icon: 'settings', route: 'settings' },
       ];
     const restricted = this.role === 'DEF-ADMIN' || this.role === 'DEF-CLIENT';
-    return restricted ? all.filter(a => !this.HIDDEN_SHORTCUTS.includes(a.route)) : all;
+    const allowed = restricted ? all.filter(a => !this.HIDDEN_SHORTCUTS.includes(a.route)) : all;
+    return this.role === 'DEF-CLIENT' ? allowed.filter(a => a.route !== 'translationplans') : allowed;
   }
 
   // ------------------------------------------------------------------ helpers used by the template

@@ -64,12 +64,12 @@ const SEEN_KEY = 'nx-announcements-seen';
           <ul class="mlist" *ngIf="manageItems.length">
             <li *ngFor="let a of manageItems; trackBy: trackById" [attr.data-testid]="'manage-row-' + a.id">
               <div class="mtext">
-                <strong>{{ a.title }}</strong>
+                <strong data-no-translate>{{ a.title }}</strong>
                 <small>
                   <span class="chip" [class]="'st-' + (a.is_expired ? 'expired' : a.status)">{{ a.is_expired ? 'Expired' : (a.status | titlecase) }}</span>
                   <span class="chip pr" *ngIf="a.priority !== 'normal'">{{ a.priority | titlecase }}</span>
                   <span class="chip pin" *ngIf="a.is_pinned">Pinned</span>
-                  <span class="mmeta">by {{ a.author.fullname }} · {{ (a.published_at || a.created_at) | date:'MMM d, y' }}<ng-container *ngIf="a.expires_at"> · expires {{ a.expires_at | date:'MMM d, y' }}</ng-container></span>
+                  <span class="mmeta" data-no-translate>by {{ a.author.fullname }} · {{ (a.published_at || a.created_at) | date:'MMM d, y' }}<ng-container *ngIf="a.expires_at"> · expires {{ a.expires_at | date:'MMM d, y' }}</ng-container></span>
                 </small>
               </div>
               <div class="macts">
@@ -89,7 +89,7 @@ const SEEN_KEY = 'nx-announcements-seen';
         <mat-card class="card" *ngFor="let a of items; trackBy: trackById" [class.urgent]="a.priority === 'urgent'" [class.important]="a.priority === 'important'" [attr.data-testid]="'card-' + a.id">
           <div class="byline">
             <img class="avatar" [src]="a.author.photo_pic || 'assets/images/default.png'" nxFallback alt="" />
-            <div class="who">
+            <div class="who" data-no-translate>
               <strong>{{ a.author.fullname }}</strong>
               <small>{{ roleLabel(a.author.role_code) }} · {{ a.published_at | date:'MMM d, y, h:mm a' }}</small>
             </div>
@@ -99,14 +99,14 @@ const SEEN_KEY = 'nx-announcements-seen';
             </div>
           </div>
 
-          <h3>{{ a.title }}</h3>
-          <p class="body" [class.clamp]="a.content.length > 420 && !expanded[a.id]">{{ a.content }}</p>
+          <h3 data-no-translate>{{ a.title }}</h3>
+          <p class="body" data-no-translate [class.clamp]="a.content.length > 420 && !expanded[a.id]">{{ a.content }}</p><app-see-translation [text]="a.content"></app-see-translation>
           <button type="button" class="link" *ngIf="a.content.length > 420" (click)="expanded[a.id] = !expanded[a.id]">{{ expanded[a.id] ? 'Show less' : 'Show more' }}</button>
 
           <div class="images" *ngIf="a.images.length" [class.one]="a.images.length === 1">
             <a *ngFor="let i of a.images" [href]="i.url" target="_blank" rel="noopener"><img [src]="i.url" nxFallback loading="lazy" [alt]="i.name || 'Announcement image'" /></a>
           </div>
-          <ul class="attachments" *ngIf="a.attachments.length">
+          <ul class="attachments" data-no-translate *ngIf="a.attachments.length">
             <li *ngFor="let f of a.attachments"><mat-icon>attach_file</mat-icon><a [href]="f.url" target="_blank" rel="noopener" download>{{ f.name }}</a><small>{{ sizeText(f.size) }}</small></li>
           </ul>
           <small class="expires" *ngIf="a.expires_at">Until {{ a.expires_at | date:'MMM d, y, h:mm a' }}</small>
@@ -133,7 +133,7 @@ const SEEN_KEY = 'nx-announcements-seen';
             <ul>
               <li *ngFor="let c of threads[a.id].list">
                 <img class="avatar sm" [src]="c.profile_pic || 'assets/images/default.png'" nxFallback alt="" />
-                <div class="cbody"><strong>{{ c.fullname }}</strong><span>{{ c.comment }}</span></div>
+                <div class="cbody" data-no-translate><strong>{{ c.fullname }}</strong><span>{{ c.comment }}</span><app-see-translation [text]="c.comment"></app-see-translation></div>
                 <button mat-icon-button type="button" *ngIf="canDeleteComment(a, c)" (click)="deleteComment(a, c)" aria-label="Delete comment"><mat-icon>close</mat-icon></button>
               </li>
             </ul>

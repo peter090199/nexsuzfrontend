@@ -93,7 +93,7 @@
             <mat-icon>edit</mat-icon>
           </button>
 
-          <p>{{ comment.comment }} </p>
+          <p>{{ comment.comment }} </p><app-see-translation [text]="comment.comment"></app-see-translation>
           <small>{{ comment.date_comment }}</small>
 
           <div class="comment-actions" *ngIf="comment">
@@ -136,7 +136,7 @@
               <img [src]="reply.profile_pic || 'assets/images/default.png'" alt="User" class="comment-avatar" />
               <div class="reply-body">
                 <strong>{{ reply.fullname }}</strong>
-                <p>{{ reply.comment }}</p>
+                <p>{{ reply.comment }}</p><app-see-translation [text]="reply.comment"></app-see-translation>
                 <small>{{ reply.date_comment }}</small>
               </div>
             </div>

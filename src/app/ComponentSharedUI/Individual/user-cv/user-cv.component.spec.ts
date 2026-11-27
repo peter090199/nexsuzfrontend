@@ -81,6 +81,8 @@ describe('UserCVComponent', () => {
     const banner = () => (fixture.nativeElement as HTMLElement).querySelector('[data-testid="cv-setup-banner"]');
 
     it('shows the banner with what is still missing while the CV is unfinished', () => {
+      // the page shows nothing until it knows the CV mode; here: the builder
+      component.cvModeLoaded = true;
       component.setup = incomplete;
       fixture.detectChanges();
       const el = banner()!;
@@ -89,6 +91,16 @@ describe('UserCVComponent', () => {
       expect(el.textContent).toContain('this is the only page you can open');
       const chips = Array.from(el.querySelectorAll('.chip')).map(c => c.textContent!.trim());
       expect(chips).toEqual(['Summary', 'Date of birth']);
+    });
+
+    it('does not flash the banner before the CV mode is known, nor show it in upload-only mode', () => {
+      component.setup = incomplete;
+      fixture.detectChanges();
+      expect(banner()).toBeNull();
+      component.cvModeLoaded = true;
+      component.cvUploadOnly = true;
+      fixture.detectChanges();
+      expect(banner()).toBeNull();
     });
 
     it('hides the banner once the CV is finished, or when the account has no CV', () => {

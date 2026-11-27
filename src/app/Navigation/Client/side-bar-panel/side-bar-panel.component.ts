@@ -646,7 +646,7 @@ export class SideBarPanelComponent implements OnInit, OnDestroy {
   materialIcon(item: any): string {
     const t = (String(item?.label || '') + ' ' + String(item?.route || '')).toLowerCase();
     const map: [RegExp, string][] = [
-      [/inquir|contact/, 'mail'], [/dashboard/, 'space_dashboard'], [/home/, 'home'], [/messag|chat/, 'chat_bubble_outline'],
+      [/my-applications|job applications/, 'work_history'], [/inquir|contact/, 'mail'], [/dashboard/, 'space_dashboard'], [/home/, 'home'], [/messag|chat/, 'chat_bubble_outline'],
       [/network|nexsuz/, 'hub'], [/vacanc/, 'campaign'], [/job/, 'work_outline'],
       [/applied/, 'assignment_turned_in'], [/search|find/, 'travel_explore'], [/cv|resume|curriculum/, 'description'],
       [/profile/, 'account_circle'], [/setting/, 'settings'], [/candidate/, 'groups'], [/interview|schedul/, 'event_available'], [/report|analytic/, 'insights'],

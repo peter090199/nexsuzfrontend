@@ -167,17 +167,23 @@ describe('NotificationPrefsService', () => {
     flush();                                             // the "Saved" message fades after a moment
   }));
 
-  it('Enable all and Disable all change every on/off setting, not the volume', fakeAsync(() => {
+  it('Enable all and Disable all change every notification setting, not the volume or the email choice', fakeAsync(() => {
+    // email preferences have their own section, so the bulk buttons leave them alone
+    const notifications = BOOLEAN_KEYS.filter(k => !k.startsWith('email_'));
     service.update({ sound_volume: 20 }); tick(400); http.expectOne(URL()).flush(ok({ sound_volume: 20 }));
 
     service.setAll(false);
-    BOOLEAN_KEYS.forEach(k => expect(service.prefs[k]).toBeFalse());
+    notifications.forEach(k => expect(service.prefs[k]).withContext(k).toBeFalse());
+    expect(service.prefs.email_application_updates).toBeTrue();
     expect(service.prefs.sound_volume).toBe(20);
-    tick(400); http.expectOne(URL()).flush(ok({ sound_volume: 20, ...Object.fromEntries(BOOLEAN_KEYS.map(k => [k, false])) }));
+    tick(400);
+    const off = http.expectOne(URL());
+    expect(Object.keys(off.request.body).sort()).toEqual([...notifications].sort());
+    off.flush(ok({ sound_volume: 20, ...Object.fromEntries(notifications.map(k => [k, false])) }));
 
     service.setAll(true);
-    BOOLEAN_KEYS.forEach(k => expect(service.prefs[k]).toBeTrue());
-    tick(400); http.expectOne(URL()).flush(ok({ sound_volume: 20, ...Object.fromEntries(BOOLEAN_KEYS.map(k => [k, true])) }));
+    notifications.forEach(k => expect(service.prefs[k]).withContext(k).toBeTrue());
+    tick(400); http.expectOne(URL()).flush(ok({ sound_volume: 20, ...Object.fromEntries(notifications.map(k => [k, true])) }));
     flush();
   }));
 

@@ -1,6 +1,7 @@
 <mat-form-field appearance="outline" class="lang-select" *ngIf="asSelect; else button">
   <mat-label>{{ 'ls_my_language' | translate }}</mat-label>
-  <mat-select [value]="languages.current" (selectionChange)="setLanguage($event.value)">
+  <mat-select [value]="languages.automatic ? 'auto' : languages.current" (selectionChange)="setLanguage($event.value)">
+    <mat-option value="auto">{{ 'ls_automatic' | translate }}</mat-option>
     <mat-option *ngFor="let l of languages.languages$ | async" [value]="l.code">{{ l.native || l.name }}<ng-container *ngIf="l.native && l.native !== l.name"> · {{ l.name }}</ng-container></mat-option>
   </mat-select>
   <mat-icon matPrefix>language</mat-icon>
@@ -11,8 +12,12 @@
     <mat-icon>language</mat-icon>
   </button>
   <mat-menu #menu="matMenu">
-    <button mat-menu-item type="button" *ngFor="let l of languages.languages$ | async" (click)="setLanguage(l.code)" [attr.aria-current]="l.code === languages.current">
-      <mat-icon>{{ l.code === languages.current ? 'check' : '' }}</mat-icon>
+    <button mat-menu-item type="button" (click)="setLanguage('auto')" [attr.aria-current]="languages.automatic">
+      <mat-icon>{{ languages.automatic ? 'check' : '' }}</mat-icon>
+      <span>{{ 'ls_automatic' | translate }}</span>
+    </button>
+    <button mat-menu-item type="button" *ngFor="let l of languages.languages$ | async" (click)="setLanguage(l.code)" [attr.aria-current]="!languages.automatic && l.code === languages.current">
+      <mat-icon>{{ !languages.automatic && l.code === languages.current ? 'check' : '' }}</mat-icon>
       <span [attr.dir]="l.rtl ? 'rtl' : 'ltr'">{{ l.native || l.name }}</span> <small *ngIf="l.native && l.native !== l.name"> · {{ l.name }}</small>
     </button>
   </mat-menu>

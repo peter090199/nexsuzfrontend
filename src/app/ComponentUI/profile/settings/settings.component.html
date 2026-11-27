@@ -65,6 +65,7 @@
         <mat-card class="st-card">
           <h3 class="st-card-title">{{ 'ls_language' | translate }}</h3>
           <app-translate [asSelect]="true"></app-translate>
+          <div class="st-country"><span>{{ 'ls_country' | translate }}</span><app-country-picker></app-country-picker></div>
         </mat-card>
 
         <!-- DEF-ADMIN / DEF-MASTERADMIN: everything except the role can be edited -->
@@ -696,6 +697,10 @@
       </ng-container>
 
       <!-- CV & RESUME MODE (DEF-MASTERADMIN): what job seekers see on their CV page -->
+      <ng-container *ngSwitchCase="'cvsetup'">
+        <app-cv-setup class="st-wide"></app-cv-setup>
+      </ng-container>
+
       <ng-container *ngSwitchCase="'cvmode'">
         <ng-container *ngIf="role === 'DEF-MASTERADMIN'">
 

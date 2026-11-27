@@ -46,7 +46,7 @@ import { SecurityRolesService } from 'src/app/services/Security/security-roles.s
             <header><h3>Recent role assignments</h3><small>Latest 10</small></header>
             <table class="tbl" *ngIf="data.recent_assignments.length; else noAssign">
               <thead><tr><th>When</th><th>Change</th><th>By</th></tr></thead>
-              <tbody><tr *ngFor="let a of data.recent_assignments"><td>{{ a.created_at | date:'MMM d, h:mm a' }}</td><td>{{ a.summary }}</td><td>{{ a.actor_name }}</td></tr></tbody>
+              <tbody><tr *ngFor="let a of data.recent_assignments"><td>{{ a.created_at | date:'MMM d, h:mm a' }}</td><td data-no-translate>{{ a.summary }}</td><td data-no-translate>{{ a.actor_name }}</td></tr></tbody>
             </table>
             <ng-template #noAssign><p class="empty">No role assignments yet.</p></ng-template>
 
@@ -56,8 +56,8 @@ import { SecurityRolesService } from 'src/app/services/Security/security-roles.s
               <tbody>
                 <tr *ngFor="let a of data.recent_activities">
                   <td>{{ a.created_at | date:'MMM d, h:mm a' }}</td>
-                  <td><mat-icon class="ai">{{ icon(a.action) }}</mat-icon>{{ a.summary }}</td>
-                  <td>{{ a.actor_name }}</td>
+                  <td data-no-translate><mat-icon class="ai">{{ icon(a.action) }}</mat-icon>{{ a.summary }}</td>
+                  <td data-no-translate>{{ a.actor_name }}</td>
                 </tr>
               </tbody>
             </table>

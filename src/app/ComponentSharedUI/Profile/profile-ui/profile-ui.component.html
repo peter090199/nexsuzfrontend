@@ -47,8 +47,8 @@
           </div>
 
           <div class="identity">
-            <h1>{{ profiles.fname }} {{ profiles.lname }}</h1>
-            <p class="headline" *ngIf="profiles.profession">{{ profiles.profession }}</p>
+            <h1 data-no-translate>{{ profiles.fname }} {{ profiles.lname }}</h1>
+            <p class="headline" data-no-translate *ngIf="profiles.profession">{{ profiles.profession }}</p>
             <p class="loc" *ngIf="profiles.role_code !== 'DEF-MASTERADMIN' && (profiles.current_state || profiles.current_location)">
               <mat-icon>location_on</mat-icon>
               {{ profiles.current_state ? profiles.current_state + (profiles.current_location ? ', ' : '') : '' }}{{ profiles.current_location }}
@@ -206,7 +206,7 @@
         <!-- About -->
         <section class="nx-card" *ngIf="profiles?.summary">
           <h2 class="nx-card-title"><mat-icon>info</mat-icon> About</h2>
-          <p class="about">{{ profiles.summary }}</p>
+          <p class="about" data-no-translate>{{ profiles.summary }}</p><app-see-translation [text]="profiles.summary"></app-see-translation>
         </section>
 
         </ng-template>
@@ -253,9 +253,9 @@
               <span class="entry-ico"><mat-icon>business</mat-icon></span>
               <div class="entry-body">
               <h3>{{ job.position }}</h3>
-              <p class="sub">{{ job.company_name }}</p>
+              <p class="sub" data-no-translate>{{ job.company_name }}</p>
               <p class="meta" *ngIf="job.date_completed">{{ job.date_completed }}</p>
-              <p class="desc" *ngIf="job.job_description">{{ job.job_description }}</p>
+              <p class="desc" data-no-translate *ngIf="job.job_description">{{ job.job_description }}</p><app-see-translation [text]="job.job_description"></app-see-translation>
             </div>
             </article>
           </ng-container>
@@ -268,8 +268,8 @@
             <article class="entry" *ngFor="let education of profiles.lines.education">
               <span class="entry-ico"><mat-icon>school</mat-icon></span>
               <div class="entry-body">
-              <h3>{{ education.school_name }}</h3>
-              <p class="sub">{{ education.highest_education }}</p>
+              <h3 data-no-translate>{{ education.school_name }}</h3>
+              <p class="sub" data-no-translate>{{ education.highest_education }}</p>
               <p class="meta">{{ education.start_month }} {{ education.start_year }} – {{ education.end_month }} {{
                 education.end_year }}</p>
             </div>
@@ -293,7 +293,7 @@
               <span class="entry-ico"><mat-icon>model_training</mat-icon></span>
               <div class="entry-body">
               <h3>{{ training.training_title }}</h3>
-              <p class="sub">{{ training.training_provider }}</p>
+              <p class="sub" data-no-translate>{{ training.training_provider }}</p>
               <p class="meta">{{ training.date_completed }}</p>
             </div>
             </article>
@@ -308,7 +308,7 @@
               <span class="entry-ico"><mat-icon>groups</mat-icon></span>
               <div class="entry-body">
               <h3>{{ seminar.seminar_title }}</h3>
-              <p class="sub">{{ seminar.seminar_provider }}</p>
+              <p class="sub" data-no-translate>{{ seminar.seminar_provider }}</p>
               <p class="meta">{{ seminar.date_completed }}</p>
             </div>
             </article>
@@ -323,7 +323,7 @@
               <span class="entry-ico"><mat-icon>workspace_premium</mat-icon></span>
               <div class="entry-body">
               <h3>{{ certificates.certificate_title }}</h3>
-              <p class="sub">{{ certificates.certificate_provider }}</p>
+              <p class="sub" data-no-translate>{{ certificates.certificate_provider }}</p>
               <p class="meta">{{ certificates.date_completed }}</p>
             </div>
             </article>
@@ -368,7 +368,7 @@
                     : ['/' + sharedRoutines.getRole() + '/client_profile', user.code]">
                 {{ user.fullname }}
               </a>
-              <p class="client-sub" *ngIf="user.profession">{{ user.profession }}</p>
+              <p class="client-sub" data-no-translate *ngIf="user.profession">{{ user.profession }}</p>
               <button type="button" class="connect-btn" [class.pending]="personState(user) === 'pending'"
                 [class.connected]="personState(user) === 'connected'" [disabled]="user.busy" (click)="connectPerson(user)">
                 <mat-icon>{{ personState(user) === 'connected' ? 'check' : personState(user) === 'pending' ? 'hourglass_top' : 'person_add' }}</mat-icon>

@@ -1,0 +1,128 @@
+<section class="ma">
+  <header class="ma-head">
+    <div>
+      <h1><mat-icon>work_history</mat-icon> My Job Applications</h1>
+      <p>Follow every job you applied for. Statuses are updated by the recruiter.</p>
+    </div>
+    <button mat-stroked-button type="button" (click)="load()" [disabled]="loading"><mat-icon>refresh</mat-icon> Refresh</button>
+  </header>
+
+  <!-- summary cards: click one to filter -->
+  <div class="ma-cards" role="group" aria-label="Applications by status">
+    <button type="button" class="ma-card total" [class.on]="!filter" (click)="filter = ''" [attr.aria-pressed]="!filter">
+      <mat-icon>inventory_2</mat-icon><span>All</span><strong>{{ items.length }}</strong>
+    </button>
+    <button type="button" *ngFor="let s of statuses" class="ma-card" [ngClass]="meta[s].tone" [class.on]="filter === s"
+      (click)="setFilter(s)" [attr.aria-pressed]="filter === s">
+      <mat-icon>{{ meta[s].icon }}</mat-icon><span>{{ meta[s].label }}</span><strong>{{ counts[s] || 0 }}</strong>
+    </button>
+  </div>
+
+  <!-- search and filter -->
+  <div class="ma-tools">
+    <mat-form-field appearance="outline" class="ma-search">
+      <mat-label>Search</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput [(ngModel)]="search" placeholder="Job title, company or reference" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="ma-filter">
+      <mat-label>Status</mat-label>
+      <mat-select [(ngModel)]="filter">
+        <mat-option value="">All statuses</mat-option>
+        <mat-option *ngFor="let s of statuses" [value]="s">{{ meta[s].label }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <mat-progress-bar *ngIf="loading" mode="indeterminate"></mat-progress-bar>
+
+  <div class="ma-state" *ngIf="!loading && failed" role="alert">
+    <mat-icon>error_outline</mat-icon><strong>Could not load your applications</strong>
+    <button mat-stroked-button color="primary" type="button" (click)="load()">Try again</button>
+  </div>
+
+  <!-- empty states -->
+  <div class="ma-state" *ngIf="!loading && !failed && !items.length">
+    <mat-icon>work_outline</mat-icon>
+    <strong>You haven't applied for any jobs yet</strong>
+    <span>When you apply for a job, you can follow its progress here.</span>
+    <a mat-flat-button color="primary" routerLink="../jobs"><mat-icon>search</mat-icon> Find jobs</a>
+  </div>
+  <div class="ma-state" *ngIf="!loading && !failed && items.length && !visible.length">
+    <mat-icon>search_off</mat-icon><strong>No applications match</strong>
+    <button mat-stroked-button type="button" (click)="clear()">Clear search and filter</button>
+  </div>
+
+  <!-- list: a table on wide screens, cards on phones -->
+  <div class="ma-list" *ngIf="!loading && !failed && visible.length" role="table" aria-label="My job applications">
+    <div class="ma-row ma-th" role="row">
+      <span role="columnheader">Job</span><span role="columnheader">Reference</span><span role="columnheader">Applied</span>
+      <span role="columnheader">Last updated</span><span role="columnheader">Status</span><span role="columnheader"></span>
+    </div>
+    <div class="ma-row" role="row" *ngFor="let a of visible; trackBy: trackId">
+      <span class="ma-job" role="cell">
+        <strong data-no-translate>{{ a.job_title }}</strong>
+        <small>{{ a.company || 'Company not shown' }}<ng-container *ngIf="a.location"> · {{ a.location }}</ng-container></small>
+        <small class="ma-gone" *ngIf="!a.job_available">This job posting is no longer available</small>
+      </span>
+      <span role="cell" class="ma-ref" data-label="Reference">{{ a.reference }}</span>
+      <span role="cell" data-label="Applied">{{ a.applied_at | date:'mediumDate' }}</span>
+      <span role="cell" data-label="Last updated">{{ a.updated_at | date:'mediumDate' }}</span>
+      <span role="cell"><span class="ma-badge" [ngClass]="meta[a.status].tone"><mat-icon>{{ meta[a.status].icon }}</mat-icon>{{ meta[a.status].label }}</span></span>
+      <span role="cell" class="ma-act"><button mat-stroked-button color="primary" type="button" (click)="open(a)" [attr.aria-label]="'View details of ' + a.job_title">View details</button></span>
+    </div>
+  </div>
+</section>
+
+<!-- details -->
+<ng-template #details>
+  <div class="md">
+    <div class="md-head">
+      <h2 mat-dialog-title>Application details</h2>
+      <button mat-icon-button mat-dialog-close aria-label="Close"><mat-icon>close</mat-icon></button>
+    </div>
+    <mat-dialog-content>
+      <mat-progress-bar *ngIf="!detail && !detailFailed" mode="indeterminate"></mat-progress-bar>
+      <p class="md-error" *ngIf="detailFailed" role="alert">Could not load this application.</p>
+
+      <ng-container *ngIf="detail">
+        <div class="md-job">
+          <strong data-no-translate>{{ detail.job_title }}</strong>
+          <span>{{ detail.company || 'Company not shown' }}<ng-container *ngIf="detail.location"> · {{ detail.location }}</ng-container></span>
+        </div>
+        <dl class="md-facts">
+          <div><dt>Reference</dt><dd>{{ detail.reference }}</dd></div>
+          <div><dt>Applied</dt><dd>{{ detail.applied_at | date:'medium' }}</dd></div>
+          <div><dt>Last updated</dt><dd>{{ detail.updated_at | date:'medium' }}</dd></div>
+          <div><dt>Status</dt><dd><span class="ma-badge" [ngClass]="meta[$any(detail.status)].tone"><mat-icon>{{ meta[$any(detail.status)].icon }}</mat-icon>{{ meta[$any(detail.status)].label }}</span></dd></div>
+        </dl>
+
+        <h3>Progress</h3>
+        <ol class="md-steps">
+          <li *ngFor="let s of steps(detail)" [ngClass]="[s.state, meta[s.status].tone]">
+            <span class="dot"><mat-icon>{{ s.state === 'todo' ? 'radio_button_unchecked' : meta[s.status].icon }}</mat-icon></span>
+            <span class="txt"><strong>{{ meta[s.status].label }}</strong><small>{{ s.at ? (s.at | date:'medium') : 'Not yet' }}</small></span>
+          </li>
+        </ol>
+
+        <ng-container *ngIf="detail.interviews?.length">
+          <h3>Interviews</h3>
+          <ul class="md-iv">
+            <li *ngFor="let i of detail.interviews">
+              <mat-icon>event</mat-icon>
+              <span><strong>{{ i.scheduled_at | date:'medium' }}</strong>
+                <small>{{ i.type }}<ng-container *ngIf="i.duration_min"> · {{ i.duration_min }} min</ng-container><ng-container *ngIf="i.interviewer_name"> · {{ i.interviewer_name }}</ng-container><ng-container *ngIf="i.status"> · {{ i.status }}</ng-container></small>
+                <small *ngIf="i.location">{{ i.location }}</small>
+                <a *ngIf="i.meeting_link" [href]="i.meeting_link" target="_blank" rel="noopener noreferrer">Join meeting</a></span>
+            </li>
+          </ul>
+        </ng-container>
+
+        <p class="md-note">Only the recruiter can change the status. You are notified when it changes.</p>
+      </ng-container>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end" *ngIf="detail?.job_available">
+      <a mat-stroked-button color="primary" mat-dialog-close [routerLink]="['../recommended-jobs', detail.trans_no]">View job posting</a>
+    </mat-dialog-actions>
+  </div>
+</ng-template>

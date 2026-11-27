@@ -35,7 +35,7 @@
         <img [src]="avatarOf(post)" nxFallback alt="Author photo">
       </div>
       <div class="pc-meta">
-        <h3 class="pc-name">{{ post.fullname }}</h3>
+        <h3 class="pc-name" data-no-translate>{{ post.fullname }}</h3>
         <div class="pc-sub">
           <span>{{ timeAgo(post.created_at) }}</span>
           <span class="pc-dot" aria-hidden="true">·</span>
@@ -67,11 +67,12 @@
 
     <!-- Caption -->
     <div class="post-caption pc-caption">
-      <p>{{ post.expanded ? post.caption : (post.caption | slice:0:800) + (post.caption.length > 800 ? '...' : '') }}
+      <p data-no-translate>{{ post.expanded ? post.caption : (post.caption | slice:0:800) + (post.caption.length > 800 ? '...' : '') }}
       </p>
       <a *ngIf="post.caption.length > 800" (click)="post.expanded = !post.expanded" class="see-more">
         {{ post.expanded ? 'See Less' : 'See More' }}
       </a>
+      <app-see-translation [text]="post.caption"></app-see-translation>
     </div>
 
     <!-- Images: 1 = full width, 2 = halves, 3 = one large + two, 4+ = 2x2 with a "+N" tile -->

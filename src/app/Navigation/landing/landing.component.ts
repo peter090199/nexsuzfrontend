@@ -109,7 +109,7 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
   accountRole = '';
 
   private static readonly HOME: Record<string, string> = {
-    'DEF-USERS': '/DEF-USERS/home', 'DEF-CLIENT': '/DEF-CLIENT/client-dashboard',
+    'DEF-USERS': '/DEF-USERS/dashboard', 'DEF-CLIENT': '/DEF-CLIENT/client-dashboard',
     'DEF-ADMIN': '/DEF-ADMIN/admin-dashboard', 'DEF-MASTERADMIN': '/DEF-MASTERADMIN/admin-dashboard'
   };
   private static readonly ROLE: Record<string, string> = {

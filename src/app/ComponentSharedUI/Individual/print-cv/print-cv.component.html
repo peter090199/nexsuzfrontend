@@ -20,10 +20,13 @@
     <button *ngIf="!shared" mat-stroked-button color="primary" (click)="share()" [disabled]="!cv" aria-label="Share CV">
       <mat-icon>share</mat-icon><span class="lbl">Share</span>
     </button>
-    <button mat-stroked-button color="primary" (click)="printData()" [disabled]="!cv || !!busy" aria-label="Print CV">
+    <button mat-stroked-button color="primary" *ngIf="pdfSettings.preview_enabled" (click)="previewPdf()" [disabled]="!cv || !!busy" aria-label="PDF preview">
+      <mat-icon>pageview</mat-icon><span class="lbl">PDF preview</span>
+    </button>
+    <button mat-stroked-button color="primary" *ngIf="pdfSettings.allow_print" (click)="printData()" [disabled]="!cv || !!busy" aria-label="Print CV">
       <mat-icon>print</mat-icon><span class="lbl">Print</span>
     </button>
-    <button mat-stroked-button color="primary" (click)="downloadPDF()" [disabled]="!cv || !!busy" aria-label="Download CV as PDF">
+    <button mat-stroked-button color="primary" *ngIf="pdfSettings.allow_download" (click)="downloadPDF()" [disabled]="!cv || !!busy" aria-label="Download CV as PDF">
       <mat-spinner *ngIf="busy === 'pdf'" diameter="18"></mat-spinner>
       <mat-icon *ngIf="busy !== 'pdf'">picture_as_pdf</mat-icon><span class="lbl">{{ busy === 'pdf' ? 'Creating…' : 'PDF' }}</span>
     </button>

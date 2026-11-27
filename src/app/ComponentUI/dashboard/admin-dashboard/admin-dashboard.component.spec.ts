@@ -47,6 +47,12 @@ describe('AdminDashboardComponent', () => {
       });
     }
 
+    it('only administrators get Translation plans', async () => {
+      expect(await shortcuts('DEF-ADMIN')).toContain('translationplans');
+      expect(await shortcuts('DEF-MASTERADMIN')).toContain('translationplans');
+      expect(await shortcuts('DEF-CLIENT')).not.toContain('translationplans');
+    });
+
     it('DEF-ADMIN keeps its other shortcuts', async () => {
       const routes = await shortcuts('DEF-ADMIN');
       ['user', 'usersubscriptionmonitoring', 'subscriptionreports', 'message', 'network', 'settings'].forEach(r => expect(routes).toContain(r));

@@ -145,8 +145,8 @@
               <img *ngIf="u.photo_pic && !broken[u.code]; else ini" [src]="u.photo_pic" alt="" (error)="broken[u.code] = true">
               <ng-template #ini><span>{{ initials(u.fullname) }}</span></ng-template>
             </button>
-            <div class="who">
-              <strong>{{ u.fullname }}</strong>
+            <div class="who" >
+              <strong data-no-translate>{{ u.fullname }}</strong>
               <small>{{ accountType(u.role_code) }}<ng-container *ngIf="u.company"> · {{ u.company }}</ng-container></small>
             </div>
             <div class="meta">
@@ -166,7 +166,7 @@
             (click)="openProfile(a.code, a.role_code)" (keydown.enter)="openProfile(a.code, a.role_code)"
             [attr.tabindex]="a.code ? 0 : null" [attr.role]="a.code ? 'link' : null">
             <span class="tl-ico"><mat-icon>{{ activityIcon(a.type) }}</mat-icon></span>
-            <div class="tl-body">
+            <div class="tl-body" data-no-translate>
               <strong>{{ a.title }}</strong>
               <small>{{ a.subtitle }}</small>
             </div>
@@ -192,7 +192,7 @@
         <h3 class="sub-h">Active subscribers by plan</h3>
         <ul class="bars compact" *ngIf="data.master.subscriptions.by_plan.length; else noPlans">
           <li *ngFor="let p of data.master.subscriptions.by_plan">
-            <div class="bar-head"><span>{{ p.plan_name }}</span><strong>{{ p.count }}</strong></div>
+            <div class="bar-head"><span data-no-translate>{{ p.plan_name }}</span><strong>{{ p.count }}</strong></div>
             <div class="bar-track"><span class="bar-fill" [style.width.%]="barWidth(p.count, maxOf(data.master.subscriptions.by_plan, 'count'))"></span></div>
           </li>
         </ul>

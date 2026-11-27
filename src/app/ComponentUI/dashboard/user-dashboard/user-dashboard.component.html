@@ -1,0 +1,72 @@
+<section class="ud">
+  <header class="ud-head">
+    <div>
+      <h1><mat-icon>space_dashboard</mat-icon> Dashboard</h1>
+      <p>Your job search at a glance.</p>
+    </div>
+    <nav class="ud-links" aria-label="Quick links">
+      <a mat-flat-button routerLink="../jobs"><mat-icon>travel_explore</mat-icon> Browse Jobs</a>
+      <a mat-stroked-button routerLink="../my-applications"><mat-icon>work_history</mat-icon> My Job Applications</a>
+    </nav>
+  </header>
+
+  <mat-progress-bar *ngIf="loading" mode="indeterminate"></mat-progress-bar>
+
+  <div class="ud-state" *ngIf="!loading && failed" role="alert">
+    <mat-icon>error_outline</mat-icon><strong>Could not load your dashboard</strong>
+    <button mat-stroked-button color="primary" type="button" (click)="load()">Try again</button>
+  </div>
+
+  <ng-container *ngIf="!loading && !failed">
+    <!-- summary cards: each opens My Job Applications -->
+    <div class="ud-cards">
+      <a class="ud-card total" routerLink="../my-applications">
+        <mat-icon>inventory_2</mat-icon><span>Total Applications</span><strong>{{ total }}</strong>
+      </a>
+      <a class="ud-card" *ngFor="let s of statuses" [ngClass]="meta[s].tone" routerLink="../my-applications">
+        <mat-icon>{{ meta[s].icon }}</mat-icon><span>{{ meta[s].label }}</span><strong>{{ counts[s] || 0 }}</strong>
+      </a>
+    </div>
+
+    <!-- nothing yet -->
+    <div class="ud-state ud-card-box" *ngIf="!total">
+      <mat-icon>work_outline</mat-icon>
+      <strong>You haven't applied for any jobs yet</strong>
+      <span>Find a job you like and apply. Its progress will show up here.</span>
+      <a mat-flat-button color="primary" routerLink="../jobs"><mat-icon>search</mat-icon> Browse Jobs</a>
+    </div>
+
+    <div class="ud-grid" *ngIf="total">
+      <section class="ud-card-box span-5">
+        <h2>Application status</h2>
+        <app-mini-chart type="donut" [slices]="slices" ariaLabel="Your applications by status" emptyText="No applications yet"></app-mini-chart>
+      </section>
+
+      <section class="ud-card-box span-7">
+        <div class="ud-box-head">
+          <h2>Recent applications</h2>
+          <a mat-button color="primary" routerLink="../my-applications">View all</a>
+        </div>
+        <ul class="ud-list">
+          <li *ngFor="let a of recent">
+            <span class="ud-job"><strong data-no-translate>{{ a.job_title }}</strong><small>{{ a.company || 'Company not shown' }} · {{ a.applied_at | date:'mediumDate' }}</small></span>
+            <span class="ud-badge" [ngClass]="meta[a.status].tone"><mat-icon>{{ meta[a.status].icon }}</mat-icon>{{ meta[a.status].label }}</span>
+          </li>
+        </ul>
+      </section>
+
+      <section class="ud-card-box span-12">
+        <h2>Latest application updates</h2>
+        <p class="ud-empty" *ngIf="!updates.length">No updates yet.</p>
+        <ol class="ud-updates" *ngIf="updates.length">
+          <li *ngFor="let u of updates">
+            <span class="dot" [ngClass]="meta[u.status].tone"><mat-icon>{{ meta[u.status].icon }}</mat-icon></span>
+            <span class="ud-job"><strong data-no-translate>{{ u.job_title || 'A job' }}</strong>
+              <small><ng-container *ngIf="u.status === 'applied_active'; else changed">Application sent</ng-container><ng-template #changed><span>Status changed to</span> <span>{{ meta[u.status].label }}</span></ng-template></small></span>
+            <time>{{ u.at | date:'MMM d, y · h:mm a' }}</time>
+          </li>
+        </ol>
+      </section>
+    </div>
+  </ng-container>
+</section>

@@ -1,4 +1,6 @@
-import { Component, ElementRef, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
+import { TextTranslationService } from '../ComponentSharedUI/see-translation/see-translation.component';
+import { Component, ElementRef, OnDestroy, OnInit, TemplateRef, ViewChild, Injector } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { Subscription, interval } from 'rxjs';
@@ -95,6 +97,32 @@ export class MessengerChatComponent implements OnInit, OnDestroy {
   listError = false;
 
   selected: Peer | null = null;
+
+  translationOn = false;
+  translationLanguages: { code: string; name: string }[] = [];
+
+  get isAdmin(): boolean { return /^DEF-(MASTER)?ADMIN$/.test(sessionStorage.getItem('role') || ''); }
+
+  /** the language this person wants this conversation translated into; empty = their own */
+  get chatLanguage(): string { return localStorage.getItem(this.languageKey()) || ''; }
+  set chatLanguage(code: string) {
+    code ? localStorage.setItem(this.languageKey(), code) : localStorage.removeItem(this.languageKey());
+  }
+
+  private languageKey(): string { return `nx-chat-lang:${sessionStorage.getItem('code') || 'x'}:${this.selected?.user_id ?? 'x'}`; }
+
+  private loadTranslation(): void {
+    const service = this.injector.get(TextTranslationService);
+    service.enabled().subscribe(on => {
+      this.translationOn = on;
+      if (!on) { return; }
+      const Names = (Intl as any).DisplayNames;
+      const names = Names ? new Names([this.injector.get(TranslateService).currentLang || 'en'], { type: 'language' }) : null;
+      service.languages().subscribe(list => this.translationLanguages = list
+        .map(l => ({ code: l.code, name: (names && /^[a-z]{2,3}(-[A-Za-z]+)?$/.test(l.code) && names.of(l.code)) || l.name }))
+        .sort((a, b) => a.name.localeCompare(b.name)));
+    });
+  }
   messages: ChatMessage[] = [];
   groups: DayGroup[] = [];
   loadingChat = false;
@@ -116,6 +144,7 @@ export class MessengerChatComponent implements OnInit, OnDestroy {
   private refreshing = false;
 
   constructor(
+    private injector: Injector,
     private chat: ChatService,
     private echo: EchoService,
     private auth: AuthService,
@@ -133,6 +162,7 @@ export class MessengerChatComponent implements OnInit, OnDestroy {
 
   // =================================================================== lifecycle
   ngOnInit(): void {
+    this.loadTranslation();
     this.watchVisualViewport();
     this.auth.getData().subscribe({
       next: (me: any) => {

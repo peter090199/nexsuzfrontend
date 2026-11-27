@@ -5,8 +5,15 @@ import { TranslateService } from '@ngx-translate/core';
 import { NexsuzTestingModule } from 'src/testing/nexsuz-testing.module';
 import { _url } from 'src/global-variables';
 
-import { LanguageService, matchBrowserLanguage, NexsuzTranslateLoader } from './language.service';
+import { LanguageService, languageForCountry, matchBrowserLanguage, NexsuzTranslateLoader, withoutCoveredContent } from './language.service';
 import { MenuLabelPipe } from './menu-label.pipe';
+
+describe('database texts', () => {
+  it('are listed only when no existing key has the same English', () => {
+    expect(withoutCoveredContent({ web_600: 'STARTER', web_db_a: 'STARTER', web_db_b: 'New feature' }))
+      .toEqual({ web_600: 'STARTER', web_db_b: 'New feature' });
+  });
+});
 
 describe('Language support', () => {
   let http: HttpTestingController;
@@ -91,5 +98,44 @@ describe('Language support', () => {
     it('the saved preference', () => expect(resolveWith('fil-PH', ['es-ES'])).toBe('fil-PH'));
     it('else the browser language', () => expect(resolveWith(null, ['es-ES'])).toBe('es-ES'));
     it('else the system default', () => expect(resolveWith(null, ['de-DE'])).toBe('zh-CN'));
+  });
+});
+
+describe('languageForCountry', () => {
+  const lang = (code: string, countries: string[]) => ({ code, name: code, native: '', rtl: false, countries });
+  const languages = [lang('zh-CN', ['CN']), lang('en-US', ['US']), lang('fil-PH', ['PH']), lang('ar', ['IL', 'SA']), lang('es', ['ES', 'MX'])];
+
+  it('gives the country its switched-on language', () => {
+    expect(['CN', 'PH', 'SA', 'MX', 'US'].map(c => languageForCountry(c, languages))).toEqual(['zh-CN', 'fil-PH', 'ar', 'es', 'en-US']);
+  });
+
+  it('picks sensibly where a country has several languages', () => {
+    const several = [lang('fr', ['CH', 'CA', 'FR']), lang('de', ['CH', 'DE']), lang('sv', ['FI', 'SE'])];
+
+    expect(['CH', 'FR', 'CA', 'FI', 'SE'].map(c => languageForCountry(c, several))).toEqual(['de', 'fr', 'en-US', 'en-US', 'sv']);
+  });
+
+  it('else English', () => {
+    expect(['FR', 'IL', 'TW', ''].map(c => languageForCountry(c, languages))).toEqual(['en-US', 'en-US', 'en-US', 'en-US']);
+  });
+});
+
+describe('Automatic language', () => {
+  beforeEach(() => { sessionStorage.clear(); localStorage.clear(); TestBed.configureTestingModule({ imports: [NexsuzTestingModule] }); });
+  afterEach(() => { sessionStorage.clear(); localStorage.clear(); });
+
+  it('forgets the picked language and follows the browser again', () => {
+    const service = TestBed.inject(LanguageService);
+    const http = TestBed.inject(HttpTestingController);
+    spyOn(service, 'browserLanguages').and.returnValue(['ja-JP']);
+    localStorage.setItem('language', 'fil-PH');
+    const config = { default: 'en-US', languages: ['en-US', 'fil-PH', 'ja'].map(code => ({ code, name: code, native: '', rtl: false })) };
+
+    service.choose('auto');
+    http.expectOne(`${_url}i18n/config`).flush(config);
+
+    expect(localStorage.getItem('language')).toBeNull();
+    expect(service.automatic).toBeTrue();
+    expect(sessionStorage.getItem('nx-lang')).toBe('ja');
   });
 });

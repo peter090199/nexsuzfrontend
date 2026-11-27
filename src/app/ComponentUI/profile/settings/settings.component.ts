@@ -24,7 +24,7 @@ import { AppearanceService, AppearancePrefs, DEFAULT_APPEARANCE, FONT_SIZE_MIN, 
 
 type SectionId =
   | 'account' | 'privacy' | 'security' | 'password' | 'notifications'
-  | 'email' | 'appearance' | 'blocked' | 'danger' | 'plan' | 'jobtemplates' | 'resume' | 'cvmode';
+  | 'email' | 'appearance' | 'blocked' | 'danger' | 'plan' | 'jobtemplates' | 'resume' | 'cvmode' | 'cvsetup';
 
 interface SettingsSection {
   id: SectionId;
@@ -165,6 +165,16 @@ export class SettingsComponent implements OnInit {
       this.sections.splice(at >= 0 ? at + 1 : 6, 0, {
         id: 'cvmode', label: 'CV & Resume Mode', icon: 'tune',
         description: 'Choose whether job seekers upload a CV or resume only, or fill up their CV online.',
+        available: true
+      });
+    }
+
+    // CV Setup (PDF preview, print, download, server URLs): DEF-MASTERADMIN only (the API refuses everyone else too)
+    if (this.role === 'DEF-MASTERADMIN') {
+      const at = this.sections.findIndex(x => x.id === 'cvmode');
+      this.sections.splice(at >= 0 ? at + 1 : 7, 0, {
+        id: 'cvsetup', label: 'CV Setup', icon: 'picture_as_pdf',
+        description: 'How CV and resume PDFs are previewed, printed and downloaded.',
         available: true
       });
     }

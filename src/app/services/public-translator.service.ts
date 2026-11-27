@@ -6,9 +6,11 @@ import { filter } from 'rxjs/operators';
 import { FALLBACK_LANGUAGE } from './language.service';
 
 const PUBLIC_PATHS = /^\/($|signin|signup|clientsignup|forgetpassword|reset-password|activation|homepage)/;
+/** signed-in screens whose own texts have web_ keys; anything people typed there is marked data-no-translate */
+const SIGNED_IN_PATHS = /^\/DEF-(USERS|CLIENT|MASTERADMIN|ADMIN)\/(admin-dashboard|client-dashboard|home|settings|network|vacancies|posting-job|candidates|interviews|reports|contactinquiries|user|recommended-jobs\/[^/]+|message|profile(\/[^/]+)?|client_profile\/[^/]+|dashboard|my-applications)\/?$/;
 const ATTRIBUTES = ['placeholder', 'title', 'aria-label', 'alt'];
-/** text that must never be rewritten */
-const SKIP = 'script, style, mat-icon, textarea, [data-no-translate], option:not([value])';
+/** text that must never be rewritten (posts, announcements and chat are people's own words) */
+const SKIP = 'script, style, mat-icon, textarea, [data-no-translate], option:not([value]), app-post-comments, .pre, .msg-body';
 
 interface Seen { source: string; shown: string; }
 
@@ -51,7 +53,7 @@ export class PublicTranslatorService {
   get active(): boolean { return !!this.observer; }
 
   toggle(url: string): void {
-    if (this.isPublic(url)) {
+    if (this.isPublic(url) || SIGNED_IN_PATHS.test(url.split(/[?#]/)[0])) {
       this.observe();
       this.refresh();
     } else {
@@ -97,7 +99,7 @@ export class PublicTranslatorService {
     this.keys = new Map(web.filter(([text]) => !text.includes('{0}')) as [string, string][]);
     // the most specific (longest) pattern is tried first
     this.patterns = web.filter(([text]) => text.includes('{0}')).sort((a, b) => b[0].length - a[0].length).map(([text, key]) => ({
-      regex: new RegExp('^' + text.split('{0}').map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('(.+?)') + '$'), key
+      regex: new RegExp('^' + text.split(/\{\d\}/).map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('(.+?)') + '$'), key
     }));
     // forget nodes that left the page
     this.texts.forEach((_, node) => { if (!node.isConnected) { this.texts.delete(node); } });
@@ -129,7 +131,7 @@ export class PublicTranslatorService {
       if (!match) { continue; }
       const value = this.translate.instant(key);
 
-      return value === key ? undefined : value.replace('{0}', () => match[1]);
+      return value === key ? undefined : value.replace(/\{(\d)\}/g,(_: string, i: string) => match[+i + 1] ?? '');
     }
 
     return undefined;

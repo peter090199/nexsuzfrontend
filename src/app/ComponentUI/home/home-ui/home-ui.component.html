@@ -26,7 +26,7 @@
           </div>
         </div>
 
-        <div class="profile-info">
+        <div class="profile-info" data-no-translate>
           <h3 class="profile-name">{{ profiles?.fname }} {{ profiles?.lname }}</h3>
           <p class="profile-profession">{{ profiles?.profession }}</p>
         </div>
@@ -100,7 +100,7 @@
 
             <img [src]="user.photo_pic || 'assets/images/default.png'" nxFallback alt="" class="mat-avatar" />
 
-            <div class="client-info">
+            <div class="client-info" data-no-translate>
               <a class="custom-title" [routerLink]="
                   user.role_code === 'DEF-USERS'
                     ? ['/' + sharedRoutines.getRole() + '/profile', user.code]

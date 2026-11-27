@@ -127,12 +127,12 @@
 
         <section class="jd-sec" *ngIf="selectedJob.job_description">
           <h2>Job description</h2>
-          <p class="pre">{{ selectedJob.job_description }}</p>
+          <p class="pre">{{ selectedJob.job_description }}</p><app-see-translation [text]="selectedJob.job_description"></app-see-translation>
         </section>
 
         <section class="jd-sec" *ngIf="selectedJob.qualification || selectedJob.education || selectedJob.preferred_qualifications">
           <h2>Qualifications</h2>
-          <p class="pre" *ngIf="selectedJob.qualification">{{ selectedJob.qualification }}</p>
+          <p class="pre" *ngIf="selectedJob.qualification">{{ selectedJob.qualification }}</p><app-see-translation [text]="selectedJob.qualification"></app-see-translation>
           <p *ngIf="selectedJob.education"><strong>Education:</strong> {{ selectedJob.education }}</p>
           <ng-container *ngIf="selectedJob.preferred_qualifications">
             <h3>Nice to have</h3>
@@ -147,7 +147,7 @@
 
         <section class="jd-sec" *ngIf="selectedJob.benefits">
           <h2>Benefits and perks</h2>
-          <p class="pre">{{ selectedJob.benefits }}</p>
+          <p class="pre">{{ selectedJob.benefits }}</p><app-see-translation [text]="selectedJob.benefits"></app-see-translation>
         </section>
 
         </ng-template>

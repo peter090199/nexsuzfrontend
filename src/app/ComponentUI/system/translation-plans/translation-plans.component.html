@@ -1,0 +1,137 @@
+<div class="tp" data-no-translate>
+  <header class="tp-head">
+    <h1><mat-icon>translate</mat-icon> Google Translate</h1>
+    <p>Plans, pricing, budget and usage. Shared by every administrator.</p>
+  </header>
+
+  <p class="tp-note" *ngIf="failed" role="alert">Could not load the translation settings.
+    <button mat-button color="primary" type="button" (click)="load()">Try again</button></p>
+  <mat-progress-bar *ngIf="busy || (!data && !failed)" mode="indeterminate"></mat-progress-bar>
+
+  <ng-container *ngIf="data">
+
+    <!-- PLANS -->
+    <section class="tp-card" aria-label="Translation Plans">
+      <h2>Translation Plans</h2>
+      <div class="tp-plans">
+        <article class="tp-plan" [class.on]="!paid">
+          <h3>Free <span class="tp-tag on" *ngIf="!paid">Active</span></h3>
+          <strong class="tp-price">₱0 API cost</strong>
+          <ul>
+            <li>The translations built into Nexsuz</li>
+            <li>No API key or Google Cloud billing</li>
+            <li>“Automatic” detects the browser's language; any language can also be chosen</li>
+            <li>No requests to Google</li>
+          </ul>
+          <button mat-stroked-button type="button" *ngIf="paid" [disabled]="busy" (click)="useFree()">Switch to Free</button>
+        </article>
+        <article class="tp-plan" [class.on]="paid">
+          <h3>Paid <span class="tp-tag on" *ngIf="paid">Active</span></h3>
+          <strong class="tp-price">Usage based</strong>
+          <ul>
+            <li>Everything in Free</li>
+            <li>Google Cloud Translation for system texts with no translation yet</li>
+            <li>Only when an administrator asks; results are saved</li>
+            <li>Budget, limit and usage alerts</li>
+          </ul>
+          <ng-container *ngIf="!paid">
+            <mat-checkbox [(ngModel)]="approve" [disabled]="!canEnable">I approve paid Google translation charges</mat-checkbox>
+            <button mat-flat-button color="primary" type="button" [disabled]="busy || !canEnable || !approve" (click)="enablePaid()">Enable Paid</button>
+            <small *ngIf="!canEnable">First save an API key, test it, and set a price and a monthly budget.</small>
+          </ng-container>
+          <small *ngIf="paid">Approved by {{ data.config.approved_by }} on {{ data.config.approved_at | date:'MMM d, y, h:mm a' }}</small>
+        </article>
+      </div>
+    </section>
+
+    <!-- ALERTS -->
+    <section class="tp-card" aria-label="Billing and Usage Alerts">
+      <h2>Billing and Usage Alerts</h2>
+      <p class="tp-alert danger" *ngIf="data.current.alert_level >= 100" role="alert">The monthly budget or character limit is reached. No further paid requests are sent.</p>
+      <p class="tp-alert warn" *ngIf="data.current.alert_level > 0 && data.current.alert_level < 100" role="alert">Usage has passed {{ data.current.alert_level }}% this month ({{ data.current.percent }}%).</p>
+      <p class="tp-alert ok" *ngIf="!data.current.alert_level">No usage warnings this month. Warnings at {{ data.config.thresholds.join('%, ') }}%.</p>
+      <p class="tp-note">These are application figures and limits. They do not cap what Google bills, and anything else using the same key is not counted.
+        Set a budget alert and a quota in Google Cloud too, and treat Google's invoice as the actual charge.</p>
+    </section>
+
+    <!-- USAGE -->
+    <section class="tp-card" aria-label="Usage Monitoring">
+      <h2>Usage Monitoring <small>{{ data.current.period }}</small></h2>
+      <dl class="tp-stats">
+        <div><dt>Current plan</dt><dd>{{ paid ? 'Paid' : 'Free' }}</dd></div>
+        <div><dt>API connection</dt><dd>{{ connection }}</dd></div>
+        <div><dt>Characters sent</dt><dd>{{ data.current.characters | number }}</dd></div>
+        <div><dt>Free allowance used</dt><dd>{{ data.current.allowance_used | number }} / {{ data.current.allowance | number }}</dd></div>
+        <div><dt>Paid characters</dt><dd>{{ data.current.paid_characters | number }}</dd></div>
+        <div><dt>Estimated API charges</dt><dd>{{ money(data.current.estimated_cost) }}</dd></div>
+      </dl>
+
+      <div class="tp-table" *ngIf="data.history.length; else noHistory">
+        <table>
+          <thead><tr><th>Month</th><th>Characters</th><th>Requests</th><th>Paid characters</th><th>Estimated charge</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let h of data.history">
+              <td>{{ h.period }}</td><td>{{ h.characters | number }}</td><td>{{ h.requests }}</td><td>{{ h.paid_characters | number }}</td>
+              <td>{{ h.currency === 'PHP' ? '₱' : '$' }}{{ h.estimated_cost | number:'1.0-4' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <ng-template #noHistory><p class="tp-note">No paid translation has been used yet.</p></ng-template>
+
+      <h3>Translate missing system texts</h3>
+      <div class="tp-row">
+        <select [(ngModel)]="locale" (ngModelChange)="findMissing()" aria-label="Language to translate">
+          <option value="">Choose a language</option>
+          <option *ngFor="let l of languages" [value]="l.code">{{ l.name }}</option>
+        </select>
+        <span *ngIf="missing">{{ missingCount }} missing, {{ missingCharacters | number }} characters</span>
+        <button mat-flat-button color="primary" type="button" [disabled]="busy || !paid || !missingCount || data.current.blocked" (click)="translateMissing()">Translate with Google</button>
+      </div>
+      <p class="tp-note">Sends only interface and system texts, never posts, CVs, profiles or messages. Review the results in Language Setup.</p>
+    </section>
+
+    <!-- BUDGET -->
+    <section class="tp-card" aria-label="Monthly Budget">
+      <h2>Monthly Budget</h2>
+      <p>{{ money(data.current.estimated_cost) }} estimated of {{ money(data.config.monthly_budget) }}
+        <ng-container *ngIf="data.current.budget_percent !== null">({{ data.current.budget_percent }}%)</ng-container></p>
+      <mat-progress-bar mode="determinate" [value]="data.current.percent > 100 ? 100 : data.current.percent"
+        [color]="data.current.alert_level >= 80 ? 'warn' : 'primary'" aria-label="Budget used"></mat-progress-bar>
+      <p class="tp-note">Estimated cost of the expected {{ data.config.expected_characters | number }} characters a month: {{ money(data.expected_cost) }}</p>
+    </section>
+
+    <!-- PRICING -->
+    <section class="tp-card" aria-label="Pricing Configuration">
+      <h2>Pricing Configuration</h2>
+      <p class="tp-note">No price is built in. Copy the current one from
+        <a [href]="data.config.pricing_url" target="_blank" rel="noopener noreferrer">Google's pricing page</a>.
+        If you choose PHP, enter the price already converted to pesos.</p>
+      <form class="tp-form" *ngIf="form" (ngSubmit)="saveSettings()">
+        <label>Currency<select name="currency" [(ngModel)]="form.currency"><option value="USD">USD</option><option value="PHP">PHP</option></select></label>
+        <label>Price per million characters<input name="price" type="number" min="0" step="any" [(ngModel)]="form.price_per_million"></label>
+        <label>Free characters per month<input name="allowance" type="number" min="0" step="1" [(ngModel)]="form.free_allowance"></label>
+        <label>Monthly budget<input name="budget" type="number" min="0" step="any" [(ngModel)]="form.monthly_budget"></label>
+        <label>Monthly character limit (optional)<input name="limit" type="number" min="0" step="1" [(ngModel)]="form.monthly_char_limit"></label>
+        <label>Expected characters per month<input name="expected" type="number" min="0" step="1" [(ngModel)]="form.expected_characters"></label>
+        <label>Warning thresholds (%)<input name="thresholds" [(ngModel)]="thresholds"></label>
+        <label class="wide">Pricing reference (link)<input name="url" type="url" [(ngModel)]="form.pricing_url"></label>
+        <button mat-flat-button color="primary" type="submit" [disabled]="busy">Save pricing and budget</button>
+      </form>
+    </section>
+
+    <!-- API -->
+    <section class="tp-card" aria-label="API Configuration">
+      <h2>API Configuration</h2>
+      <p>Saved key: <code>{{ data.key.masked || 'none' }}</code> · {{ connection }}</p>
+      <form class="tp-row" (ngSubmit)="saveKey()">
+        <input type="password" name="apiKey" [(ngModel)]="apiKey" autocomplete="new-password" placeholder="Google Cloud API key" aria-label="Google Cloud API key">
+        <button mat-flat-button color="primary" type="submit" [disabled]="busy || !apiKey.trim()">Save key</button>
+        <button mat-stroked-button type="button" [disabled]="busy || !data.key.saved" (click)="test()">Test connection</button>
+        <button mat-button color="warn" type="button" [disabled]="busy || !data.key.saved" (click)="removeKey()">Remove</button>
+      </form>
+      <p class="tp-note">Stored encrypted on the server and never sent back. Saving or removing a key returns to the Free plan. Testing sends no text.
+        In Google Cloud, restrict the key to the Cloud Translation API.</p>
+    </section>
+  </ng-container>
+</div>

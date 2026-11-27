@@ -1,0 +1,55 @@
+:host { display: block; font-family: var(--nx-font, Verdana, Geneva, Tahoma, sans-serif);
+  --c-pending: #b35c00; --b-pending: #fff2e0; --c-review: #0a58b8; --b-review: #e7f1fb; --c-interview: #6a1b9a; --b-interview: #f3e8fa;
+  --c-hired: #14753d; --b-hired: #e7f6ee; --c-rejected: #b3261e; --b-rejected: #fdecec; }
+.ud { max-width: 1100px; margin: 0 auto; padding: 8px 4px 24px; }
+.ud-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px; margin-bottom: 14px;
+  border-radius: 16px; color: #fff; background: linear-gradient(120deg, #004182, #0a66c2); }
+.ud-head h1 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 20px; color: #fff; }
+.ud-head p { margin: 0; font-size: 13px; opacity: .9; }
+.ud-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.ud-links a[mat-flat-button] { background: #fff; color: #004182; }
+.ud-links a[mat-stroked-button] { color: #fff; border-color: rgba(255, 255, 255, .6); }
+
+.ud-cards { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+.ud-card { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; align-items: center; column-gap: 8px; padding: 12px;
+  border: 1px solid #e3e9f3; border-radius: 12px; background: #fff; color: inherit; text-decoration: none; transition: box-shadow .15s; }
+.ud-card:hover { box-shadow: 0 2px 10px rgba(0, 65, 130, .1); }
+.ud-card mat-icon { grid-row: span 2; width: 36px; height: 36px; font-size: 22px; line-height: 36px; text-align: center; border-radius: 10px; background: #eef2f8; color: #3c4a66; }
+.ud-card span { font-size: 12px; color: #5b6880; } .ud-card strong { font-size: 20px; color: #1b2a4a; }
+.pending mat-icon, .dot.pending { background: var(--b-pending); color: var(--c-pending); }
+.review mat-icon, .dot.review { background: var(--b-review); color: var(--c-review); }
+.interview mat-icon, .dot.interview { background: var(--b-interview); color: var(--c-interview); }
+.hired mat-icon, .dot.hired { background: var(--b-hired); color: var(--c-hired); }
+.rejected mat-icon, .dot.rejected { background: var(--b-rejected); color: var(--c-rejected); }
+
+.ud-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 14px; }
+.span-5 { grid-column: span 5; } .span-7 { grid-column: span 7; } .span-12 { grid-column: span 12; }
+.ud-card-box { padding: 16px 18px; background: #fff; border: 1px solid #e3e9f3; border-radius: 12px; min-width: 0; }
+.ud-card-box h2 { margin: 0 0 10px; font-size: 15px; }
+.ud-box-head { display: flex; align-items: center; justify-content: space-between; }
+
+.ud-list, .ud-updates { list-style: none; margin: 0; padding: 0; }
+.ud-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-top: 1px solid #eef2f8; }
+.ud-job { display: flex; flex-direction: column; min-width: 0; } .ud-job strong { overflow-wrap: anywhere; } .ud-job small { color: #6b7a99; }
+.ud-badge { display: inline-flex; align-items: center; gap: 4px; flex: none; padding: 3px 10px 3px 6px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.ud-badge mat-icon { width: 16px; height: 16px; font-size: 16px; background: none !important; }
+.ud-badge.pending { background: var(--b-pending); color: var(--c-pending); } .ud-badge.review { background: var(--b-review); color: var(--c-review); }
+.ud-badge.interview { background: var(--b-interview); color: var(--c-interview); } .ud-badge.hired { background: var(--b-hired); color: var(--c-hired); }
+.ud-badge.rejected { background: var(--b-rejected); color: var(--c-rejected); }
+
+.ud-updates li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid #eef2f8; }
+.ud-updates .dot { flex: none; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.ud-updates .dot mat-icon { width: 18px; height: 18px; font-size: 18px; background: none !important; }
+.ud-updates .ud-job { flex: 1; } .ud-updates time { flex: none; font-size: 12px; color: #6b7a99; }
+
+.ud-state { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 36px 16px; text-align: center; color: #5b6880; }
+.ud-state mat-icon { width: 44px; height: 44px; font-size: 44px; color: #b5c6dd; }
+.ud-empty { color: #6b7a99; font-size: 13px; }
+
+@media (max-width: 959.98px) { .ud-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } .span-5, .span-7 { grid-column: span 12; } }
+@media (max-width: 599.98px) {
+  .ud-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ud-updates li { flex-wrap: wrap; } .ud-updates time { width: 100%; padding-left: 40px; }
+  .ud-links, .ud-links a { width: 100%; }
+}
+.ud-job small span + span { margin-inline-start: .3em; }

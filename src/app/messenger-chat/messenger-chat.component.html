@@ -51,7 +51,7 @@
             </span>
             <span class="meta">
               <span class="row1">
-                <strong class="name">{{ c.fullname }}</strong>
+                <strong class="name" data-no-translate>{{ c.fullname }}</strong>
                 <time class="when">{{ listTime(c.last_message?.created_at) }}</time>
               </span>
               <span class="row2">
@@ -72,7 +72,7 @@
           <h2 class="section">People</h2>
           <button type="button" class="conv person" role="listitem" *ngFor="let p of matchingPeople; trackBy: trackConv" (click)="open(p)">
             <span class="av"><img [src]="p.photo_pic || 'assets/images/default.png'" nxFallback alt="" /><i class="dot" *ngIf="p.is_online"></i></span>
-            <span class="meta"><span class="row1"><strong class="name">{{ p.fullname }}</strong></span><span class="row2"><span class="prev">Start a conversation</span></span></span>
+            <span class="meta"><span class="row1"><strong class="name" data-no-translate>{{ p.fullname }}</strong></span><span class="row2"><span class="prev">Start a conversation</span></span></span>
           </button>
         </ng-container>
 
@@ -107,12 +107,22 @@
         <button type="button" mat-icon-button class="back" (click)="closeChat()" aria-label="Back to conversations"><mat-icon>arrow_back</mat-icon></button>
         <span class="av"><img [src]="selected.photo_pic || 'assets/images/default.png'" nxFallback alt="" /><i class="dot" *ngIf="selected.is_online"></i></span>
         <span class="who">
-          <strong>{{ selected.fullname }}</strong>
+          <strong data-no-translate>{{ selected.fullname }}</strong>
           <small [class.on]="selected.is_online">{{ selected.is_online ? 'Online' : 'Offline' }}</small>
         </span>
         <a mat-icon-button class="prof" *ngIf="selected.code" [routerLink]="['/' + routines.getRole() + '/profile', selected.code]"
           matTooltip="View profile" aria-label="View profile"><mat-icon>person</mat-icon></a>
       </header>
+
+      <!-- translation language, remembered for each conversation -->
+      <div class="tr-bar" *ngIf="translationOn && translationLanguages.length" data-no-translate>
+        <mat-icon aria-hidden="true">translate</mat-icon>
+        <select [ngModel]="chatLanguage" (ngModelChange)="chatLanguage = $event" [attr.aria-label]="'ls_see_translation' | translate">
+          <option value="">{{ 'ls_my_language' | translate }}</option>
+          <option *ngFor="let l of translationLanguages" [value]="l.code">{{ l.name }}</option>
+        </select>
+      </div>
+      <p class="tr-off" *ngIf="!translationOn && isAdmin">Translation is off. Turn on the Paid plan under Google Translate to translate messages.</p>
 
       <div class="chat-body" #scroller (scroll)="onScroll()" role="log" aria-live="polite" aria-label="Messages">
 
@@ -128,7 +138,7 @@
 
         <div class="state hello" *ngIf="!loadingChat && !chatError && !groups.length">
           <img [src]="selected.photo_pic || 'assets/images/default.png'" nxFallback alt="" />
-          <strong>{{ selected.fullname }}</strong>
+          <strong data-no-translate>{{ selected.fullname }}</strong>
           <span>No messages yet. Say hello! 👋</span>
         </div>
 
@@ -144,7 +154,7 @@
               <div class="stack">
                 <div class="line">
                   <button type="button" class="act copy" *ngIf="v.mine" (click)="copy(v.m)" matTooltip="Copy" aria-label="Copy message"><mat-icon>content_copy</mat-icon></button>
-                  <div class="bubble">{{ v.m.message }}</div>
+                  <div class="bubble" data-no-translate>{{ v.m.message }}<app-see-translation [text]="v.m.message" [into]="chatLanguage"></app-see-translation></div>
                   <button type="button" class="act copy" *ngIf="!v.mine" (click)="copy(v.m)" matTooltip="Copy" aria-label="Copy message"><mat-icon>content_copy</mat-icon></button>
                 </div>
 
@@ -210,7 +220,7 @@
       </div>
       <button type="button" class="conv" *ngFor="let p of newMatches; trackBy: trackConv" (click)="startChat(p)">
         <span class="av"><img [src]="p.photo_pic || 'assets/images/default.png'" nxFallback alt="" /><i class="dot" *ngIf="p.is_online"></i></span>
-        <span class="meta"><span class="row1"><strong class="name">{{ p.fullname }}</strong></span><span class="row2"><span class="prev">{{ p.is_online ? 'Online' : 'Offline' }}</span></span></span>
+        <span class="meta"><span class="row1"><strong class="name" data-no-translate>{{ p.fullname }}</strong></span><span class="row2"><span class="prev">{{ p.is_online ? 'Online' : 'Offline' }}</span></span></span>
       </button>
       <div class="state" *ngIf="peopleLoaded && !newMatches.length"><mat-icon>search_off</mat-icon><strong>No people found</strong></div>
     </div>

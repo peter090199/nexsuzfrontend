@@ -45,7 +45,7 @@ export class RoleGuard implements CanActivate {
         return this.router.parseUrl('/superadmin/dashboard');
 
       case 'DEF-USERS':
-        return this.router.parseUrl('/DEF-USERS/home');
+        return this.router.parseUrl('/DEF-USERS/dashboard');
 
       default:
         return this.router.parseUrl('/homepage');

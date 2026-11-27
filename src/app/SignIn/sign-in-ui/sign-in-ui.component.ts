@@ -139,7 +139,7 @@ export class SignInUIComponent implements OnInit {
           return;
         }
 
-        // DEF-USERS go straight to Home, with or without a plan (plan-limited actions ask to upgrade when used)
+        // DEF-USERS go straight to their Dashboard, with or without a plan (plan-limited actions ask to upgrade when used)
 
         // Load features, then redirect by role
         this.featureService.refresh().subscribe(() => this.redirectUser(res.role));
@@ -160,7 +160,7 @@ export class SignInUIComponent implements OnInit {
       'DEF-CLIENT': '/DEF-CLIENT/client-dashboard',
       'DEF-ADMIN': '/DEF-ADMIN/admin-dashboard',
       'DEF-MASTERADMIN': '/DEF-MASTERADMIN/admin-dashboard',
-      'DEF-USERS': '/DEF-USERS/home'
+      'DEF-USERS': '/DEF-USERS/dashboard'
     };
     this.redirectTo([routes[role] || '/homepage']);
   }

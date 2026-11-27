@@ -6,7 +6,7 @@ import { BehaviorSubject, forkJoin, Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { _url } from 'src/global-variables';
 
-export interface Language { code: string; name: string; native: string; rtl: boolean; }
+export interface Language { code: string; name: string; native: string; rtl: boolean; countries?: string[]; }
 
 export const FALLBACK_LANGUAGE = 'en-US';
 /** what a visitor picked on this device (shared by tabs) */
@@ -39,6 +39,31 @@ export function matchBrowserLanguage(wanted: readonly string[], available: strin
   return null;
 }
 
+/** countries that list another language, but where English is the better choice (HK, TW: never give Simplified) */
+const ENGLISH_COUNTRIES = ['BZ', 'CA', 'CY', 'ER', 'FI', 'GG', 'GU', 'HK', 'IL', 'JE', 'MU', 'NA', 'RW', 'SC', 'SG', 'SX', 'TW', 'VU'];
+/** countries with several languages, where the first in the list is not the one to start with */
+const COUNTRY_LANGUAGE: Record<string, string> = { BE: 'nl', CH: 'de', LU: 'fr', MO: 'zh-HK' };
+
+/** The language to show for a chosen country: one of the switched-on languages, else English. */
+export function languageForCountry(country: string, languages: Language[]): string {
+  const used = languages.filter(l => l.countries?.includes(country));
+  const local = used.filter(l => !l.code.startsWith('en'));
+  const own = local.find(l => l.code.endsWith(`-${country}`));
+  if (own) { return own.code; }
+
+  const chosen = languages.find(l => l.code === COUNTRY_LANGUAGE[country]);
+  if (chosen) { return chosen.code; }
+
+  return ENGLISH_COUNTRIES.includes(country) || !local.length ? FALLBACK_LANGUAGE : local[0].code;
+}
+
+/** drops database texts (web_db_) that a translated key already covers with the same English */
+export function withoutCoveredContent(texts: Record<string, string>): Record<string, string> {
+  const covered = new Set(Object.keys(texts).filter(k => !k.startsWith('web_db_')).map(k => texts[k]));
+
+  return Object.fromEntries(Object.entries(texts).filter(([k, v]) => !k.startsWith('web_db_') || !covered.has(v)));
+}
+
 /**
  * The texts of one language: the files shipped in assets/i18n (base language, then the country variant) with the
  * administrator's saved texts on top. Anything missing falls back to English (the default language).
@@ -52,7 +77,7 @@ export class NexsuzTranslateLoader implements TranslateLoader {
     const files = codes.map(c => this.http.get<Record<string, string>>(`./assets/i18n/${c}.json`).pipe(catchError(empty)));
     const saved = this.http.get<any>(`${_url}i18n/translations/${lang}`).pipe(map(r => (r?.data || {}) as Record<string, string>), catchError(empty));
 
-    return forkJoin([...files, saved]).pipe(map(parts => Object.assign({}, ...parts)));
+    return forkJoin([...files, saved]).pipe(map(parts => withoutCoveredContent(Object.assign({}, ...parts))));
   }
 }
 
@@ -73,6 +98,8 @@ export class NexsuzMissingTranslationHandler implements MissingTranslationHandle
 export class LanguageService {
   readonly languages$ = new BehaviorSubject<Language[]>([{ code: FALLBACK_LANGUAGE, name: 'English (United States)', native: 'English', rtl: false }]);
   private started = false;
+  /** true while no language has been picked: it is detected from the browser */
+  automatic = true;
   /** only the newest resolution is applied (sign in and start-up can overlap) */
   private run = 0;
 
@@ -110,6 +137,7 @@ export class LanguageService {
         const languages: Language[] = config.languages;
         this.languages$.next(languages);
         const active = languages.map(l => l.code);
+        this.automatic = !saved || !active.includes(saved);
         const code = [saved, matchBrowserLanguage(this.browserLanguages(), active), config.default]
           .find((c): c is string => !!c && active.includes(c)) || FALLBACK_LANGUAGE;
         this.apply(code);
@@ -123,6 +151,8 @@ export class LanguageService {
 
   /** the person picked a language */
   choose(code: string): void {
+    if (code === 'auto') { this.detect(); return; }
+    this.automatic = false;
     this.run++;      // a resolution still in flight must not undo this
     if (!this.signedIn) {
       this.store(localStorage, DEVICE, code);
@@ -133,6 +163,28 @@ export class LanguageService {
     this.http.put(`${_url}i18n/preference`, { language: code }, { headers: this.headers() })
       .pipe(catchError(() => of(null)))
       .subscribe(() => this.apply(code));
+  }
+
+  /** the person picked a country: its language follows */
+  chooseForCountry(country: string): void {
+    const code = languageForCountry(country, this.languages$.value);
+    // before the list has arrived only English is known: keep what is showing
+    if (this.languages$.value.length > 1 && code !== this.current) { this.choose(code); }
+  }
+
+  /** "Automatic": forget the picked language and detect it from the browser again */
+  private detect(): void {
+    this.automatic = true;
+    this.run++;
+    sessionStorage.removeItem(TAB);
+    if (!this.signedIn) {
+      localStorage.removeItem(DEVICE);
+      this.resolve();
+      return;
+    }
+    this.http.put(`${_url}i18n/preference`, { language: 'auto' }, { headers: this.headers() })
+      .pipe(catchError(() => of(null)))
+      .subscribe(() => this.resolve());
   }
 
   browserLanguages(): readonly string[] { return navigator.languages?.length ? navigator.languages : [navigator.language || '']; }

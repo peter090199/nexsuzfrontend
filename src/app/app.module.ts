@@ -21,6 +21,12 @@ import { TranslateModule, TranslateLoader, MissingTranslationHandler } from '@ng
 import { NexsuzMissingTranslationHandler, NexsuzTranslateLoader } from './services/language.service';
 import { MenuLabelPipe } from './services/menu-label.pipe';
 import { CountryPickerComponent } from './ComponentSharedUI/country-picker/country-picker.component';
+import { UserDashboardComponent } from './ComponentUI/dashboard/user-dashboard/user-dashboard.component';
+import { MyApplicationsComponent } from './ComponentUI/jobs/my-applications/my-applications.component';
+import { CvSetupComponent } from './ComponentUI/system/cv-setup/cv-setup.component';
+import { CvPdfViewerComponent } from './ComponentSharedUI/Resume/cv-pdf-viewer/cv-pdf-viewer.component';
+import { SeeTranslationComponent } from './ComponentSharedUI/see-translation/see-translation.component';
+import { TranslationPlansComponent } from './ComponentUI/system/translation-plans/translation-plans.component';
 import { LanguageSetupComponent } from './ComponentUI/system/language-setup/language-setup.component';
 import { CookieService } from 'ngx-cookie-service';
 // Component declarations
@@ -281,6 +287,12 @@ export function HttpLoaderFactory(http: HttpClient) {
     MenuLabelPipe,
     CountryPickerComponent,
     LanguageSetupComponent,
+    TranslationPlansComponent,
+    SeeTranslationComponent,
+    CvSetupComponent,
+    MyApplicationsComponent,
+    UserDashboardComponent,
+    CvPdfViewerComponent,
     PublicProfileComponent,
     ProfileVisibilityComponent,
     UserCVComponent,

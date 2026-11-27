@@ -1,0 +1,74 @@
+<ng-container *ngIf="isMaster">
+
+  <mat-card class="cs-card">
+    <h3>PDF settings</h3>
+    <mat-progress-bar *ngIf="!form && !loadFailed" mode="indeterminate"></mat-progress-bar>
+    <p class="cs-error" *ngIf="loadFailed" role="alert">Could not load the CV setup.
+      <button mat-button color="primary" type="button" (click)="load()">Try again</button></p>
+
+    <form *ngIf="form" (ngSubmit)="save()">
+      <label class="cs-check"><input type="checkbox" name="preview" [(ngModel)]="form.preview_enabled"> Enable CV and resume PDF preview</label>
+      <label class="cs-check"><input type="checkbox" name="print" [(ngModel)]="form.allow_print"> Allow printing</label>
+      <label class="cs-check"><input type="checkbox" name="download" [(ngModel)]="form.allow_download" [disabled]="form.method === 'download'"> Allow downloading</label>
+
+      <div class="cs-grid">
+        <label>Viewing method
+          <select name="method" [(ngModel)]="form.method" (ngModelChange)="methodChanged()">
+            <option value="preview">Browser preview</option>
+            <option value="download">Download</option>
+          </select>
+        </label>
+        <label>Display
+          <select name="display" [(ngModel)]="form.display" [disabled]="form.method === 'download'">
+            <option value="embedded">Embedded viewer</option>
+            <option value="tab">New tab</option>
+          </select>
+        </label>
+        <label>Page size (CV PDF and print)
+          <select name="size" [(ngModel)]="form.page_size">
+            <option value="a4">A4</option>
+            <option value="letter">Letter</option>
+            <option value="legal">Legal</option>
+          </select>
+        </label>
+        <label>Orientation
+          <select name="orientation" [(ngModel)]="form.orientation">
+            <option value="portrait">Portrait</option>
+            <option value="landscape">Landscape</option>
+          </select>
+        </label>
+        <label class="wide">Default PDF file name
+          <input name="filename" [(ngModel)]="form.filename" maxlength="80" required>
+          <small>{{ '{name}' }} becomes the person's name. Example: {{ exampleName }}</small>
+        </label>
+      </div>
+
+      <p class="cs-note">Turning off printing or downloading removes those actions from Nexsuz. It cannot stop someone from printing,
+        saving or photographing what their browser is already showing.</p>
+      <p class="cs-error" *ngIf="error" role="alert">{{ error }}</p>
+      <button mat-flat-button color="primary" type="submit" [disabled]="saving">{{ saving ? 'Saving…' : 'Save CV setup' }}</button>
+    </form>
+  </mat-card>
+
+  <mat-card class="cs-card">
+    <h3>Environment <span class="cs-tag" [class.prod]="server?.environment === 'production'" *ngIf="server">{{ server.environment === 'production' ? 'Production' : 'Local' }}</span></h3>
+    <p class="cs-error" *ngIf="serverFailed" role="alert">Could not reach the server to check it. Check the API address below.
+      <button mat-button color="primary" type="button" (click)="load()">Try again</button></p>
+
+    <dl>
+      <dt>Website (Angular)</dt><dd>{{ app.url }} · {{ app.environment }} build</dd>
+      <dt>API URL used by the website</dt><dd>{{ app.api }}</dd>
+      <ng-container *ngIf="server">
+        <dt>Laravel URL (APP_URL)</dt><dd>{{ server.app_url }}</dd>
+        <dt>Public storage URL</dt><dd>{{ server.storage_url }}</dd>
+        <dt>Storage link</dt><dd [class.bad]="!server.storage_linked">{{ server.storage_linked ? 'OK' : 'Missing' }}</dd>
+        <dt>Storage writable</dt><dd [class.bad]="!server.storage_writable">{{ server.storage_writable ? 'Yes' : 'No' }}</dd>
+      </ng-container>
+    </dl>
+
+    <p class="cs-warn" *ngIf="mismatch" role="alert">The website is a {{ app.environment }} build but the server is {{ server.environment }}.</p>
+    <p class="cs-warn" *ngFor="let w of server?.warnings" role="alert">{{ w }}</p>
+    <p class="cs-note">CV PDFs are created in the browser. Uploaded resumes are private files, sent only through the signed-in API.</p>
+  </mat-card>
+
+</ng-container>

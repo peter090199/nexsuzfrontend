@@ -32,7 +32,7 @@ import { ProfileService } from 'src/app/services/Profile/profile.service';
 
     <section class="card" *ngIf="p.about || p.industry || p.companywebsite">
       <h2>About</h2>
-      <p *ngIf="p.about">{{ p.about }}</p>
+      <p *ngIf="p.about">{{ p.about }}</p><app-see-translation [text]="p.about"></app-see-translation>
       <p class="muted" *ngIf="p.industry">{{ p.industry }}</p>
       <p *ngIf="website"><a [href]="website" target="_blank" rel="noopener noreferrer nofollow">{{ p.companywebsite }}</a></p>
     </section>
@@ -50,7 +50,7 @@ import { ProfileService } from 'src/app/services/Profile/profile.service';
       <p class="muted" *ngIf="!p.posts.length">No public posts yet.</p>
       <article *ngFor="let post of p.posts">
         <p class="muted"><mat-icon inline>public</mat-icon> Public · {{ post.created_at | date:'medium' }}</p>
-        <p class="caption">{{ post.caption }}</p>
+        <p class="caption">{{ post.caption }}</p><app-see-translation [text]="post.caption"></app-see-translation>
         <img class="media" *ngFor="let i of post.images" [src]="i.path_url" loading="lazy" alt="Post image">
       </article>
     </section>

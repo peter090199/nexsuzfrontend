@@ -1,3 +1,4 @@
+import { CvPdfService } from 'src/app/services/CV/cv-pdf.service';
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
@@ -33,6 +34,7 @@ export class ResumeManagerComponent implements OnInit {
   uploadOnly = false;
 
   constructor(
+    public cvPdf: CvPdfService,
     private svc: UserResumeService,
     private mode: CvModeService,
     private alert: NotificationsService,
@@ -41,6 +43,7 @@ export class ResumeManagerComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    this.cvPdf.load().subscribe();
     this.mode.get().subscribe({ next: m => (this.uploadOnly = !!m.upload_only), error: () => { /* builder stays offered */ } });
     this.load();
   }
@@ -129,20 +132,30 @@ export class ResumeManagerComponent implements OnInit {
     });
   }
 
+  /** "Preview": the uploaded PDF, shown as CV Setup says */
   view(r: UserResume): void {
+    if (r.type !== 'pdf') { this.downloadResume(r); return; }
+    if (!this.cvPdf.settings.preview_enabled) { return; }
+    const tab = this.cvPdf.openTabIfNeeded();
+    this.withFile(r, blob => this.cvPdf.present(blob, r.name, tab), () => tab?.close());
+  }
+
+  downloadResume(r: UserResume): void {
+    if (this.cvPdf.settings.allow_download) { this.withFile(r, blob => this.cvPdf.download(blob, r.name)); }
+  }
+
+  printResume(r: UserResume): void {
+    if (r.type === 'pdf' && this.cvPdf.settings.allow_print) { this.withFile(r, blob => this.cvPdf.print(blob)); }
+  }
+
+  private withFile(r: UserResume, use: (blob: Blob) => void, failed?: () => void): void {
     this.svc.file(r.id).subscribe({
-      next: blob => {
-        const url = URL.createObjectURL(blob);
-        if (r.type === 'pdf') {
-          window.open(url, '_blank', 'noopener');
-        } else {
-          const a = document.createElement('a');
-          a.href = url; a.download = r.name; a.rel = 'noopener';
-          document.body.appendChild(a); a.click(); a.remove();
-        }
-        setTimeout(() => URL.revokeObjectURL(url), 60000);
-      },
-      error: () => this.alert.toastrError('Could not open the resume.')
+      next: blob => use(blob),
+      error: err => {
+        failed?.();
+        this.alert.toastrError(err?.status === 404 ? 'The file for this resume is missing. Please upload it again.'
+          : 'Could not open the resume. Check your connection and try again.');
+      }
     });
   }
 

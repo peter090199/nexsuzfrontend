@@ -25,7 +25,8 @@
       <img class="avatar" [src]="post.photo_pic || 'assets/images/default.png'" nxFallback [alt]="post.fullname">
 
       <div class="user-info">
-        <h4 class="name">
+        <!-- names are never translated -->
+        <h4 class="name" data-no-translate>
           {{ post.fullname }}
         </h4>
 
@@ -59,12 +60,13 @@
 
     </div>
     <!-- CAPTION -->
-    <p style="font-family: Verdana, Geneva, Tahoma, sans-serif; color: #413f3f; font-size: 14px; margin-bottom: 20px; text-align: justify;">
+    <p style="font-family: Verdana, Geneva, Tahoma, sans-serif; color: #413f3f; font-size: 14px; margin-bottom: 20px; text-align: justify;" data-no-translate>
       {{ post.expanded ? post.caption : (post.caption | slice:0:200) }}
       <a *ngIf="post.caption?.length > 200" (click)="post.expanded = !post.expanded">
         {{ post.expanded ? 'See less' : 'See more' }}
       </a>
     </p>
+    <app-see-translation [text]="post.caption"></app-see-translation>
 
     <!-- IMAGES -->
     <div class="post-gallery" *ngIf="post.images?.length"

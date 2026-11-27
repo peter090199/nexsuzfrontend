@@ -148,7 +148,8 @@ button { font-family: inherit; }
 
 /* composer: pinned to the bottom of the chat */
 .composer { flex: none; position: relative; padding: 8px 12px 10px; border-top: 1px solid #e3e9f3; background: #fff; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
-.composer .row { display: flex; align-items: flex-end; gap: 6px; }
+/* "row" is also a Bootstrap class: undo its negative side margins and wrapping, or the send button sticks out on phones */
+.composer .row { display: flex; flex-wrap: nowrap; align-items: flex-end; gap: 6px; margin: 0; }
 .composer .input { flex: 1; min-width: 0; max-height: 140px; min-height: 40px; padding: 10px 16px; border: 1.5px solid transparent; border-radius: 20px; background: #f0f2f5; font: inherit; font-size: 14px; line-height: 1.4; color: #1b2a4a; resize: none; overflow-y: auto; transition: background .2s, border-color .2s, box-shadow .2s; }
 .composer .input:focus { outline: 0; background: #fff; border-color: #0a66c2; box-shadow: 0 0 0 3px rgba(10, 102, 194, .15); }
 .composer .input::placeholder { color: #8a97b0; }
@@ -295,3 +296,8 @@ button { font-family: inherit; }
   .composer .input { max-height: 112px; }
   .chat-body { overscroll-behavior: contain; }
 }
+
+.tr-bar { display: flex; align-items: center; gap: 8px; padding: 4px 12px; border-bottom: 1px solid #e3eaf4; flex: none; min-width: 0; }
+.tr-bar mat-icon { font-size: 18px; width: 18px; height: 18px; color: #0a66c2; }
+.tr-bar select { flex: 1; min-width: 0; max-width: 280px; height: 30px; border: 1px solid #cfd9e8; border-radius: 8px; background: #fff; font: inherit; font-size: 12px; }
+.tr-off { margin: 0; padding: 6px 12px; font-size: 11px; color: #6b7a99; border-bottom: 1px solid #e3eaf4; flex: none; }

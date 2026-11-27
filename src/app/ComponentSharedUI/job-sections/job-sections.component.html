@@ -22,10 +22,10 @@
 
       <p *ngSwitchCase="'summary'">{{ job.job_about }}</p>
 
-      <p class="pre" *ngSwitchCase="'responsibilities'">{{ job.job_description }}</p>
+      <ng-container *ngSwitchCase="'responsibilities'"><p class="pre">{{ job.job_description }}</p><app-see-translation [text]="job.job_description"></app-see-translation></ng-container>
 
       <ng-container *ngSwitchCase="'qualifications'">
-        <p class="pre" *ngIf="job.qualification">{{ job.qualification }}</p>
+        <p class="pre" *ngIf="job.qualification">{{ job.qualification }}</p><app-see-translation [text]="job.qualification"></app-see-translation>
         <p *ngIf="legacy && job.education"><strong>Education:</strong> {{ job.education }}</p>
         <ng-container *ngIf="job.preferred_qualifications">
           <h4>Nice to have</h4>
@@ -39,7 +39,7 @@
         <span class="skill" *ngFor="let k of skills; trackBy: trackIdx">{{ k }}</span>
       </div>
 
-      <p class="pre" *ngSwitchCase="'benefits'">{{ job.benefits }}</p>
+      <ng-container *ngSwitchCase="'benefits'"><p class="pre">{{ job.benefits }}</p><app-see-translation [text]="job.benefits"></app-see-translation></ng-container>
 
       <ng-container *ngSwitchCase="'questions'">
         <p class="muted"><ng-container *ngIf="job.allow_cv !== false">A CV (PDF) is required. </ng-container>You will be asked:</p>

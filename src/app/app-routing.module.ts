@@ -1,3 +1,6 @@
+import { UserDashboardComponent } from './ComponentUI/dashboard/user-dashboard/user-dashboard.component';
+import { MyApplicationsComponent } from './ComponentUI/jobs/my-applications/my-applications.component';
+import { TranslationPlansComponent } from './ComponentUI/system/translation-plans/translation-plans.component';
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { LanguageSetupComponent } from './ComponentUI/system/language-setup/language-setup.component';
@@ -116,6 +119,8 @@ export const routes: Routes = [
       { path: 'recommended-jobs/:transNo', component: JobsProfileComponent },
       { path: 'apply-job/:transNo', component: ApplyJobComponent, canActivate: [FeatureGuard], data: { feature: FEATURE.APPLY_JOBS } },
       { path: 'applied-jobs', component: ListAppliedJobsComponent },
+      { path: 'my-applications', component: MyApplicationsComponent },
+      { path: 'dashboard', component: UserDashboardComponent },
       { path: 'checkout/:planId', component: CheckOutUIComponent },
       { path: 'subscription', component: UpgradeRequiredComponent },
     ]
@@ -177,6 +182,7 @@ export const routes: Routes = [
       { path: 'planfeatureassignment', component: PlanFeatureAssignmentComponent },
       { path: 'usersubscriptionmonitoring', component: UserSubscriptionMonitoringComponent },
       { path: 'subscriptionreports', component: SubscriptionReportsComponent },
+      { path: 'translationplans', component: TranslationPlansComponent },
       // NEXSUZ INFORMATION (one shared business record; the API enforces the assigned permission)
       { path: 'nexsuzinfo', component: BusinessInfoComponent },
       // CONTACT INQUIRIES (visitor messages and email replies; the API enforces the assigned permission)
@@ -240,6 +246,7 @@ export const routes: Routes = [
       { path: 'planfeatureassignment', component: PlanFeatureAssignmentComponent },
       { path: 'usersubscriptionmonitoring', component: UserSubscriptionMonitoringComponent },
       { path: 'subscriptionreports', component: SubscriptionReportsComponent },
+      { path: 'translationplans', component: TranslationPlansComponent },
 
       // ACCOUNTPLAN
       { path: 'featuresplan', component: FeaturesPlanListComponent },

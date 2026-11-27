@@ -48,7 +48,9 @@
         <button mat-stroked-button type="button" *ngIf="!r.is_default" (click)="makeDefault(r)" [disabled]="busyId !== null">
           <mat-icon>star_outline</mat-icon> Set as default
         </button>
-        <button mat-icon-button type="button" matTooltip="{{ r.type === 'pdf' ? 'View' : 'Download' }}" [attr.aria-label]="(r.type === 'pdf' ? 'View ' : 'Download ') + r.name" (click)="view(r)"><mat-icon>{{ r.type === 'pdf' ? 'visibility' : 'download' }}</mat-icon></button>
+        <button mat-stroked-button type="button" *ngIf="r.type === 'pdf' && cvPdf.settings.preview_enabled" (click)="view(r)" [attr.aria-label]="'PDF preview of ' + r.name"><mat-icon>pageview</mat-icon> PDF preview</button>
+        <button mat-icon-button type="button" *ngIf="r.type === 'pdf' && cvPdf.settings.allow_print" (click)="printResume(r)" matTooltip="Print" [attr.aria-label]="'Print ' + r.name"><mat-icon>print</mat-icon></button>
+        <button mat-icon-button type="button" *ngIf="cvPdf.settings.allow_download" (click)="downloadResume(r)" matTooltip="Download" [attr.aria-label]="'Download ' + r.name"><mat-icon>download</mat-icon></button>
         <button mat-icon-button type="button" color="warn" matTooltip="Delete" [attr.aria-label]="'Delete ' + r.name" (click)="confirmDelete(r)" [disabled]="busyId !== null"><mat-icon>delete_outline</mat-icon></button>
       </div>
     </li>
