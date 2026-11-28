@@ -452,3 +452,31 @@
     opacity: 1;
     transform: translate(0, 0);
 }
+/* ==========================
+   MOTION FIX: the slide-in used to run on page load (while this section was
+   still off-screen), so nobody saw it. It now plays when the section scrolls
+   into view (AboutComponent adds .active).
+========================== */
+.reveal.reveal-left,
+.reveal.reveal-right {
+    animation: none;
+    transition: opacity 1s cubic-bezier(.22, 1, .36, 1), transform 1s cubic-bezier(.22, 1, .36, 1);
+}
+
+.reveal.reveal-right {
+    transition-delay: .15s;
+}
+
+/* stat numbers count up (AboutComponent), keep their width steady while they change */
+.floating-card h4 {
+    font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reveal.reveal-left,
+    .reveal.reveal-right {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+}

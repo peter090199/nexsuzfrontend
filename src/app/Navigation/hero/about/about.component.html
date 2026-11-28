@@ -89,33 +89,13 @@
         <div class="hero-image">
           <img src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=800" class="img-fluid" alt="about">
 
-          <!-- Floating Card 1 -->
-          <div class="floating-card card1">
-            <mat-icon>groups</mat-icon>
+          <!-- Floating stat cards: real totals from the API (public/stats), counted up when first seen -->
+          <div class="floating-card" *ngFor="let s of stats; let i = index" [ngClass]="'card' + (i + 1)">
+            <mat-icon>{{ s.icon }}</mat-icon>
 
             <div>
-              <h4>25K+</h4>
-              <small>Professionals</small>
-            </div>
-          </div>
-
-          <!-- Floating Card 2 -->
-          <div class="floating-card card2">
-            <mat-icon>work</mat-icon>
-
-            <div>
-              <h4>5K+</h4>
-              <small>Jobs Posted</small>
-            </div>
-          </div>
-
-          <!-- Floating Card 3 -->
-          <div class="floating-card card3">
-            <mat-icon>verified</mat-icon>
-
-            <div>
-              <h4>1000+</h4>
-              <small>Companies</small>
+              <h4 [attr.aria-label]="s.target === null ? null : s.target + ' ' + label(s)">{{ s.shown }}</h4>
+              <small>{{ label(s) }}</small>
             </div>
           </div>
 

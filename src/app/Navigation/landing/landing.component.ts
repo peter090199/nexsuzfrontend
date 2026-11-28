@@ -41,7 +41,13 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
     '.section-title', '.section-heading', '.hero-header', '.search-container',
     '.feature-card', '.plan-box', '.job-card', '.people-section-title',
     '.about-section-1 .feature', '.about-section-1 .hero-image',
-    '.contact-info-card', '.contact-form', '.recruiter-section .cta'
+    '.contact-info-card', '.contact-form', '.recruiter-section .cta',
+    // pricing
+    '.pricing-header > *', '.trust-strip > div', '.compare', '.faq',
+    // jobs / people search
+    '.search-hero > h1', '.search-hero > p', '.type-filter', '.result-count', '.state-box', '.load-more',
+    // footer
+    '.site-footer .footer-content > *', '.site-footer .footer-bottom'
   ].join(',');
 
   fadeIn = false;
@@ -51,6 +57,8 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
   chatOpened = false;
   showScrollTop = false;
   navScrolled = false;
+  /** 0..1, how far down the page the visitor has scrolled (drives the header progress bar) */
+  scrollProgress = 0;
 
   myControl = new FormControl();
   options: User[] = [
@@ -244,6 +252,8 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
       if (target) {
         this.showScrollTop = target.scrollTop > this.scrollTopThreshold;
         this.navScrolled = target.scrollTop > 40;
+        const max = target.scrollHeight - target.clientHeight;
+        this.scrollProgress = max > 0 ? Math.min(target.scrollTop / max, 1) : 0;
         this.updateActiveSection(target.scrollTop);
       }
       this.scrollTicking = false;

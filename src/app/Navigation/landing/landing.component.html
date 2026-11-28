@@ -119,6 +119,8 @@
           <mat-icon aria-hidden="true">{{ drawer.opened ? 'close' : 'menu' }}</mat-icon>
         </button>
 
+        <!-- reading progress: grows along the bottom of the header as the page scrolls -->
+        <span class="lx-progress" aria-hidden="true" [style.transform]="'scaleX(' + scrollProgress + ')'"></span>
       </mat-toolbar>
     </header>
 

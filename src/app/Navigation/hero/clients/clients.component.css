@@ -307,3 +307,12 @@
     transform: translateY(-10px);
     box-shadow: 0 20px 40px rgba(0,0,0,.08);
 }
+/* ==========================
+   MOTION FIX: the load-time fadeUp finished before this section was on
+   screen and blocked the landing page's scroll reveal. The landing page
+   now fades these cards in, staggered, as they scroll into view.
+========================== */
+.feature-card {
+    opacity: 1;
+    animation: none;
+}

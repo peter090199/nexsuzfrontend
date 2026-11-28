@@ -721,3 +721,246 @@ mat-toolbar app-app-logo { flex: 0 1 auto; min-width: 0; }
   .nav-links a { padding: 8px 8px; font-size: .9rem; }
   .nav-right .btn-signin, .nav-right .btn-signup { padding: 0 12px; }
 }
+
+
+/* =====================================================================
+   MOTION LAYER 2: page entrance, reading progress, drawer stagger,
+   press feedback. Animation / transition / fade only; no colours or
+   backgrounds change.
+   ===================================================================== */
+
+/* --- Page entrance: header drops in, links and actions fade in one after another --- */
+header {
+  animation: lx-drop 0.8s var(--lx-ease) backwards;
+}
+
+@keyframes lx-drop {
+  from { opacity: 0; transform: translateY(-100%); }
+  to { opacity: 1; transform: none; }
+}
+
+.nav-links a,
+.nav-right > * {
+  animation: lx-fade-down 0.6s var(--lx-ease) backwards;
+}
+
+.nav-links a:nth-child(1) { animation-delay: 0.25s; }
+.nav-links a:nth-child(2) { animation-delay: 0.32s; }
+.nav-links a:nth-child(3) { animation-delay: 0.39s; }
+.nav-links a:nth-child(4) { animation-delay: 0.46s; }
+.nav-links a:nth-child(5) { animation-delay: 0.53s; }
+.nav-links a:nth-child(6) { animation-delay: 0.60s; }
+.nav-right > *:nth-child(1) { animation-delay: 0.55s; }
+.nav-right > *:nth-child(2) { animation-delay: 0.65s; }
+.nav-right > *:nth-child(3) { animation-delay: 0.75s; }
+.nav-right > *:nth-child(4) { animation-delay: 0.85s; }
+
+@keyframes lx-fade-down {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* page body fades in softly under the header */
+.page-content {
+  animation: lx-fade 0.9s ease 0.1s backwards;
+}
+
+@keyframes lx-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* signed-in avatar pops in */
+.acct-btn {
+  animation: lx-pop 0.5s var(--lx-ease) 0.6s backwards;
+}
+
+@keyframes lx-pop {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: none; }
+}
+
+/* --- Reading progress along the bottom of the header (white, like the link underline) --- */
+.lx-progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.4), #fff);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.15s linear;
+  pointer-events: none;
+}
+
+/* --- Mobile drawer: card, links and buttons slide in one after another when it opens --- */
+.mobile-sidebar .dr-card,
+.mobile-sidebar .dr-link,
+.mobile-sidebar .dr-foot {
+  opacity: 0;
+  transform: translateX(28px);
+  transition: opacity 0.2s ease, transform 0.2s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.mobile-sidebar.mat-drawer-opened .dr-card,
+.mobile-sidebar.mat-drawer-opened .dr-link,
+.mobile-sidebar.mat-drawer-opened .dr-foot {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.5s ease, transform 0.55s var(--lx-ease), background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.mobile-sidebar.mat-drawer-opened .dr-card { transition-delay: 0.08s; }
+.mobile-sidebar.mat-drawer-opened .dr-link:nth-child(2) { transition-delay: 0.14s, 0.14s, 0s, 0s; }
+.mobile-sidebar.mat-drawer-opened .dr-link:nth-child(3) { transition-delay: 0.19s, 0.19s, 0s, 0s; }
+.mobile-sidebar.mat-drawer-opened .dr-link:nth-child(4) { transition-delay: 0.24s, 0.24s, 0s, 0s; }
+.mobile-sidebar.mat-drawer-opened .dr-link:nth-child(5) { transition-delay: 0.29s, 0.29s, 0s, 0s; }
+.mobile-sidebar.mat-drawer-opened .dr-link:nth-child(6) { transition-delay: 0.34s, 0.34s, 0s, 0s; }
+.mobile-sidebar.mat-drawer-opened .dr-link:nth-child(7) { transition-delay: 0.39s, 0.39s, 0s, 0s; }
+.mobile-sidebar.mat-drawer-opened .dr-foot { transition-delay: 0.42s; }
+
+/* links: icon grows and the chevron slides on hover */
+.dr-ico { transition: background 0.18s ease, transform 0.3s var(--lx-ease); }
+.dr-link .dr-chev { transition: transform 0.3s var(--lx-ease); }
+.dr-link:hover .dr-chev,
+.dr-link.active .dr-chev { transform: translateX(4px); }
+.dr-link:hover .dr-ico { transform: scale(1.08); }
+.dr-go { transition: transform 0.3s var(--lx-ease); }
+.dr-go:hover { transform: translateX(3px); }
+
+/* --- Press feedback on toggles and chips in the sections --- */
+:host ::ng-deep .page-content .audience button,
+:host ::ng-deep .page-content .billing button,
+:host ::ng-deep .page-content .type-chip {
+  transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease, transform 0.25s var(--lx-ease);
+}
+
+:host ::ng-deep .page-content .audience button:active,
+:host ::ng-deep .page-content .billing button:active,
+:host ::ng-deep .page-content .type-chip:active {
+  transform: scale(0.95);
+}
+
+/* the freshly selected tab settles in with a small pop */
+:host ::ng-deep .page-content .audience button.on,
+:host ::ng-deep .page-content .billing button.on {
+  animation: lx-pop-soft 0.4s var(--lx-ease);
+}
+
+@keyframes lx-pop-soft {
+  0% { transform: scale(0.92); }
+  60% { transform: scale(1.04); }
+  100% { transform: none; }
+}
+
+/* trust strip & contact rows: lift on hover, icon pops */
+:host ::ng-deep .page-content .trust-strip > div,
+:host ::ng-deep .page-content .contact-info-item {
+  transition: transform 0.4s var(--lx-ease), box-shadow 0.4s var(--lx-ease);
+}
+
+:host ::ng-deep .page-content .trust-strip > div:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px rgba(47, 44, 225, 0.15);
+}
+
+:host ::ng-deep .page-content .contact-info-item:hover {
+  transform: translateX(4px);
+}
+
+:host ::ng-deep .page-content .trust-strip mat-icon,
+:host ::ng-deep .page-content .contact-info-item .feature-icon {
+  transition: transform 0.45s var(--lx-ease);
+}
+
+:host ::ng-deep .page-content .trust-strip > div:hover mat-icon,
+:host ::ng-deep .page-content .contact-info-item:hover .feature-icon {
+  transform: translateY(-3px) scale(1.12);
+}
+
+/* pricing: the star on the Recommended ribbon twinkles */
+:host ::ng-deep .page-content .plan-box.featured .ribbon mat-icon {
+  animation: lx-twinkle 2.6s ease-in-out infinite;
+}
+
+@keyframes lx-twinkle {
+  0%, 100% { transform: scale(1) rotate(0); }
+  50% { transform: scale(1.2) rotate(18deg); }
+}
+
+/* plan feature rows fade in one by one when the plan cards appear */
+:host ::ng-deep .page-content .plan-box .feature-list .feature {
+  animation: lx-fade-right 0.5s var(--lx-ease) backwards;
+}
+
+:host ::ng-deep .page-content .plan-box .feature-list .feature:nth-child(1) { animation-delay: 0.15s; }
+:host ::ng-deep .page-content .plan-box .feature-list .feature:nth-child(2) { animation-delay: 0.21s; }
+:host ::ng-deep .page-content .plan-box .feature-list .feature:nth-child(3) { animation-delay: 0.27s; }
+:host ::ng-deep .page-content .plan-box .feature-list .feature:nth-child(4) { animation-delay: 0.33s; }
+:host ::ng-deep .page-content .plan-box .feature-list .feature:nth-child(5) { animation-delay: 0.39s; }
+:host ::ng-deep .page-content .plan-box .feature-list .feature:nth-child(n+6) { animation-delay: 0.45s; }
+
+@keyframes lx-fade-right {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* success / error messages and empty states fade in instead of popping */
+:host ::ng-deep .page-content .form-success,
+:host ::ng-deep .page-content .form-error,
+:host ::ng-deep .page-content .notice,
+:host ::ng-deep .page-content .empty-audience {
+  animation: lx-rise 0.6s var(--lx-ease) both;
+}
+
+/* footer: links get the same growing underline as the header */
+:host ::ng-deep .page-content .footer-links a {
+  position: relative;
+}
+
+:host ::ng-deep .page-content .footer-links a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0.7;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s var(--lx-ease);
+}
+
+:host ::ng-deep .page-content .footer-links a:hover::after {
+  transform: scaleX(1);
+}
+
+/* --- Reduced motion: no entrance, no stagger, nothing moves --- */
+@media (prefers-reduced-motion: reduce) {
+  header,
+  .nav-links a,
+  .nav-right > *,
+  .page-content,
+  .acct-btn,
+  .dr-chev,
+  .dr-ico,
+  .dr-go {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .mobile-sidebar .dr-card,
+  .mobile-sidebar .dr-link,
+  .mobile-sidebar .dr-foot {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .lx-progress {
+    transition: none;
+  }
+}
